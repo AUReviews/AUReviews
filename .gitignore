@@ -1,0 +1,25 @@
+# IDE
+.idea/
+.vscode/
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# Env
+.env
+.env.local
+.env*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (leftover from project scaffolding)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
