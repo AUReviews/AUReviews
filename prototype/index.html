@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlainsCourses — Auburn CSSE Course Reviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ===========================================================================
+   PlainsCourses — HiFi prototype
+   Faithful standalone implementation of "Auburn Course Feedback - HiFi.dc.html"
+   (imported from Claude Design). The original inline-style template + DCLogic
+   state class are translated here into CSS classes + vanilla JS, with no
+   dependency on the DC runtime or React.
+   =========================================================================== */
+
+/* ---- Theme tokens (verbatim from the source design) --------------------- */
+[data-theme="light"]{
+  --bg-page:oklch(0.955 0.012 255);--bg-surface:#fff;--bg-chip:oklch(0.96 0.015 255);
+  --bg-chip-alt:oklch(0.94 0.012 255);--border-default:oklch(0.9 0.012 255);
+  --border-input:oklch(0.88 0.012 255);--border-subtle:oklch(0.93 0.012 255);
+  --border-strong:#161b26;--border-card:#d8dae0;--text-heading:oklch(0.22 0.045 262);
+  --text-primary:#161b26;--text-secondary:#3a4258;--text-muted:oklch(0.62 0.02 262);
+  --text-placeholder:#9aa3b5;--text-body:oklch(0.5 0.025 262);--link:oklch(0.42 0.09 262);
+  --avatar-bg:oklch(0.42 0.09 262);--brand-bg:oklch(0.28 0.06 262);--brand-text:#fff;
+  --accent-bg:oklch(0.72 0.14 52);--accent-text:#1a1206;--shadow-btn:0 1px 2px rgba(0,0,0,.08)
+}
+[data-theme="dark"]{
+  --bg-page:oklch(0.22 0.02 262);--bg-surface:oklch(0.27 0.022 262);--bg-chip:oklch(0.33 0.022 262);
+  --bg-chip-alt:oklch(0.31 0.022 262);--border-default:oklch(0.37 0.022 262);
+  --border-input:oklch(0.4 0.022 262);--border-subtle:oklch(0.35 0.022 262);
+  --border-strong:oklch(0.82 0.012 262);--border-card:oklch(0.4 0.022 262);
+  --text-heading:oklch(0.96 0.01 262);--text-primary:oklch(0.93 0.01 262);
+  --text-secondary:oklch(0.8 0.015 262);--text-muted:oklch(0.65 0.02 262);
+  --text-placeholder:oklch(0.55 0.02 262);--text-body:oklch(0.75 0.018 262);--link:oklch(0.78 0.1 262);
+  --avatar-bg:oklch(0.55 0.09 262);--brand-bg:oklch(0.55 0.09 262);--brand-text:oklch(0.15 0.02 262);
+  --accent-bg:oklch(0.72 0.14 52);--accent-text:#1a1206;--shadow-btn:0 1px 3px rgba(0,0,0,.5)
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+a{color:var(--link);text-decoration:none}
+a:hover{opacity:.8}
+::placeholder{color:var(--text-placeholder)}
+input{font-family:inherit}
+
+.app{min-height:100vh;background:var(--bg-page);color:var(--text-primary);display:flex;flex-direction:column}
+
+/* ---- Header ------------------------------------------------------------- */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 40px;
+  background:var(--bg-surface);border-bottom:1px solid var(--border-default);
+  position:sticky;top:0;z-index:10}
+.hdr-left{display:flex;align-items:center;gap:32px}
+.hdr-right{display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:9px;cursor:pointer}
+.brand:hover{opacity:.8}
+.brand-logo{width:28px;height:28px;border-radius:7px;background:var(--brand-bg);display:flex;
+  align-items:center;justify-content:center;color:var(--brand-text);font-weight:800;font-size:14px}
+.brand-name{font-size:16px;letter-spacing:-0.01em;color:var(--text-heading)}
+.nav-link{font-size:14px;font-weight:600;color:var(--text-secondary);cursor:pointer}
+.nav-link:hover{color:var(--text-heading)}
+
+.btn-accent{padding:8px 18px;border-radius:8px;background:var(--accent-bg);color:var(--accent-text);
+  font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:var(--shadow-btn);border:none;
+  font-family:inherit}
+.btn-accent:hover{filter:brightness(0.94)}
+
+/* Theme toggle group */
+.theme-group{display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;
+  background:var(--bg-chip);border:1px solid var(--border-default)}
+.theme-btn{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;background:transparent;color:var(--text-muted);box-shadow:none}
+.theme-btn:hover{background:var(--bg-surface)}
+.theme-btn.active{background:var(--bg-surface);color:var(--text-primary);box-shadow:var(--shadow-btn)}
+
+.user{display:flex;align-items:center;gap:7px;font-size:13.5px;color:var(--text-secondary);
+  font-weight:500;cursor:pointer}
+.user:hover{color:var(--text-heading)}
+.avatar{width:24px;height:24px;border-radius:50%;background:var(--avatar-bg);color:#fff;font-size:11px;
+  display:flex;align-items:center;justify-content:center;font-weight:700}
+.signin{font-size:13.5px;font-weight:600;color:var(--link);cursor:pointer}
+.signin:hover{opacity:.8}
+
+/* ---- Views -------------------------------------------------------------- */
+[data-view]{display:none;flex:1}
+.app[data-active="landing"] [data-view="landing"],
+.app[data-active="list"] [data-view="list"],
+.app[data-active="course"] [data-view="course"],
+.app[data-active="add"] [data-view="add"]{display:flex}
+
+/* ---- Landing ------------------------------------------------------------ */
+.landing{flex-direction:column;align-items:center;justify-content:center;padding:64px 24px}
+.hero{max-width:680px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--accent-bg)}
+.hero-h1{font-size:34px;font-weight:800;letter-spacing:-0.02em;line-height:1.15;margin:0;
+  color:var(--text-heading);white-space:nowrap}
+.hero-sub{font-size:15.5px;color:var(--text-body);line-height:1.55;margin:0;white-space:nowrap}
+.search{width:100%;max-width:560px;margin-top:10px;display:flex;border-radius:8px;overflow:hidden;
+  border:1px solid var(--border-input)}
+.search-input{flex:1;border:none;background:var(--bg-surface);padding:14px 16px;font-size:14px;
+  outline:none;color:var(--text-primary)}
+.search-btn{padding:14px 22px;background:var(--brand-bg);color:var(--brand-text);font-weight:700;
+  font-size:14px;cursor:pointer}
+.search-btn:hover{filter:brightness(1.15)}
+.viewall{font-size:13px;color:var(--text-muted)}
+.viewall a{font-weight:600}
+
+.section{max-width:920px;width:100%;margin-top:64px;display:flex;flex-direction:column;gap:18px}
+.section-head{display:flex;align-items:baseline;justify-content:space-between}
+.section-head h2{font-size:18px;font-weight:800;margin:0;color:var(--text-heading)}
+.link-cta{font-size:13.5px;font-weight:600;color:var(--link);cursor:pointer}
+.link-cta:hover{opacity:.8}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+.course-card{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;
+  padding:20px 22px;display:flex;flex-direction:column;gap:8px;cursor:pointer}
+.course-card:hover{border-color:var(--link)}
+.course-card .cc-head{display:flex;align-items:baseline;justify-content:space-between}
+.course-card .cc-title{font-size:15px;color:var(--text-heading)}
+.course-card .cc-meta{font-size:12.5px;color:var(--text-muted);font-weight:600}
+.course-card p{margin:0;font-size:13.5px;color:var(--text-body);line-height:1.55}
+
+/* ---- List --------------------------------------------------------------- */
+.list{flex-direction:column;padding:36px 40px 60px;max-width:1180px;width:100%;margin:0 auto}
+.list-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:22px}
+.list-head h1{font-size:26px;font-weight:800;margin:0;color:var(--text-heading)}
+.list-count{font-size:13.5px;color:var(--text-muted)}
+.searchbar{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.search-sm{flex:1;max-width:320px;border:1px solid var(--border-input);border-radius:8px;padding:9px 14px;
+  font-size:13.5px;outline:none;background:var(--bg-surface);color:var(--text-primary)}
+.filter-btn{padding:9px 16px;border:1px solid var(--border-input);border-radius:8px;font-size:13px;
+  font-weight:600;color:var(--text-secondary);cursor:pointer;background:var(--bg-surface)}
+.filter-btn:hover{background:var(--bg-chip)}
+
+.filters{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;
+  padding:18px 20px;margin-bottom:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.filters[hidden]{display:none}
+.filter-group .fg-label{font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:8px}
+.minmax{display:flex;gap:8px}
+.minmax input{width:100%;border:1px solid var(--border-input);border-radius:6px;padding:7px 10px;
+  font-size:13px;background:var(--bg-surface);color:var(--text-primary)}
+
+.table{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;overflow:hidden}
+.table-grid{display:grid;grid-template-columns:1.2fr 2fr 0.6fr 0.8fr 0.8fr 0.8fr}
+.table-head{padding:12px 20px;font-size:11px;font-weight:700;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border-subtle)}
+.table-row{padding:15px 20px;font-size:13.5px;border-bottom:1px solid var(--border-subtle);
+  cursor:pointer;align-items:center;color:var(--text-primary)}
+.table-row:last-child{border-bottom:none}
+.table-row:hover{background:var(--bg-chip)}
+
+/* ---- Course ------------------------------------------------------------- */
+.course{flex-direction:column;padding:36px 40px 60px;max-width:1080px;width:100%;margin:0 auto}
+.course-head{margin-bottom:26px}
+.course-head h1{font-size:27px;font-weight:800;margin:0 0 6px;color:var(--text-heading)}
+.course-head span{font-size:13.5px;color:var(--text-muted)}
+.course-body{display:flex;gap:24px}
+.course-main{flex:1;display:flex;flex-direction:column;gap:18px}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border-default)}
+.tab{padding:10px 4px;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-primary)}
+.tab:first-child{margin-right:26px}
+.tab:hover{color:var(--link)}
+.tab.active{color:var(--link);box-shadow:inset 0 -2px 0 var(--link)}
+
+.panel[hidden]{display:none}
+.panel-overview{display:flex;flex-direction:column;gap:18px}
+.summary{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;
+  padding:20px;display:flex;flex-direction:column;gap:12px}
+.summary-head{display:flex;align-items:baseline;justify-content:space-between}
+.summary-head strong{font-size:14.5px;color:var(--text-primary)}
+.summary-head span{font-size:12.5px;color:var(--text-muted)}
+.summary p{font-size:14px;line-height:1.6;color:var(--text-secondary);margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chip{padding:5px 12px;border-radius:20px;background:var(--bg-chip);font-size:12.5px;font-weight:600;
+  color:var(--text-secondary)}
+.desc-card{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;
+  padding:20px;font-size:13.5px;line-height:1.55;color:var(--text-secondary)}
+.subhead{font-size:14.5px;display:block;margin-bottom:10px;color:var(--text-primary)}
+
+.review{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:10px;
+  padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.review.compact{padding:14px 16px;gap:6px}
+.review-head{display:flex;justify-content:space-between;font-size:13px}
+.review-head .stat{font-weight:700;color:var(--text-primary)}
+.review-head .when{color:var(--text-muted)}
+.review p{margin:0;font-size:13.5px;color:var(--text-secondary);line-height:1.55}
+.helpful{display:flex;align-items:center;gap:10px;margin-top:2px}
+.helpful-label{font-size:12px;color:var(--text-muted);font-weight:600}
+.vote{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border:1px solid var(--border-input);
+  border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary)}
+.vote:hover{background:var(--bg-chip)}
+.vote.down svg{transform:rotate(180deg)}
+.vote svg{fill:none;stroke:currentColor}
+.vote.on svg{fill:currentColor}
+
+/* Course sidebar */
+.side{width:240px;display:flex;flex-direction:column;gap:14px}
+.side-btn{padding:12px;border-radius:9px;background:var(--accent-bg);color:var(--accent-text);
+  font-weight:700;font-size:14px;text-align:center;cursor:pointer}
+.side-btn:hover{filter:brightness(0.94)}
+.stats{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:12px;
+  padding:16px;display:flex;flex-direction:column;gap:14px}
+.stat-row{display:flex;align-items:center;justify-content:space-between}
+.stat-row .lbl{font-size:12.5px;color:var(--text-muted);font-weight:600}
+.stat-row .val{font-size:22px;color:var(--text-heading);font-weight:700}
+.stat-row .val small{font-size:12px;color:var(--text-muted);font-weight:500}
+
+/* ---- Add review --------------------------------------------------------- */
+.add{padding:44px 24px 64px;justify-content:center}
+.add-card{max-width:620px;width:100%;background:var(--bg-surface);border:1px solid var(--border-default);
+  border-radius:16px;padding:36px 40px;display:flex;flex-direction:column;gap:24px;height:fit-content}
+.add-card h1{font-size:23px;font-weight:800;margin:0 0 6px;color:var(--text-heading)}
+.add-card .lede{font-size:13.5px;color:var(--text-muted);margin:0}
+.frow{display:flex;gap:14px}
+.field-label{font-size:12.5px;font-weight:700;color:var(--text-secondary);margin-bottom:7px}
+.fake-input{border:1px solid var(--border-input);border-radius:8px;padding:11px 13px;font-size:13.5px;
+  background:var(--bg-surface);color:var(--text-primary)}
+.fake-input.between{display:flex;align-items:center;justify-content:space-between}
+.change{font-size:12px;color:var(--link);font-weight:600;cursor:pointer}
+.change:hover{opacity:.8}
+.scale{display:flex;gap:6px}
+.scale span{flex:1;text-align:center;padding:9px;border:1px solid var(--border-input);border-radius:8px;
+  font-weight:600;font-size:14px;background:var(--bg-surface);color:var(--text-primary);cursor:pointer}
+.scale span.sel{border-color:transparent;background:var(--accent-bg);color:var(--accent-text);font-weight:700}
+.slider{height:6px;border-radius:4px;background:var(--border-subtle);position:relative}
+.slider .fill{position:absolute;left:0;top:0;bottom:0;width:56%;background:var(--link);border-radius:4px}
+.textarea{border:1px solid var(--border-input);border-radius:10px;padding:13px;height:120px;font-size:13.5px;
+  color:var(--text-placeholder);line-height:1.5;background:var(--bg-surface)}
+
+.auth{background:var(--bg-page);border:1px solid var(--border-default);border-radius:12px;padding:20px;
+  display:flex;flex-direction:column;gap:13px}
+.auth[hidden]{display:none}
+.auth strong{font-size:14px;color:var(--text-heading)}
+.auth .note{font-size:12.5px;color:var(--text-body)}
+.email-row{display:flex;max-width:280px}
+.email-user{flex:1;border:1px solid var(--border-input);border-radius:8px 0 0 8px;padding:9px 12px;
+  font-size:13px;color:var(--text-placeholder);background:var(--bg-surface)}
+.email-domain{border:1px solid var(--border-input);border-left:none;border-radius:0 8px 8px 0;padding:9px 12px;
+  font-size:13px;background:var(--bg-chip-alt);color:var(--text-body)}
+.code-input{max-width:160px;border:1px solid var(--border-input);border-radius:8px;padding:9px 12px;
+  font-size:13px;background:var(--bg-surface);color:var(--text-primary)}
+.code-hint{font-size:11.5px;color:var(--text-muted);margin-top:5px}
+
+.add-actions{display:flex;align-items:center;justify-content:space-between;padding-top:8px;
+  border-top:1px solid var(--border-subtle)}
+.autosave{font-size:11.5px;color:var(--text-muted)}
+.action-btns{display:flex;gap:10px}
+.btn-ghost{padding:9px 16px;border:1px solid var(--border-input);border-radius:8px;font-size:13px;
+  font-weight:600;cursor:pointer;color:var(--text-primary)}
+.btn-ghost:hover{background:var(--bg-chip)}
+.btn-post{padding:9px 18px;border-radius:8px;background:var(--accent-bg);color:var(--accent-text);
+  font-weight:700;font-size:13px;cursor:pointer}
+.btn-post:hover{filter:brightness(0.94)}
+
+.mb0{margin:0}
+</style>
+</head>
+<body>
+<div class="app" id="app" data-active="landing" data-theme="light">
+
+  <!-- ===================== Header ===================== -->
+  <header class="hdr">
+    <div class="hdr-left">
+      <div class="brand" data-nav="landing">
+        <div class="brand-logo">P</div>
+        <strong class="brand-name">PlainsCourses</strong>
+      </div>
+      <span class="nav-link" data-nav="list">Courses</span>
+    </div>
+    <div class="hdr-right">
+      <button class="btn-accent" data-nav="add">+ Add Review</button>
+
+      <div class="theme-group" id="themeGroup">
+        <span class="theme-btn" data-theme-set="light" title="Light">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+        </span>
+        <span class="theme-btn" data-theme-set="dark" title="Dark">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </span>
+        <span class="theme-btn" data-theme-set="system" title="System">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>
+        </span>
+      </div>
+
+      <span class="user" id="userChip" data-login-toggle>
+        <div class="avatar">JD</div>jtd0042
+      </span>
+      <span class="signin" id="signinChip" data-login-toggle hidden>Sign in</span>
+    </div>
+  </header>
+
+  <!-- ===================== Landing ===================== -->
+  <div data-view="landing" class="landing">
+    <div class="hero">
+      <span class="eyebrow">AUBURN CSSE COURSE REVIEWS</span>
+      <h1 class="hero-h1">Know the course before you register</h1>
+      <p class="hero-sub">Anonymous reviews from students who've taken it. 214 courses · 3,180 reviews.</p>
+      <div class="search">
+        <input class="search-input" placeholder="Search by course number or title…">
+        <span class="search-btn" data-nav="list">Search</span>
+      </div>
+      <span class="viewall"><a href="#" data-nav="list">View all courses →</a></span>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Latest reviews</h2>
+        <span class="link-cta" data-nav="list">View all courses →</span>
+      </div>
+      <div class="stack">
+        <div class="course-card" data-nav="course">
+          <div class="cc-head"><strong class="cc-title">COMP 3270 · Intro to Algorithms</strong><span class="cc-meta">3 cr · Spring 26 · rat 4.0/5 · diff 4.6/5 · 14 hrs/wk</span></div>
+          <p>Tough but fair — the problem sets take real time. Start early and go to office hours before exams.</p>
+        </div>
+        <div class="course-card" data-nav="course">
+          <div class="cc-head"><strong class="cc-title">COMP 5350 · Database Systems I</strong><span class="cc-meta">3 cr · Spring 26 · rat 4.5/5 · diff 2.9/5 · 9 hrs/wk</span></div>
+          <p>Well-organized lectures and a fair curve. The group project takes real coordination.</p>
+        </div>
+        <div class="course-card" data-nav="course">
+          <div class="cc-head"><strong class="cc-title">COMP 2710 · Software Construction</strong><span class="cc-meta">3 cr · Fall 25 · rat 3.0/5 · diff 3.0/5 · 11 hrs/wk</span></div>
+          <p>Solid intro to software practices, but the workload spikes hard near the final project.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== List ===================== -->
+  <div data-view="list" class="list">
+    <div class="list-head"><h1>All courses</h1><span class="list-count">62 courses</span></div>
+    <div class="searchbar">
+      <input class="search-sm" placeholder="Search courses…">
+      <span class="filter-btn" id="filterBtn" data-filters-toggle>Filters ▾</span>
+    </div>
+    <div class="filters" id="filters" hidden>
+      <div class="filter-group"><div class="fg-label">Rating</div><div class="minmax"><input placeholder="Min"><input placeholder="Max"></div></div>
+      <div class="filter-group"><div class="fg-label">Difficulty</div><div class="minmax"><input placeholder="Min"><input placeholder="1–5"></div></div>
+      <div class="filter-group"><div class="fg-label">Workload (hrs/wk)</div><div class="minmax"><input placeholder="Min"><input placeholder="1–25"></div></div>
+    </div>
+    <div class="table">
+      <div class="table-grid table-head"><span>Course</span><span>Title</span><span>Credits</span><span>Rating</span><span>Difficulty</span><span>Workload</span></div>
+      <div class="table-grid table-row" data-nav="course"><strong>COMP 3270</strong><span>Introduction to Algorithms</span><span>3</span><span>4.0</span><span>4.6</span><span>14</span></div>
+      <div class="table-grid table-row" data-nav="course"><strong>COMP 5350</strong><span>Database Systems I</span><span>3</span><span>4.5</span><span>2.9</span><span>9</span></div>
+      <div class="table-grid table-row" data-nav="course"><strong>COMP 2710</strong><span>Software Construction</span><span>3</span><span>3.0</span><span>3.0</span><span>11</span></div>
+      <div class="table-grid table-row" data-nav="course"><strong>COMP 3600</strong><span>Design &amp; Analysis of Algorithms</span><span>3</span><span>3.8</span><span>4.2</span><span>13</span></div>
+    </div>
+  </div>
+
+  <!-- ===================== Course ===================== -->
+  <div data-view="course" class="course">
+    <div class="course-head"><h1>COMP 3270 · Introduction to Algorithms</h1><span>3 credits · 122 reviews</span></div>
+    <div class="course-body">
+      <div class="course-main">
+        <div class="tabs">
+          <span class="tab active" id="tabOverview" data-tab="overview">Overview</span>
+          <span class="tab" id="tabReviews" data-tab="reviews">Reviews (122)</span>
+        </div>
+
+        <div class="panel panel-overview" id="panelOverview">
+          <div class="summary">
+            <div class="summary-head"><strong>What students say</strong><span>from 122 reviews</span></div>
+            <p>Proof-heavy and rigorous, with weekly problem sets that take real time. Most students recommend starting assignments early and going to office hours before the exams.</p>
+            <div class="chips"><span class="chip">proof-heavy</span><span class="chip">weekly problem sets</span><span class="chip">curved</span><span class="chip">start early</span></div>
+          </div>
+          <div class="desc-card">Design and analysis of algorithms: asymptotic notation, divide and conquer, greedy methods, dynamic programming, graph algorithms, and an introduction to NP-completeness.</div>
+          <div>
+            <strong class="subhead">Latest reviews</strong>
+            <div class="stack">
+              <div class="review compact"><div class="review-head"><span class="stat">rat 4.0 · diff 5.0 · 16 hrs/wk</span><span class="when">2 weeks ago</span></div><p>Tough but fair. The problem sets take real time — start them the day they're posted.</p></div>
+              <div class="review compact"><div class="review-head"><span class="stat">rat 3.0 · diff 4.0 · 12 hrs/wk</span><span class="when">1 month ago</span></div><p>Office hours are a lifesaver for the DP section.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="panelReviews" hidden>
+          <div class="stack" id="reviewList"><!-- rendered from JS --></div>
+        </div>
+      </div>
+
+      <div class="side">
+        <span class="side-btn" data-nav="add">Review this course</span>
+        <div class="stats">
+          <div class="stat-row"><span class="lbl">Rating</span><strong class="val">4.0<small> /5</small></strong></div>
+          <div class="stat-row"><span class="lbl">Difficulty</span><strong class="val">4.6<small> /5</small></strong></div>
+          <div class="stat-row"><span class="lbl">Workload</span><strong class="val">14<small> hrs</small></strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== Add review ===================== -->
+  <div data-view="add" class="add">
+    <div class="add-card">
+      <div><h1>Add a review</h1><p class="lede">Anonymous. Your Auburn email verifies you and is never stored with the review.</p></div>
+      <div class="frow">
+        <div style="flex:2"><div class="field-label">Course</div><div class="fake-input between"><span>COMP 3270 · Introduction to Algorithms</span><span class="change">change</span></div></div>
+        <div style="flex:1"><div class="field-label">Term</div><div class="fake-input">Spring 2026 ▾</div></div>
+      </div>
+      <div class="frow">
+        <div style="flex:1"><div class="field-label">Overall rating</div>
+          <div class="scale" data-scale="rating"><span>1</span><span>2</span><span>3</span><span class="sel">4</span><span>5</span></div>
+        </div>
+        <div style="flex:1"><div class="field-label">Difficulty</div>
+          <div class="scale" data-scale="difficulty"><span>1</span><span>2</span><span>3</span><span>4</span><span class="sel">5</span></div>
+        </div>
+      </div>
+      <div><div class="field-label">Hours per week</div><div class="slider"><div class="fill"></div></div></div>
+      <div><div class="field-label">Your review</div><div class="textarea">What surprised you? How would you prepare? What was the workload actually like week to week?</div></div>
+
+      <div class="auth" id="authBox">
+        <strong>Authentication</strong>
+        <span class="note">Only verified Auburn students can leave reviews at this time.</span>
+        <div><div class="field-label" style="margin-bottom:6px">Auburn account</div><div class="email-row"><div class="email-user">jtd0042</div><div class="email-domain">@auburn.edu</div></div></div>
+        <div><div class="field-label" style="margin-bottom:6px">Code</div><input class="code-input" placeholder="123456"><div class="code-hint">Enter your one-time six-digit code.</div></div>
+      </div>
+
+      <div class="add-actions">
+        <span class="autosave">Saves as you type</span>
+        <div class="action-btns"><span class="btn-ghost">Discard</span><span class="btn-post">Post anonymously</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===========================================================================
+   State + behavior — a direct translation of the source DCLogic class.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  var app = document.getElementById('app');
+
+  var state = {
+    view: 'landing',
+    courseTab: 'overview',
+    loggedIn: false,
+    filtersOpen: false,
+    votes: {},
+    themeMode: 'system',
+    systemDark: false
+  };
+
+  // Source: baseReviews on the Component class.
+  var baseReviews = [
+    { id: 'r1', rating: '5.0', diff: '4.0', hrs: 10, when: '1 month ago', text: 'Loved this class — the DP problem sets click once you do a few by hand first.', up: 21, down: 0 },
+    { id: 'r2', rating: '5.0', diff: '4.0', hrs: 13, when: 'Dec 2025', text: 'Best CS course I’ve taken. Office hours are genuinely useful here.', up: 31, down: 3 },
+    { id: 'r3', rating: '4.0', diff: '5.0', hrs: 15, when: 'Oct 2025', text: 'Heavy workload but very fair grading and a generous curve.', up: 17, down: 1 },
+    { id: 'r4', rating: '3.0', diff: '5.0', hrs: 18, when: 'Nov 2025', text: 'Proof-heavy. If you’re rusty on discrete math, brush up first.', up: 6, down: 4 },
+    { id: 'r5', rating: '4.0', diff: '4.0', hrs: 14, when: 'Apr 2025', text: 'Solid intro to algorithmic thinking, weekly sets keep you on pace.', up: 8, down: 2 }
+  ];
+
+  var VOTE_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>';
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+  // ---- Rendering ----------------------------------------------------------
+  function resolvedTheme() {
+    return state.themeMode === 'system'
+      ? (state.systemDark ? 'dark' : 'light')
+      : state.themeMode;
+  }
+
+  function renderReviews() {
+    var html = baseReviews.map(function (r) {
+      var v = state.votes[r.id];
+      var upCount = r.up + (v === 'up' ? 1 : 0);
+      var downCount = r.down + (v === 'down' ? 1 : 0);
+      return '' +
+        '<div class="review">' +
+          '<div class="review-head"><span class="stat">rat ' + r.rating + ' · diff ' + r.diff + ' · ' + r.hrs + ' hrs/wk</span><span class="when">' + esc(r.when) + '</span></div>' +
+          '<p>' + esc(r.text) + '</p>' +
+          '<div class="helpful"><span class="helpful-label">Helpful?</span>' +
+            '<span class="vote up' + (v === 'up' ? ' on' : '') + '" data-vote="up" data-id="' + r.id + '">' + VOTE_SVG + upCount + '</span>' +
+            '<span class="vote down' + (v === 'down' ? ' on' : '') + '" data-vote="down" data-id="' + r.id + '">' + VOTE_SVG + downCount + '</span>' +
+          '</div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('reviewList').innerHTML = html;
+  }
+
+  function render() {
+    // View routing.
+    app.setAttribute('data-active', state.view);
+
+    // Theme.
+    app.setAttribute('data-theme', resolvedTheme());
+    ['light', 'dark', 'system'].forEach(function (m) {
+      app.querySelector('[data-theme-set="' + m + '"]')
+        .classList.toggle('active', state.themeMode === m);
+    });
+
+    // Login chip.
+    document.getElementById('userChip').hidden = !state.loggedIn;
+    document.getElementById('signinChip').hidden = state.loggedIn;
+
+    // Add-view auth box shows only when logged out (source: loggedOut branch).
+    document.getElementById('authBox').hidden = state.loggedIn;
+
+    // Filters panel + caret.
+    document.getElementById('filters').hidden = !state.filtersOpen;
+    document.getElementById('filterBtn').textContent = 'Filters ' + (state.filtersOpen ? '▴' : '▾');
+
+    // Course tabs.
+    document.getElementById('tabOverview').classList.toggle('active', state.courseTab === 'overview');
+    document.getElementById('tabReviews').classList.toggle('active', state.courseTab === 'reviews');
+    document.getElementById('panelOverview').hidden = state.courseTab !== 'overview';
+    document.getElementById('panelReviews').hidden = state.courseTab !== 'reviews';
+
+    renderReviews();
+  }
+
+  // ---- Actions (mirror the DCLogic handlers) ------------------------------
+  function setThemeMode(mode) {
+    try { localStorage.setItem('pc-theme-mode', mode); } catch (e) {}
+    state.themeMode = mode;
+    render();
+  }
+  function setView(v) {
+    state.view = v;
+    if (v === 'course') state.courseTab = 'overview';
+    render();
+  }
+  function vote(id, dir) {
+    state.votes[id] = state.votes[id] === dir ? null : dir;
+    render();
+  }
+
+  // ---- Wiring -------------------------------------------------------------
+  app.addEventListener('click', function (e) {
+    var nav = e.target.closest('[data-nav]');
+    if (nav) { setView(nav.getAttribute('data-nav')); return; }
+
+    var themeSet = e.target.closest('[data-theme-set]');
+    if (themeSet) { setThemeMode(themeSet.getAttribute('data-theme-set')); return; }
+
+    if (e.target.closest('[data-login-toggle]')) { state.loggedIn = !state.loggedIn; render(); return; }
+
+    if (e.target.closest('[data-filters-toggle]')) { state.filtersOpen = !state.filtersOpen; render(); return; }
+
+    var tab = e.target.closest('[data-tab]');
+    if (tab) { state.courseTab = tab.getAttribute('data-tab'); render(); return; }
+
+    var voteEl = e.target.closest('[data-vote]');
+    if (voteEl) { vote(voteEl.getAttribute('data-id'), voteEl.getAttribute('data-vote')); return; }
+
+    // Add-review rating/difficulty pills — local selection, decorative.
+    var pill = e.target.closest('.scale span');
+    if (pill) {
+      var scale = pill.parentNode;
+      scale.querySelectorAll('span').forEach(function (s) { s.classList.remove('sel'); });
+      pill.classList.add('sel');
+      return;
+    }
+  });
+
+  // ---- Init (source: componentDidMount) -----------------------------------
+  var saved = null;
+  try { saved = localStorage.getItem('pc-theme-mode'); } catch (e) {}
+  state.themeMode = saved || 'system';
+  state.systemDark = mq.matches;
+  if (mq.addEventListener) {
+    mq.addEventListener('change', function () { state.systemDark = mq.matches; render(); });
+  } else if (mq.addListener) {
+    mq.addListener(function () { state.systemDark = mq.matches; render(); });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
