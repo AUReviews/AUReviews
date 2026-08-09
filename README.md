@@ -1,4 +1,4 @@
-# PlainsCourses
+# AUReviews
 
 Course reviews for Auburn undergrads, starting with Computer Science and Software Engineering.
 
@@ -7,7 +7,7 @@ semester you'll actually survive.
 
 ## Status
 
-Planning. This project is being charted with [`/wayfinder`](https://github.com/PlainsCourses/PlainsCourses/issues/1) —
+Planning. This project is being charted with [`/wayfinder`](https://github.com/AUReviews/AUReviews/issues/1) —
 the map issue tracks the destination (a buildable v1 spec), the decisions made so far, and what's
 still fogged in. Research findings land on `research/*` branches.
 

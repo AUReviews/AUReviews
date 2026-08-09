@@ -1,4 +1,4 @@
-# PlainsCourses
+# AUReviews
 
 An Auburn undergraduate course-review site for CSSE-department (`COMP`-prefix) courses. This glossary is the ubiquitous language for the domain — the durable review data on one side, the imported-and-refreshed Auburn catalog data on the other.
 
