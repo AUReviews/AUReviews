@@ -167,21 +167,22 @@ describe("runIngest", () => {
     expect(store.courses.size).toBe(2);
   });
 
-  it("routes an ambiguous renumber to pending without creating a course", async () => {
+  it("routes a dropped-out renumber to pending, retiring the old number, minting nothing", async () => {
     const store = new FakeCatalogStore();
     await runIngest(deps(store, page([["2210", "FUNDAMENTALS OF COMPUTING II"]])));
+    const comp2210Id = [...store.courses.values()][0].id;
 
-    // Same title reappears under a new number — a candidate renumber.
+    // COMP 2210 disappears and the same title shows up under COMP 2220 — a
+    // candidate renumber only a human should confirm.
     const summary = await runIngest(
-      deps(store, page([
-        ["2210", "FUNDAMENTALS OF COMPUTING II"],
-        ["2220", "FUNDAMENTALS OF COMPUTING II"],
-      ])),
+      deps(store, page([["2220", "FUNDAMENTALS OF COMPUTING II"]])),
     );
 
     expect(summary.pending).toBe(1);
     expect(summary.created).toBe(0);
+    expect(summary.retired).toBe(1);
     expect(store.pending.get("COMP 2220")?.reason).toBe("possible-renumber");
+    expect(store.courses.get(comp2210Id)!.status).toBe("retired"); // old kept, retired
     expect(store.courses.size).toBe(1); // no new durable course minted
   });
 });

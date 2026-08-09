@@ -2,28 +2,27 @@ import { describe, expect, it } from "vitest";
 import { parseCatalogHtml, parseCreditHours } from "./catalog";
 
 /**
- * Fixture in the CourseLeaf ("Courses of Instruction") markup the bulletin
- * serves — a `.courseblock` per course, title in `.courseblocktitle`, body in
- * `.courseblockdesc`. The visible text is pasted verbatim from
- * research/auburn-course-data.md so the parser is exercised against real strings.
+ * Fixture in the real CourseLeaf ("Courses of Instruction") markup the bulletin
+ * serves (verified against a live fetch of the COMP page): one `.courseblock` div
+ * per course, each a single `<p>` whose `<strong>` is the title line and whose
+ * trailing text is the body — `LEC./LAB.` breakdowns, `Pr./Coreq.` prose (course
+ * codes as `<a>` links, separated by `&#160;`), and the description in one run.
+ * The visible text is pasted verbatim from a live fetch / research/auburn-course-
+ * data.md so the parser is exercised against real strings.
  */
 const FIXTURE = `
 <div id="courseinventorycontainer">
   <div class="courseblock">
-    <p class="courseblocktitle"><strong>COMP 1000 PERSONAL COMPUTER APPLICATIONS (2)</strong></p>
-    <p class="courseblockdesc">Introduction to personal computers and software applications, including word processing, spreadsheets, databases, and presentation graphics; generation and retrieval of information with the Internet; integration of data among applications.</p>
+    <p><strong>COMP 1000 PERSONAL COMPUTER APPLICATIONS (2) </strong>LEC. 2. Introduction to personal computers and software applications, including word processing, spreadsheets, databases, and presentation graphics; generation and retrieval of information with the Internet; integration of data among applications.</p>
   </div>
   <div class="courseblock">
-    <p class="courseblocktitle"><strong>COMP 1201 INTRODUCTION TO COMPUTING LABORATORY (1)</strong></p>
-    <p class="courseblockdesc">Laboratory activities focused on computer programming in a high-level language. Coreq. COMP 1200.</p>
+    <p><strong>COMP 1201 INTRODUCTION TO COMPUTING LABORATORY (1) </strong>LAB. 1.  SU. Coreq. <a href="/search/?P=COMP%201200" title="COMP&#160;1200" class="bubblelink code">COMP&#160;1200</a>. Laboratory activities focused on computer programming in a high-level language.</p>
   </div>
   <div class="courseblock">
-    <p class="courseblocktitle"><strong>COMP 2210 FUNDAMENTALS OF COMPUTING II (4)</strong></p>
-    <p class="courseblockdesc">LEC. 3. LAB. 3. Pr. COMP 1210 or COMP 1213. Software development in the context of collections (e.g., lists, trees, graphs, hashtables). Communication, teamwork, and a design experience are integral course experience. Pr. COMP 1210 with a grade of C or higher.</p>
+    <p><strong>COMP 2210 FUNDAMENTALS OF COMPUTING II (4) </strong>LEC. 3. LAB. 3. Pr. <a href="/search/?P=COMP%201210" title="COMP&#160;1210" class="bubblelink code">COMP&#160;1210</a> or COMP 1213. Software development in the context of collections (e.g., lists, trees, graphs, hashtables).  Communication, teamwork, and a design experience are integral course experience. Pr. <a href="/search/?P=COMP%201210" title="COMP&#160;1210" class="bubblelink code">COMP&#160;1210</a> with a grade of C or higher.</p>
   </div>
   <div class="courseblock">
-    <p class="courseblocktitle"><strong>COMP 3500 INTRODUCTION TO OPERATING SYSTEMS (3)</strong></p>
-    <p class="courseblockdesc">LEC. 3. Pr. (COMP 2710 or COMP 2713) and (COMP 3350 or COMP 3353 or ELEC 2220). Structure and functions of operating systems.</p>
+    <p><strong>COMP 3500 INTRODUCTION TO OPERATING SYSTEMS (3) </strong>LEC. 3. Pr. (COMP 2710 or COMP 2713) and (COMP 3350 or COMP 3353 or ELEC 2220). Structure and functions of operating systems.</p>
   </div>
 </div>
 `;
@@ -49,8 +48,7 @@ describe("parseCatalogHtml", () => {
   it("keeps a variable-credit range verbatim rather than dropping it", () => {
     const html = `
       <div class="courseblock">
-        <p class="courseblocktitle"><strong>COMP 4920 PRACTICUM (1-3)</strong></p>
-        <p class="courseblockdesc">Supervised practical experience.</p>
+        <p><strong>COMP 4920 PRACTICUM (1-3) </strong>SU. Supervised practical experience.</p>
       </div>`;
     const rows = parseCatalogHtml(html);
     expect(rows[0].title).toBe("PRACTICUM");
@@ -61,7 +59,7 @@ describe("parseCatalogHtml", () => {
     const rows = parseCatalogHtml(FIXTURE);
     const comp1000 = rows.find((r) => r.number === "1000")!;
     expect(comp1000.description).toBe(
-      "Introduction to personal computers and software applications, including word processing, spreadsheets, databases, and presentation graphics; generation and retrieval of information with the Internet; integration of data among applications.",
+      "LEC. 2. Introduction to personal computers and software applications, including word processing, spreadsheets, databases, and presentation graphics; generation and retrieval of information with the Internet; integration of data among applications.",
     );
   });
 
@@ -90,8 +88,7 @@ describe("parseCatalogHtml", () => {
   it("decodes HTML entities and strips inline tags in the body", () => {
     const html = `
       <div class="courseblock">
-        <p class="courseblocktitle"><strong>COMP 3350 COMPUTER ORGANIZATION &amp; ASSEMBLY (3)</strong></p>
-        <p class="courseblockdesc">Registers &amp; memory&nbsp;&mdash; a <em>hands-on</em> survey.</p>
+        <p><strong>COMP 3350 COMPUTER ORGANIZATION &amp; ASSEMBLY (3) </strong>Registers &amp; memory&nbsp;&mdash; a <em>hands-on</em> survey.</p>
       </div>`;
     const rows = parseCatalogHtml(html);
     expect(rows).toHaveLength(1);

@@ -67,7 +67,13 @@ export interface CatalogSnapshot {
   pendingKeys: string[];
 }
 
-export type PendingReason = "possible-renumber" | "possible-cross-list";
+/**
+ * Why an incoming key needs an admin decision. Only `possible-renumber` is
+ * inferred from an import (a title reappearing under a new number as the old one
+ * drops out). Splits, merges, and cross-lists are never inferred — they are
+ * admin-identified — so no reason value is auto-produced for them.
+ */
+export type PendingReason = "possible-renumber";
 
 export interface CreateCourseAction {
   courseId: CourseId;
@@ -110,9 +116,11 @@ export interface PlanIngestOptions {
  * - Existing mapped key → **apply** (last-import-wins; also flips status back to
  *   active, so a reappeared course un-retires).
  * - Unmapped key with no ambiguity → **create** a fresh durable Course.
- * - Unmapped key that looks like a renumber (existing active course, same title,
- *   different key) or a cross-list (two incoming rows share a title) → **pending**,
- *   never auto-applied. Already-pending keys are not re-queued.
+ * - Unmapped key that looks like a renumber (a dropped-out active course carries
+ *   the same title under a different number) → **pending**, never auto-applied.
+ *   Coexisting same-title courses are distinct courses, not a signal; splits,
+ *   merges, and cross-lists are admin-identified, never inferred. Already-pending
+ *   keys are not re-queued.
  * - Any active Course no incoming row applied to → **retire** (status flip only).
  * - Reviews and Instructors are never referenced here — the plan only ever
  *   touches catalog-side Course/crosswalk state.
@@ -144,16 +152,13 @@ export function planIngest(
     else courseByCurrentKey.set(c.catalogKey, [c]);
   }
 
-  // Count titles among the *unmapped* incoming rows so a shared title across new
-  // numbers reads as a candidate cross-list. Rows whose key is already mapped are
-  // established identities, so a new row sharing their title is a renumber
-  // candidate (handled below), not an intra-import cross-list.
-  const unmappedTitleCounts = new Map<string, number>();
-  for (const row of rows) {
-    if (mappingByKey.has(normalizeCatalogKey(row))) continue;
-    const t = normalizeTitle(row.title);
-    unmappedTitleCounts.set(t, (unmappedTitleCounts.get(t) ?? 0) + 1);
-  }
+  // Keys present in *this* import. A renumber is only a plausible signal when the
+  // old number DROPS OUT as a new one appears; if two numbers with the same title
+  // coexist in the catalog, they are simply distinct courses. Auburn reuses
+  // generic titles heavily ("SPECIAL TOPICS", "RESEARCH", "THESIS", "DIRECTED
+  // STUDIES") across course levels, so title collision alone must NOT flag —
+  // otherwise a first import buries dozens of real courses in the pending queue.
+  const incomingKeys = new Set(rows.map((r) => normalizeCatalogKey(r)));
 
   const plan: IngestPlan = {
     creates: [],
@@ -187,19 +192,26 @@ export function planIngest(
       continue;
     }
 
-    // Unmapped key: distinguish a genuinely-new course from an ambiguous one.
+    // Unmapped key: a genuinely-new course, unless it looks like a renumber of an
+    // existing course that just dropped out. Candidate = an active course with the
+    // same title under a different number that is NOT itself in this import (i.e.
+    // it is disappearing as this number appears). Coexisting same-title courses
+    // don't qualify — a true cross-list/split/merge is an admin decision, never
+    // inferred (ADR 0002).
     const titleKey = normalizeTitle(row.title);
     const renumberCandidates = activeCourses.filter(
-      (c) => normalizeTitle(c.title) === titleKey && c.catalogKey !== catalogKey,
+      (c) =>
+        normalizeTitle(c.title) === titleKey &&
+        c.catalogKey !== catalogKey &&
+        !incomingKeys.has(c.catalogKey),
     );
-    const isCrossList = (unmappedTitleCounts.get(titleKey) ?? 0) > 1;
 
-    if (renumberCandidates.length > 0 || isCrossList) {
+    if (renumberCandidates.length > 0) {
       if (pendingKeys.has(catalogKey)) continue; // already awaiting a human
       plan.pendings.push({
         catalogKey,
         title: row.title,
-        reason: isCrossList ? "possible-cross-list" : "possible-renumber",
+        reason: "possible-renumber",
         candidateCourseIds: renumberCandidates.map((c) => c.id),
         attributes,
       });

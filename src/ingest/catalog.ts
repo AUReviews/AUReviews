@@ -3,20 +3,19 @@
  *
  * Turns the public CourseLeaf "Courses of Instruction" HTML at
  * `bulletin.auburn.edu/coursesofinstruction/comp/` into flat catalog rows. The
- * page is server-rendered HTML (not JS-gated) with one `.courseblock` per course:
- * a `.courseblocktitle` (`COMP 2210 FUNDAMENTALS OF COMPUTING II (4)`) and a
- * `.courseblockdesc` body that mixes `LEC./LAB.` credit breakdowns, `Pr./Coreq.`
- * prerequisite prose, and the description.
+ * page is server-rendered HTML (not JS-gated) with one `.courseblock` div per
+ * course, each holding a single `<p>`: the title line is bold
+ * (`<strong>COMP 2210 FUNDAMENTALS OF COMPUTING II (4) </strong>`) and everything
+ * after the `</strong>` is the body — `LEC./LAB.` credit breakdowns, `Pr./Coreq.`
+ * prerequisite prose (course codes rendered as `<a>` links), and the description,
+ * all in one run of text. Verified against a live fetch of the COMP page.
  *
- * Pure and dependency-free: a targeted parser over the class-tagged paragraphs,
- * not a full DOM. The whole course body is kept as the description losslessly, so
- * the fully verbatim prose (prereqs included) is always retained. `prereqText` is
- * a convenience field lifting each `Pr.`/`Coreq.` clause out verbatim per-clause
+ * Pure and dependency-free: a targeted parser over the block markup, not a full
+ * DOM. The whole course body is kept as the description losslessly, so the fully
+ * verbatim prose (prereqs included) is always retained. `prereqText` is a
+ * convenience field lifting each `Pr.`/`Coreq.` clause out verbatim per-clause
  * (joined by a space when a course has several) — structured `Pr.` parsing is a
  * separate ticket (§9).
- *
- * The exact class names match Leepfrog's standard CourseLeaf output; validate
- * against a live fetch if Auburn's template ever diverges.
  */
 
 import type { IncomingCourse } from "@/domain";
@@ -30,10 +29,8 @@ export type RawCatalogRow = IncomingCourse;
 
 const COURSEBLOCK_RE =
   /<div[^>]*class="[^"]*\bcourseblock\b[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
-const TITLE_RE =
-  /<p[^>]*class="[^"]*\bcourseblocktitle\b[^"]*"[^>]*>([\s\S]*?)<\/p>/i;
-const DESC_RE =
-  /<p[^>]*class="[^"]*\bcourseblockdesc\b[^"]*"[^>]*>([\s\S]*?)<\/p>/i;
+// The bold title line; everything after it in the block is the body.
+const STRONG_RE = /<strong>([\s\S]*?)<\/strong>/i;
 
 // `COMP 2210 FUNDAMENTALS OF COMPUTING II (4)` → subject, number, rest.
 // The number may carry a trailing letter (e.g. a lab suffix), so allow one.
@@ -51,17 +48,18 @@ export function parseCatalogHtml(html: string): RawCatalogRow[] {
   for (const block of html.matchAll(COURSEBLOCK_RE)) {
     const inner = block[1];
 
-    const titleMatch = inner.match(TITLE_RE);
-    if (!titleMatch) continue;
-    const titleLine = toText(titleMatch[1]);
+    const strongMatch = STRONG_RE.exec(inner);
+    if (!strongMatch || strongMatch.index === undefined) continue;
+    const titleLine = toText(strongMatch[1]);
 
     const parsedLine = TITLE_LINE_RE.exec(titleLine);
     if (!parsedLine) continue;
     const [, subject, number, rest] = parsedLine;
     const { title, creditHours } = parseCreditHours(rest);
 
-    const descMatch = inner.match(DESC_RE);
-    const description = descMatch ? toText(descMatch[1]) || null : null;
+    // Body = everything after the closing </strong> of the title.
+    const body = inner.slice(strongMatch.index + strongMatch[0].length);
+    const description = toText(body) || null;
 
     rows.push({
       subject,

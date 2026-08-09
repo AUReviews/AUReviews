@@ -178,22 +178,45 @@ describe("planIngest", () => {
     expect(plan.pendings[0].candidateCourseIds).toEqual(["c1" as CourseId]);
   });
 
-  it("flags an intra-import cross-list (two new numbers sharing a title) as pending", () => {
+  it("treats coexisting same-title numbers as distinct courses, not an inferred cross-list", () => {
+    // Auburn reuses generic titles (SPECIAL TOPICS, RESEARCH, …) across levels;
+    // two new numbers sharing a title are simply two new courses, not a cross-list.
     const plan = planIngest(
       [
-        row({ subject: "COMP", number: "5000", title: "Machine Learning" }),
-        row({ subject: "COMP", number: "6000", title: "Machine Learning" }),
+        row({ subject: "COMP", number: "5000", title: "Special Topics" }),
+        row({ subject: "COMP", number: "6000", title: "Special Topics" }),
       ],
       EMPTY,
       { ...OPTS, mintId: counterMinter() },
     );
 
-    expect(plan.creates).toHaveLength(0);
-    expect(plan.pendings).toHaveLength(2);
-    expect(plan.pendings.map((p) => p.reason)).toEqual([
-      "possible-cross-list",
-      "possible-cross-list",
-    ]);
+    expect(plan.creates).toHaveLength(2);
+    expect(plan.pendings).toHaveLength(0);
+  });
+
+  it("does not flag a renumber candidate whose old number is still present", () => {
+    // Same title under two numbers, both in the catalog → distinct courses.
+    const snapshot: CatalogSnapshot = {
+      courses: [
+        { id: "c1" as CourseId, catalogKey: "COMP 2210", title: "Special Topics", status: "active" },
+      ],
+      crosswalk: [{ catalogKey: "COMP 2210", courseId: "c1" as CourseId }],
+      pendingKeys: [],
+    };
+
+    const plan = planIngest(
+      [
+        row({ subject: "COMP", number: "2210", title: "Special Topics" }),
+        row({ subject: "COMP", number: "2220", title: "Special Topics" }),
+      ],
+      snapshot,
+      { ...OPTS, mintId: counterMinter() },
+    );
+
+    expect(plan.applies.map((a) => a.courseId)).toEqual(["c1"]);
+    expect(plan.creates).toHaveLength(1); // COMP 2220 is just a new course
+    expect(plan.creates[0].catalogKey).toBe("COMP 2220");
+    expect(plan.pendings).toHaveLength(0);
   });
 
   it("does not duplicate a pending row already awaiting an admin decision", () => {
