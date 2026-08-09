@@ -9,6 +9,9 @@ out/
 dist/
 *.tsbuildinfo
 
+# Next.js generated
+next-env.d.ts
+
 # Env
 .env
 .env.local
