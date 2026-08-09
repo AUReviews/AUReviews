@@ -7,8 +7,9 @@ semester you'll actually survive.
 
 ## Status
 
-Planning. This project is being charted with [`/wayfinder`](https://github.com/AUReviews/AUReviews/issues/1) —
-the map issue tracks the destination (a buildable v1 spec), the decisions made so far, and what's
-still fogged in. Research findings land on `research/*` branches.
+Planning complete. The v1 buildable spec is [`docs/v1-spec.md`](docs/v1-spec.md), assembled from
+the decisions charted on the [wayfinder map](https://github.com/AUReviews/AUReviews/issues/1)
+(now closed). The design source is [`prototype/index.html`](prototype/index.html); research
+findings backing the spec live under [`research/`](research).
 
 Not affiliated with or endorsed by Auburn University.
