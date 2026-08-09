@@ -29,12 +29,11 @@ account, so a human runs them once. Times are rough.
    uses:
    - **`DATABASE_URL`** → the **pooled** endpoint (host contains `-pooler`). The
      app and Auth.js use this at runtime.
-   - **`DIRECT_URL`** → the **direct** (non-pooled) endpoint (same host without
-     `-pooler`). Migrations use this.
+   - **`DATABASE_URL_UNPOOLED`** → the **direct** (non-pooled) endpoint (same
+     host without `-pooler`). Migrations use this.
 
-   The integration may name them `DATABASE_URL` and `DATABASE_URL_UNPOOLED` (or
-   similar). Add/rename env vars so this app sees exactly `DATABASE_URL`
-   (pooled) and `DIRECT_URL` (direct). Both should include `?sslmode=require`.
+   The Vercel–Neon integration emits both of these names directly, so no
+   renaming is needed. Both should include `?sslmode=require`.
 
 ## 3. Set the revalidation secret (~1 min)
 
@@ -49,8 +48,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Migrations run from your machine (or CI), never from a Vercel function.
 
 ```bash
-cp .env.example .env.local     # then paste in DATABASE_URL, DIRECT_URL, REVALIDATE_SECRET
-npm run db:migrate             # drizzle-kit, uses DIRECT_URL
+cp .env.example .env.local     # then paste in DATABASE_URL, DATABASE_URL_UNPOOLED, REVALIDATE_SECRET
+npm run db:migrate             # drizzle-kit, uses DATABASE_URL_UNPOOLED
 ```
 
 This creates the `placeholder` table (`drizzle/0000_init.sql`).
@@ -72,7 +71,9 @@ reachable it shows a "not provisioned yet" message with the underlying error.
 
 ## 7. Verify on-demand revalidation (~1 min)
 
-The internal endpoint later writes will call (`revalidateTag` / `revalidatePath`):
+The internal endpoint later writes will call (`revalidateTag` / `revalidatePath`).
+
+**bash / macOS / Linux:**
 
 ```bash
 curl -X POST https://<your-deployment>/api/revalidate \
@@ -82,13 +83,30 @@ curl -X POST https://<your-deployment>/api/revalidate \
 # -> {"ok":true,"revalidated":{"tags":["placeholder"],"paths":["/"]}}
 ```
 
-A wrong/missing bearer token returns `401`; an empty body returns `400`.
+**Windows PowerShell** (`curl` there is an alias for `Invoke-WebRequest` and
+won't take the flags above — use `Invoke-RestMethod`; this reads the secret
+straight from `.env.local`):
+
+```powershell
+$secret = ((Get-Content .env.local | Where-Object { $_ -match '^REVALIDATE_SECRET=' }) -replace '^REVALIDATE_SECRET=', '').Trim('"')
+$url = "https://<your-deployment>/api/revalidate"
+Invoke-RestMethod -Method Post -Uri $url `
+  -Headers @{ Authorization = "Bearer $secret" } `
+  -ContentType "application/json" `
+  -Body '{"tag":"placeholder","path":"/"}'
+# -> ok = True; revalidated = @{tags=...; paths=...}
+```
+
+A wrong/missing bearer token returns `401`; an empty body returns `400` (in
+PowerShell these surface as a thrown "response status code does not indicate
+success" error — that is the expected rejection). The secret in `.env.local`
+must match the `REVALIDATE_SECRET` set in Vercel, or the call returns `401`.
 
 ## What this proves (acceptance, #17)
 
 - [x] App deployed to Vercel, reachable at a URL. *(steps 1, 6)*
 - [x] Placeholder page renders data **read from Neon** (not hardcoded). *(steps 5–6; code: `src/app/page.tsx` → `src/db/queries.ts`)*
-- [x] Migrations run against the **direct** endpoint; app connects over the **pooled** endpoint. *(step 4; `drizzle.config.ts` uses `DIRECT_URL`, `src/db/client.ts` uses `DATABASE_URL`)*
+- [x] Migrations run against the **direct** endpoint; app connects over the **pooled** endpoint. *(step 4; `drizzle.config.ts` uses `DATABASE_URL_UNPOOLED`, `src/db/client.ts` uses `DATABASE_URL`)*
 - [x] An `ingest/` module exists and depends on the domain layer only — no reverse import; enforced by eslint `import/no-restricted-paths` **and** `src/domain/boundary.test.ts`, documented in `AGENTS.md`. *(code: `src/ingest/`, `src/domain/`)*
 - [x] A revalidation endpoint exists and revalidates a page/tag on demand. *(step 7; code: `src/app/api/revalidate/route.ts`, `src/lib/revalidate.ts`)*
 
