@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "AUReviews",
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         }}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
