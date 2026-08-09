@@ -29,3 +29,14 @@ export function normalizeCatalogKey(input: {
   const number = input.number.trim().toUpperCase();
   return `${subject} ${number}`;
 }
+
+/**
+ * Normalize a course title for *matching* (case- and whitespace-insensitive:
+ * trimmed, inner runs of whitespace collapsed, upper-cased). Punctuation is left
+ * intact. Used only to detect candidate renumbers/cross-lists that must surface
+ * for an admin decision (#18) — never to assert identity, which is the durable
+ * `CourseId` alone (ADR 0001).
+ */
+export function normalizeTitle(title: string): string {
+  return title.trim().replace(/\s+/g, " ").toUpperCase();
+}

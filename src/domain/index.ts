@@ -6,5 +6,25 @@
  * imports THEM (the one-way seam of ADR 0002, enforced by eslint
  * `import/no-restricted-paths` and by src/domain/boundary.test.ts).
  */
-export { type CourseId, mintCourseId, normalizeCatalogKey } from "./identity";
+export {
+  type CourseId,
+  mintCourseId,
+  normalizeCatalogKey,
+  normalizeTitle,
+} from "./identity";
+export {
+  type ApplyCourseAction,
+  type CatalogSnapshot,
+  type CourseAttributes,
+  type CourseStatus,
+  type CreateCourseAction,
+  type CrosswalkMapping,
+  type ExistingCourse,
+  type IncomingCourse,
+  type IngestPlan,
+  type PendingCrosswalkAction,
+  type PendingReason,
+  type PlanIngestOptions,
+  planIngest,
+} from "./crosswalk";
 export { type PlaceholderRow, formatPlaceholder } from "./placeholder";
