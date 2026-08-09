@@ -53,14 +53,14 @@ Settled in [What a single review captures](https://github.com/AUReviews/AUReview
 
 ### Required core
 
-| Field | Type | Rule |
-|---|---|---|
-| `overall` | integer 1–5 | Required. "How good was this course overall?" Headline number, default sort key. Folds in "would recommend" (dropped as redundant). |
-| `difficulty` | integer 1–5 | Required. Anchored labels (1 = very easy … 5 = very hard) so 3 means the same to everyone. Genuinely separate signal from `overall`. |
-| `workload_hours` | integer 1–80 | Required. "Typical hours per week **outside of lecture**." Free-entry number field, not a slider (sliders bias to round midpoints). The north-star metric. |
+| Field | Type                                 | Rule |
+|---|--------------------------------------|---|
+| `overall` | integer 1–5                          | Required. "How good was this course overall?" Headline number, default sort key. Folds in "would recommend" (dropped as redundant). |
+| `difficulty` | integer 1–5                          | Required. Anchored labels (1 = very easy … 5 = very hard) so 3 means the same to everyone. Genuinely separate signal from `overall`. |
+| `workload_hours` | integer 1–40                         | Required. "Typical hours per week **outside of lecture**." Free-entry number field, not a slider (sliders bias to round midpoints). The north-star metric. |
 | `term` | semester (Fall/Spring/Summer) + year | Required. Selectable range is a **rolling window** — see below — but the actual term is always stored. |
-| `instructor` | dropdown, scoped to the course | Required. Populated from Banner instructor-of-record data (§9). Escape hatches: **"Instructor not listed"** and **"Don't remember"** — an explicit unknown beats a null, and a curated dropdown is what makes the by-instructor breakdown (§7) actually work. |
-| `body` | free text | Required, **100-character minimum**, no maximum, one hint-guided box (placeholder: *"What surprised you? How would you prepare? What was the workload actually like week to week?"*). This is the only place person-specific claims may appear (§10). |
+| `instructor` | dropdown, scoped to the course       | Required. Populated from Banner instructor-of-record data (§9). Escape hatches: **"Instructor not listed"** and **"Don't remember"** — an explicit unknown beats a null, and a curated dropdown is what makes the by-instructor breakdown (§7) actually work. |
+| `body` | free text                            | Required, **100-character minimum**, no maximum, one hint-guided box (placeholder: *"What surprised you? How would you prepare? What was the workload actually like week to week?"*). This is the only place person-specific claims may appear (§10). |
 
 ### "Course details" — all optional
 
@@ -69,7 +69,7 @@ Settled in [What a single review captures](https://github.com/AUReviews/AUReview
 | `workload_shape` | multi-select (0+) | Steady grind · Project spikes · Front-loaded · Back-loaded · Heavy reading · Exam-crammable |
 | `grade` | single-select | A · B · C · D · F · Pass · Fail · Withdrew |
 | `languages` | multi-select + free-text Other | Java · C · C++ · Python · C# · JS/TS · SQL · Assembly · Other · **No programming** |
-| `curved` | single-select | Curved up · Not curved · Not sure |
+| `curved` | single-select | Curved up · Not curved |
 | `attendance` | single-select | Mandatory · Recommended · Not needed |
 | `prep` | single-select | Well prepared · Somewhat · Underprepared |
 
