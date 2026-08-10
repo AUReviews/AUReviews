@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   type BrowseCourse,
@@ -10,6 +11,7 @@ import {
   formatReviewCount,
   sortBrowseCourses,
 } from "@/lib/browse";
+import { courseHref, formatCourseCode } from "@/lib/course-detail";
 
 // The click-to-sort catalog table (issue #20, §5). The full row set is rendered
 // server-side in catalog order (so the static/ISR HTML is already correct and
@@ -74,9 +76,16 @@ export default function CourseTable({ courses }: { courses: BrowseCourse[] }) {
                 key={course.id}
                 className={`course-row${course.status === "retired" ? " retired" : ""}`}
               >
-                <td className="title">{course.title}</td>
+                <td className="title">
+                  <Link
+                    href={courseHref(course.subject, course.number)}
+                    className="course-link"
+                  >
+                    {course.title}
+                  </Link>
+                </td>
                 <td className="code">
-                  {course.subject} {course.number}
+                  {formatCourseCode(course.subject, course.number)}
                   {course.status === "retired" && (
                     <span className="retired-tag">retired</span>
                   )}
