@@ -28,3 +28,9 @@ export {
   planIngest,
 } from "./crosswalk";
 export { type PlaceholderRow, formatPlaceholder } from "./placeholder";
+export {
+  type IdentityHash,
+  computeIdentityHash,
+  isAuburnAffiliateEmail,
+  normalizeEmail,
+} from "./anonymity";

@@ -15,6 +15,13 @@
       "when": 1786318430985,
       "tag": "0001_romantic_revanche",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786322639018,
+      "tag": "0002_known_sharon_carter",
+      "breakpoints": true
     }
   ]
 }
