@@ -1,0 +1,375 @@
+/* ===========================================================================
+   AUReviews — global visual system (issue #20)
+
+   Ported from `prototype/index.html` (the canonical design is the Claude Design
+   project; see prototype/SOURCE.md). The prototype drives its palette off a
+   `[data-theme="light|dark"]` attribute flipped by an in-page toggle. Here the
+   same token VALUES are attached to `:root` (light) with a `prefers-color-
+   scheme: dark` override, so theming is correct and flash-free with zero client
+   JS — which keeps the landing/browse pages fully static for CDN/ISR (§8). The
+   interactive light/dark/system toggle is a later ticket (it belongs to the
+   review-form/header work, §13); when it lands it can layer `[data-theme]`
+   overrides on top of these same tokens.
+   =========================================================================== */
+
+:root {
+  --bg-page: oklch(0.955 0.012 255);
+  --bg-surface: #fff;
+  --bg-chip: oklch(0.96 0.015 255);
+  --bg-chip-alt: oklch(0.94 0.012 255);
+  --border-default: oklch(0.9 0.012 255);
+  --border-input: oklch(0.88 0.012 255);
+  --border-subtle: oklch(0.93 0.012 255);
+  --border-strong: #161b26;
+  --border-card: #d8dae0;
+  --text-heading: oklch(0.22 0.045 262);
+  --text-primary: #161b26;
+  --text-secondary: #3a4258;
+  --text-muted: oklch(0.62 0.02 262);
+  --text-placeholder: #9aa3b5;
+  --text-body: oklch(0.5 0.025 262);
+  --link: oklch(0.42 0.09 262);
+  --avatar-bg: oklch(0.42 0.09 262);
+  --brand-bg: oklch(0.28 0.06 262);
+  --brand-text: #fff;
+  --accent-bg: oklch(0.72 0.14 52);
+  --accent-text: #1a1206;
+  --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-page: oklch(0.22 0.02 262);
+    --bg-surface: oklch(0.27 0.022 262);
+    --bg-chip: oklch(0.33 0.022 262);
+    --bg-chip-alt: oklch(0.31 0.022 262);
+    --border-default: oklch(0.37 0.022 262);
+    --border-input: oklch(0.4 0.022 262);
+    --border-subtle: oklch(0.35 0.022 262);
+    --border-strong: oklch(0.82 0.012 262);
+    --border-card: oklch(0.4 0.022 262);
+    --text-heading: oklch(0.96 0.01 262);
+    --text-primary: oklch(0.93 0.01 262);
+    --text-secondary: oklch(0.8 0.015 262);
+    --text-muted: oklch(0.65 0.02 262);
+    --text-placeholder: oklch(0.55 0.02 262);
+    --text-body: oklch(0.75 0.018 262);
+    --link: oklch(0.78 0.1 262);
+    --avatar-bg: oklch(0.55 0.09 262);
+    --brand-bg: oklch(0.55 0.09 262);
+    --brand-text: oklch(0.15 0.02 262);
+    --accent-bg: oklch(0.72 0.14 52);
+    --accent-text: #1a1206;
+    --shadow-btn: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+a:hover {
+  opacity: 0.8;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Header ------------------------------------------------------------- */
+.hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.hdr-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.brand:hover {
+  opacity: 0.8;
+}
+.brand-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--brand-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-text);
+  font-weight: 800;
+  font-size: 14px;
+}
+.brand-name {
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  color: var(--text-heading);
+  font-weight: 700;
+}
+.nav-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.nav-link:hover {
+  color: var(--text-heading);
+  opacity: 1;
+}
+
+/* ---- Buttons ------------------------------------------------------------ */
+.btn-accent {
+  padding: 8px 18px;
+  border-radius: 8px;
+  background: var(--accent-bg);
+  color: var(--accent-text);
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  box-shadow: var(--shadow-btn);
+  border: none;
+  font-family: inherit;
+  display: inline-block;
+}
+.btn-accent:hover {
+  filter: brightness(0.94);
+  opacity: 1;
+}
+
+/* ---- Main / footer ------------------------------------------------------ */
+.main {
+  flex: 1;
+}
+.site-footer {
+  padding: 28px 40px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* ---- Landing ------------------------------------------------------------ */
+.landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 96px 24px;
+}
+.hero {
+  max-width: 680px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-bg);
+}
+.hero-h1 {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--text-heading);
+}
+.hero-sub {
+  font-size: 15.5px;
+  color: var(--text-body);
+  line-height: 1.55;
+  margin: 0;
+}
+.hero-cta {
+  margin-top: 10px;
+  padding: 13px 26px;
+  font-size: 14.5px;
+}
+
+/* ---- Browse list -------------------------------------------------------- */
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 36px 40px 60px;
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+}
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  gap: 16px;
+}
+.list-head h1 {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-heading);
+}
+.list-count {
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.table {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+.ctable {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.ctable th,
+.ctable td {
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ctable tbody tr:last-child td {
+  border-bottom: none;
+}
+.ctable th {
+  padding: 0;
+}
+
+.col-head {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.col-head:hover {
+  color: var(--text-heading);
+}
+.col-head.numeric {
+  justify-content: flex-end;
+  text-align: right;
+}
+.col-head[aria-sort="ascending"],
+.col-head[aria-sort="descending"] {
+  color: var(--text-heading);
+}
+.sort-caret {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+.col-head[aria-sort="none"] .sort-caret {
+  opacity: 0;
+}
+.col-head:hover .sort-caret {
+  opacity: 0.5;
+}
+
+.ctable td {
+  padding: 15px 20px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+td.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+td.title {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+td.code {
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+td.muted {
+  color: var(--text-muted);
+}
+
+/* Retired courses are de-emphasized, never hidden (issue #20). */
+.course-row.retired {
+  opacity: 0.55;
+}
+.retired-tag {
+  margin-left: 8px;
+}
+.retired-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border: 1px solid var(--border-input);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+.empty-state,
+.error-state {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  color: var(--text-body);
+  font-size: 14px;
+}
+.error-state pre {
+  text-align: left;
+  overflow-x: auto;
+  font-size: 12px;
+  background: var(--bg-chip);
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
