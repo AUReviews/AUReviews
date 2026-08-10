@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
+import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import Header from "./_components/Header";
 
 export const metadata: Metadata = {
   title: "AUReviews",
@@ -20,7 +22,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           lineHeight: 1.5,
         }}
       >
-        {children}
+        <SessionProvider>
+          <Header />
+          {children}
+        </SessionProvider>
         <Analytics />
         <SpeedInsights />
       </body>

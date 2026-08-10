@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
+  index,
   jsonb,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -102,3 +104,79 @@ export const crosswalkPending = pgTable("crosswalk_pending", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * Verified-affiliate identities (v1-spec §7, research §4 option C; issue #19).
+ *
+ * This is BOTH the anonymity store and the Auth.js "user" table. It holds only a
+ * non-reversible `identity_hash = HMAC(PEPPER, normalize(email))` and when it was
+ * verified — NEVER the plaintext email (the pepper lives outside the DB, so a
+ * dump yields nothing brute-forceable). `id` is an opaque surrogate the session
+ * table references, so `sessions` never even stores the hash; the hash is looked
+ * up server-side only when a write must be attributed. Reviews (#6) will key to
+ * `identity_hash`, with no `(identity_hash, course_id)` uniqueness (v1-spec §4).
+ */
+export const identities = pgTable("identities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  identityHash: text("identity_hash").notNull().unique(),
+  verifiedAt: timestamp("verified_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * Auth.js database sessions (issue #19). An opaque `session_token` cookie maps
+ * server-side to an identity; the client never receives `identity_hash` or the
+ * address (v1-spec §7 step 4). Rows are deleted when the referenced identity is
+ * (there is no self-delete of an identity in v1, but the cascade keeps the seam
+ * honest).
+ */
+export const sessions = pgTable("sessions", {
+  sessionToken: text("session_token").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => identities.id, { onDelete: "cascade" }),
+  expires: timestamp("expires", { withTimezone: true }).notNull(),
+});
+
+/**
+ * Auth.js magic-link tokens (issue #19). Single-use and expiring (v1-spec §7:
+ * one live token per address, 15–60 min). `identifier` is the target address,
+ * held ONLY transiently here until the link is clicked or expires — it is the
+ * one place an address touches the DB, and it is never copied into `identities`.
+ * The adapter deletes any prior token for an identifier before issuing a new one
+ * so only one link is ever live per address.
+ */
+export const verificationTokens = pgTable(
+  "verification_tokens",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.identifier, t.token] })],
+);
+
+/**
+ * Email-send throttle log (v1-spec §7, research §5; issue #19). One row per
+ * issued magic link, used to enforce ≤3 sends/address/hour and ≤10 sends/IP/hour.
+ * The address is stored as the same keyed hash as `identities.identity_hash`,
+ * never plaintext, so per-address throttling costs no additional PII. Composite
+ * indexes make the trailing-hour count a fast range scan; rows are prunable
+ * beyond the window by a later maintenance job.
+ */
+export const emailSendLog = pgTable(
+  "email_send_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    addressHash: text("address_hash").notNull(),
+    ip: text("ip").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("email_send_log_address_idx").on(t.addressHash, t.createdAt),
+    index("email_send_log_ip_idx").on(t.ip, t.createdAt),
+  ],
+);

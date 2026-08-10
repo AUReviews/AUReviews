@@ -34,6 +34,14 @@ The imported, refreshable, disposable half of the model — a Course's current c
 **Review side**:
 The user-authored, permanent, append-only half — `Review`s plus the durable `Course` / `Instructor` identities and the crosswalk that anchor them. The precious data; the reason durable ids exist.
 
+**Verified Auburn affiliate**:
+Anyone who has proven control of an `@auburn.edu` / `@tigermail.auburn.edu` mailbox via the magic-link flow — the eligibility gate for authoring on the Review side. Deliberately *not* "current student": alumni retain Auburn mail and may review, and email control proves neither enrollment nor that the reviewer took the course. User-facing copy says "verified Auburn affiliate" for exactly this reason.
+_Avoid_: current student, enrolled student (email verification proves neither)
+
+**Identity hash**:
+The durable, non-reversible author token for a verified affiliate: `identity_hash = HMAC_SHA256(PEPPER, normalize(email))`, where the `PEPPER` lives outside the database. It is the only thing linking a person to their reviews, votes, and edits — the plaintext email is never persisted past verification. A Review-side identity, minted at verification and stable across an author's actions, but **not a uniqueness key**: a person may hold more than one review per course (see #6/#8). Never sent to the client, and never exposed on any public or session surface.
+_Avoid_: user id, email hash (the pepper, not a bare hash, is what makes it non-reversible)
+
 **Import contract**:
 The one-way rule at the seam between the two sides: an import is idempotent and may only create or update catalog-side attributes. It may never create, modify, or delete a `Review`, and never delete a durable `Course` or `Instructor`. A course dropped from the Auburn catalog is *retired* (status flip), not deleted — reversible if it reappears.
 
