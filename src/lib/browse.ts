@@ -29,7 +29,7 @@ export interface BrowseCourse {
 }
 
 /** The six sortable columns, keyed by what they sort on (not their header text:
- * "Course" sorts on `title`, "Code" on `code`, "Reviews (N)" on `reviews`). */
+ * "Course" sorts on `title`, "Code" on `code`, "Reviews" on `reviews`). */
 export type SortKey =
   | "code"
   | "title"

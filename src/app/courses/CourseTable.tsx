@@ -30,7 +30,7 @@ const COLUMNS: Column[] = [
   { key: "overall", label: "Overall", numeric: true },
   { key: "difficulty", label: "Difficulty", numeric: true },
   { key: "workload", label: "Workload", numeric: true },
-  { key: "reviews", label: "Reviews (N)", numeric: true },
+  { key: "reviews", label: "Reviews", numeric: true },
 ];
 
 export default function CourseTable({ courses }: { courses: BrowseCourse[] }) {
@@ -119,7 +119,7 @@ function ColumnHeader({
       >
         {column.label}
         <span className="sort-caret" aria-hidden="true">
-          {active ? (sort.direction === "asc" ? "▲" : "▼") : "▲"}
+          {active ? (sort.direction === "asc" ? "▲" : "▼") : ""}
         </span>
       </button>
     </th>
