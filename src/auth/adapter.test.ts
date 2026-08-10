@@ -5,6 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // drizzle chain the adapter actually uses.
 const inserted: unknown[] = [];
 
+// Configurable result for the select chain (getUser / getUserByEmail).
+let selectResult: unknown[] = [];
+
 const fakeDb = {
   insert: () => ({
     values: (v: unknown) => {
@@ -16,6 +19,11 @@ const fakeDb = {
         }),
       };
     },
+  }),
+  select: () => ({
+    from: () => ({
+      where: () => ({ limit: () => Promise.resolve(selectResult) }),
+    }),
   }),
 };
 
@@ -64,5 +72,35 @@ describe("hashing adapter — createUser", () => {
     await expect(
       adapter.createUser!({ id: "", email: "abc1234@auburn.edu", emailVerified: null }),
     ).rejects.toThrow(/PEPPER/);
+  });
+});
+
+describe("hashing adapter — reads", () => {
+  beforeEach(() => {
+    process.env.PEPPER = PEPPER;
+    selectResult = [{ id: "user-1", verifiedAt: new Date() }];
+  });
+
+  it("getUserByEmail echoes the address so the signIn domain re-check passes for returning users", async () => {
+    // Regression: a returning user requesting a fresh link must not be rejected
+    // with AccessDenied. Auth.js runs the domain check against the returned
+    // user's email, so getUserByEmail must surface the queried address.
+    const adapter = createHashingAdapter();
+    const user = await adapter.getUserByEmail!("abc1234@auburn.edu");
+    expect(user?.id).toBe("user-1");
+    expect(user?.email).toBe("abc1234@auburn.edu");
+  });
+
+  it("getUserByEmail returns null when no identity matches", async () => {
+    selectResult = [];
+    const adapter = createHashingAdapter();
+    expect(await adapter.getUserByEmail!("nobody@auburn.edu")).toBeNull();
+  });
+
+  it("getUser stays blanked — no address is available or exposed by id lookup", async () => {
+    const adapter = createHashingAdapter();
+    const user = await adapter.getUser!("user-1");
+    expect(user?.id).toBe("user-1");
+    expect(user?.email).toBe("");
   });
 });

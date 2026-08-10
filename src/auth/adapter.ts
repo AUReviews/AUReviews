@@ -74,7 +74,14 @@ export function createHashingAdapter(): Adapter {
         .from(identities)
         .where(eq(identities.identityHash, identityHash))
         .limit(1);
-      return row ? toAdapterUser(row) : null;
+      if (!row) return null;
+      // Echo the caller's address back — Auth.js needs it to run the signIn
+      // domain re-check when a RETURNING user requests a new link (otherwise a
+      // blanked email fails the check and throws AccessDenied). This address is
+      // the method's own input, used transiently server-side; it is never stored
+      // (identities has no email column) and never reaches the client, because
+      // the session is built from getSessionAndUser, which stays blanked.
+      return { id: row.id, email, emailVerified: row.verifiedAt };
     },
 
     // No OAuth accounts in v1 — the email provider never links one.
