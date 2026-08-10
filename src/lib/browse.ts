@@ -48,11 +48,20 @@ export interface SortState {
 /** Catalog order — the stable, non-ranking default (§5). */
 export const DEFAULT_SORT: SortState = { key: "code", direction: "asc" };
 
+/** The minimal shape catalog order sorts on — any course-like row with a
+ * `(subject, number)` code. */
+export interface CatalogOrdered {
+  subject: string;
+  number: string;
+}
+
 /** Compare two courses by catalog identity: subject, then COMP number ordered
  * NUMERICALLY (so 60 < 500 < 1000), then the raw number as a final tiebreak.
- * This is both the `code` column's ordering and the stability tiebreak every
- * other column falls back on. Always ascending — callers apply direction. */
-function compareCatalog(a: BrowseCourse, b: BrowseCourse): number {
+ * This is both the browse `code` column's ordering and the stability tiebreak
+ * every other column falls back on — and the single definition of "catalog
+ * order" (§5) reused wherever the site lists courses (e.g. `prereqs.ts`'s
+ * Unlocks). Always ascending — callers apply direction. */
+export function compareCatalogOrder(a: CatalogOrdered, b: CatalogOrdered): number {
   const bySubject = a.subject.localeCompare(b.subject);
   if (bySubject !== 0) return bySubject;
 
@@ -102,7 +111,7 @@ export function sortBrowseCourses(
   const primary = (a: BrowseCourse, b: BrowseCourse): number => {
     switch (key) {
       case "code":
-        return sign * compareCatalog(a, b);
+        return sign * compareCatalogOrder(a, b);
       case "title":
         return sign * a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
       case "reviews":
@@ -125,7 +134,7 @@ export function sortBrowseCourses(
     const byPrimary = primary(a, b);
     if (byPrimary !== 0) return byPrimary;
     // Stable, direction-independent tiebreak so equal rows keep catalog order.
-    return compareCatalog(a, b);
+    return compareCatalogOrder(a, b);
   });
 }
 
