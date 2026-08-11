@@ -199,6 +199,46 @@ describe("planOfferings — instructor identity resolution", () => {
     ]);
   });
 
+  it("takes the NEWEST term's spelling when a person's name varies across history", () => {
+    // Rows arrive oldest-first from the orchestrator; the display name is a
+    // mutable latest-wins attribute, so the newest sighting must win anyway.
+    const snapshot = { ...emptySnapshot(), instructors: [existingVlr] };
+    const rows = [
+      offering("COMP 1210", "200810", [
+        { displayName: "Vishalini Ramnath", bannerKey: "vlr0013" },
+      ]),
+      offering("COMP 1210", "202710", [
+        { displayName: "Vishalini L. Ramnath", bannerKey: "vlr0013" },
+      ]),
+    ];
+
+    const plan = planOfferings(rows, snapshot, { mintId: makeMinter() });
+    expect(plan.instructorRenames).toEqual([
+      { id: "instructor-1", displayName: "Vishalini L. Ramnath" },
+    ]);
+  });
+
+  it("mints a new instructor with the NEWEST term's spelling", () => {
+    const rows = [
+      offering("COMP 1210", "200810", [
+        { displayName: "Old Spelling", bannerKey: "os0001" },
+      ]),
+      offering("COMP 3270", "202710", [
+        { displayName: "New Spelling", bannerKey: "os0001" },
+      ]),
+    ];
+
+    const plan = planOfferings(rows, emptySnapshot(), { mintId: makeMinter() });
+    expect(plan.instructorCreates).toEqual([
+      {
+        id: "instructor-1",
+        displayName: "New Spelling",
+        bannerKey: "os0001",
+        nameKey: normalizeInstructorName("New Spelling"),
+      },
+    ]);
+  });
+
   it("resolves a keyless instructor to the single existing name match", () => {
     const existing = {
       id: "instructor-1" as InstructorId,

@@ -4,6 +4,7 @@ import {
   type InstructorId,
   type OfferingsPlan,
   type OfferingsSnapshot,
+  offeringKey,
 } from "@/domain";
 import { getDb } from "./client";
 import {
@@ -70,7 +71,7 @@ export async function loadOfferingsSnapshot(): Promise<OfferingsSnapshot> {
 
   const linksByOffering = new Map<string, InstructorId[]>();
   for (const link of linkRows) {
-    const key = `${link.courseId} ${link.termCode}`;
+    const key = offeringKey(link.courseId as CourseId, link.termCode);
     const list = linksByOffering.get(key);
     if (list) list.push(link.instructorId as InstructorId);
     else linksByOffering.set(key, [link.instructorId as InstructorId]);
@@ -91,7 +92,8 @@ export async function loadOfferingsSnapshot(): Promise<OfferingsSnapshot> {
       courseId: o.courseId as CourseId,
       termCode: o.termCode,
       instructorIds:
-        linksByOffering.get(`${o.courseId} ${o.termCode}`) ?? [],
+        linksByOffering.get(offeringKey(o.courseId as CourseId, o.termCode)) ??
+        [],
     })),
     pendingNameKeys: pendingRows.map((p) => p.nameKey),
   };

@@ -47,6 +47,7 @@ export {
   type IncomingOffering,
   type IncomingSection,
   type InstructorPendingReason,
+  type InstructorSighting,
   type OfferingKey,
   type OfferingLink,
   type OfferingsPlan,
@@ -55,6 +56,8 @@ export {
   type PlanOfferingsOptions,
   type RenameInstructorAction,
   collapseSections,
+  instructorDedupeKey,
+  offeringKey,
   planOfferings,
 } from "./offerings";
 export {

@@ -20,7 +20,11 @@
  * not modeled. Pure and dependency-free, like the bulletin parser.
  */
 
-import type { IncomingInstructor, IncomingSection } from "@/domain";
+import {
+  type IncomingInstructor,
+  type IncomingSection,
+  instructorDedupeKey,
+} from "@/domain";
 import { toText } from "./html";
 
 /** A term as offered by the Banner dropdown. */
@@ -107,7 +111,7 @@ function parseSectionInstructors(sectionBody: string): IncomingInstructor[] {
       for (const instructor of parseInstructorCell(
         cells[INSTRUCTOR_CELL_INDEX][1],
       )) {
-        const key = instructor.bannerKey ?? `name:${instructor.displayName}`;
+        const key = instructorDedupeKey(instructor);
         if (seen.has(key)) continue;
         seen.add(key);
         instructors.push(instructor);
