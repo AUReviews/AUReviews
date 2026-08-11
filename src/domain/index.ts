@@ -8,8 +8,11 @@
  */
 export {
   type CourseId,
+  type InstructorId,
   mintCourseId,
+  mintInstructorId,
   normalizeCatalogKey,
+  normalizeInstructorName,
   normalizeTitle,
 } from "./identity";
 export {
@@ -27,6 +30,33 @@ export {
   type PlanIngestOptions,
   planIngest,
 } from "./crosswalk";
+export {
+  type Semester,
+  type Term,
+  FALL_2007_TERM_CODE,
+  formatTerm,
+  isIngestibleTermCode,
+  parseTermCode,
+  rollupOfferedSemesters,
+} from "./term";
+export {
+  type CreateInstructorAction,
+  type ExistingInstructor,
+  type ExistingOffering,
+  type IncomingInstructor,
+  type IncomingOffering,
+  type IncomingSection,
+  type InstructorPendingReason,
+  type OfferingKey,
+  type OfferingLink,
+  type OfferingsPlan,
+  type OfferingsSnapshot,
+  type PendingInstructorAction,
+  type PlanOfferingsOptions,
+  type RenameInstructorAction,
+  collapseSections,
+  planOfferings,
+} from "./offerings";
 export {
   type ParsedPrereqs,
   type PrereqCourseRef,

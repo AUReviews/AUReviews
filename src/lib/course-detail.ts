@@ -12,6 +12,7 @@
  * renumber (ADR 0002), an old code URL can still be made to resolve later.
  */
 
+import { rollupOfferedSemesters } from "@/domain";
 import type { BrowseCourse } from "./browse";
 
 /**
@@ -102,6 +103,19 @@ export function formatCourseDescription(
     .replace(/\s+/g, " ")
     .trim();
   return cleaned || null;
+}
+
+/**
+ * The "Typically offered" badge text (§6; issue #23): a display-time rollup of
+ * the distinct semesters in the course's Banner Offering history — computed on
+ * every render, never a stored flag, so it self-corrects as offerings accrue.
+ * Returns null when there is no usable history (no offerings ingested yet, or
+ * a course Banner never listed), and the page simply shows no badge.
+ */
+export function formatTypicallyOffered(termCodes: string[]): string | null {
+  const semesters = rollupOfferedSemesters(termCodes);
+  if (semesters.length === 0) return null;
+  return `Typically offered: ${semesters.join(", ")}`;
 }
 
 /** Link to a course's detail page. */

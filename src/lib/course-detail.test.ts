@@ -7,6 +7,7 @@ import {
   formatCourseCode,
   formatCourseDescription,
   formatCreditHours,
+  formatTypicallyOffered,
   parseCourseSlug,
   reviewFormHref,
 } from "./course-detail";
@@ -177,5 +178,24 @@ describe("hrefs", () => {
     const c = detail();
     expect(courseHref(c.subject, c.number)).toBe("/courses/comp-3270");
     expect(reviewFormHref(c.subject, c.number)).toBe("/courses/comp-3270/review");
+  });
+});
+
+describe("formatTypicallyOffered", () => {
+  it("rolls offering term codes up into a semester list", () => {
+    expect(formatTypicallyOffered(["202520", "202410", "202030"])).toBe(
+      "Typically offered: Fall, Spring, Summer",
+    );
+  });
+
+  it("orders semesters canonically regardless of history order", () => {
+    expect(formatTypicallyOffered(["202520", "201910"])).toBe(
+      "Typically offered: Fall, Spring",
+    );
+  });
+
+  it("returns null when there is no usable offering history", () => {
+    expect(formatTypicallyOffered([])).toBeNull();
+    expect(formatTypicallyOffered(["bogus"])).toBeNull();
   });
 });

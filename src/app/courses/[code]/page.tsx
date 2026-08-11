@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
-import { getCourseByCode, listCourses, listPrereqRows } from "@/db/queries";
+import {
+  getCourseByCode,
+  listCourses,
+  listOfferingTermCodes,
+  listPrereqRows,
+} from "@/db/queries";
 import {
   type CourseDetail,
   courseSlug,
@@ -10,6 +15,7 @@ import {
   formatCourseCode,
   formatCourseDescription,
   formatCreditHours,
+  formatTypicallyOffered,
   parseCourseSlug,
   reviewFormHref,
 } from "@/lib/course-detail";
@@ -51,6 +57,16 @@ const loadCourse = unstable_cache(
 const loadPrereqRows = unstable_cache(
   (): Promise<PrereqCatalogRow[]> => listPrereqRows(),
   ["course-prereq-rows"],
+  { tags: ["catalog"] },
+);
+
+// One course's Banner offering term codes, for the "Typically offered" badge
+// (issue #23). Behind the same "catalog" tag: an offerings import refreshes the
+// badge alongside every other catalog-derived read. The courseId argument is
+// part of the cache key, so each course caches independently.
+const loadOfferingTermCodes = unstable_cache(
+  (courseId: string): Promise<string[]> => listOfferingTermCodes(courseId),
+  ["course-offering-terms"],
   { tags: ["catalog"] },
 );
 
@@ -106,6 +122,12 @@ export default async function CoursePage({
   const credits = formatCreditHours(course.creditHours);
   const reviewHref = reviewFormHref(course.subject, course.number);
 
+  // Display-time rollup over the course's Offering history — never a stored
+  // flag (§6, issue #23). Null (no ingested history) renders as no badge.
+  const typicallyOffered = formatTypicallyOffered(
+    await loadOfferingTermCodes(course.id),
+  );
+
   // Prerequisites + the inverse "Unlocks", derived from the whole-catalog
   // snapshot so both directions stay consistent (issue #22, §6).
   const prereqView = buildCoursePrereqView(
@@ -125,6 +147,9 @@ export default async function CoursePage({
         </h1>
         <div className="course-meta">
           {credits && <span>{credits}</span>}
+          {typicallyOffered && (
+            <span className="offered-stamp">{typicallyOffered}</span>
+          )}
           <span className="catalog-stamp">
             {formatCatalogYear(course.catalogYear)}
           </span>

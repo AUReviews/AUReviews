@@ -16,6 +16,27 @@ export function mintCourseId(): CourseId {
   return crypto.randomUUID() as CourseId;
 }
 
+/** Opaque, internally-minted Instructor identity (ADR 0001 — same philosophy
+ * as {@link CourseId}: Banner's names and even its person keys are demoted to
+ * mutable attributes; Offerings and Reviews reference this id alone). */
+export type InstructorId = string & { readonly __brand: "InstructorId" };
+
+/** Mint a fresh, never-changing Instructor id. */
+export function mintInstructorId(): InstructorId {
+  return crypto.randomUUID() as InstructorId;
+}
+
+/**
+ * Normalize an instructor display name for *matching* (issue #23): trimmed,
+ * inner whitespace collapsed (Banner pads names irregularly), upper-cased.
+ * Used only to key instructors that expose no stable Banner person key and to
+ * detect ambiguous matches that must surface for an admin decision — never to
+ * assert identity, which is the durable {@link InstructorId} alone.
+ */
+export function normalizeInstructorName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toUpperCase();
+}
+
 /**
  * Normalize an Auburn `(subject, number)` into the natural key the crosswalk
  * matches on (#18) — case- and whitespace-insensitive. The durable `CourseId`,
