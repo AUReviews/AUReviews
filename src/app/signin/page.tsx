@@ -4,7 +4,7 @@ import { signIn } from "@/auth";
 import { clientIpFromHeaders } from "@/auth/client-ip";
 import { getPepper } from "@/auth/pepper";
 import { checkAndRecordSend } from "@/auth/rate-limit";
-import { computeIdentityHash, isAuburnAffiliateEmail } from "@/domain";
+import { computeIdentityHash, isAuburnStudentEmail } from "@/domain";
 
 // Per-user auth surface — always dynamic, never cached (v1-spec §8).
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 async function requestMagicLink(formData: FormData) {
   "use server";
   const email = String(formData.get("email") ?? "").trim();
-  if (!isAuburnAffiliateEmail(email)) {
+  if (!isAuburnStudentEmail(email)) {
     redirect("/signin?error=domain");
   }
 
@@ -38,7 +38,7 @@ function errorMessage(code: string | undefined): string | null {
   switch (code) {
     case "domain":
     case "AccessDenied":
-      return "That address isn't an Auburn affiliate address. Use your @auburn.edu or @tigermail.auburn.edu email.";
+      return "That address isn't an Auburn student address. Use your @auburn.edu or @tigermail.auburn.edu email.";
     case "rate":
       return "Too many sign-in requests. Please wait an hour and try again.";
     case "Verification":
@@ -60,7 +60,7 @@ export default async function SignInPage({
     <main style={{ maxWidth: 440, margin: "4rem auto", padding: "0 1.5rem" }}>
       <h1 style={{ marginBottom: "0.25rem" }}>Sign in</h1>
       <p style={{ color: "#666", marginTop: 0 }}>
-        AUReviews is for <strong>verified Auburn affiliates</strong>. Enter your
+        AUReviews is for <strong>verified Auburn students</strong>. Enter your
         Auburn email and we&apos;ll send a single-use sign-in link.
       </p>
 

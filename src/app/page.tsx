@@ -37,7 +37,7 @@ export default async function Home() {
         <span className="eyebrow">AUBURN CSSE COURSE REVIEWS</span>
         <h1 className="hero-h1">Know the course before you register</h1>
         <p className="hero-sub">
-          Anonymous reviews from verified Auburn affiliates who&rsquo;ve taken
+          Anonymous reviews from verified Auburn students who&rsquo;ve taken
           it — overall, difficulty, and real weekly workload, side by side.
           {courseCount !== null && courseCount > 0
             ? ` Browse all ${courseCount.toLocaleString()} COMP courses.`
