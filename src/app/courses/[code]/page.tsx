@@ -8,6 +8,7 @@ import {
   courseSlug,
   formatCatalogYear,
   formatCourseCode,
+  formatCourseDescription,
   formatCreditHours,
   parseCourseSlug,
   reviewFormHref,
@@ -87,7 +88,7 @@ export async function generateMetadata({
   return {
     title: `${codeLabel} ${course.title} — AUReviews`,
     description:
-      course.description ??
+      formatCourseDescription(course.description) ??
       `Reviews and catalog details for ${codeLabel} ${course.title} at Auburn.`,
   };
 }
@@ -187,12 +188,17 @@ function Overview({
   prereqView: CoursePrereqView;
   reviewHref: string;
 }) {
+  // The stored description is the lossless bulletin body; strip the LEC./LAB.
+  // breakdown and the Pr./Coreq. prose now that credits and prerequisites are
+  // shown structurally (issue #22).
+  const description = formatCourseDescription(course.description);
+
   return (
     <div className="panel-stack">
       <section className="desc-card">
         <strong className="subhead">Description</strong>
-        {course.description ? (
-          <p>{course.description}</p>
+        {description ? (
+          <p>{description}</p>
         ) : (
           <p className="muted">No catalog description on file.</p>
         )}

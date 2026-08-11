@@ -5,6 +5,7 @@ import {
   courseSlug,
   formatCatalogYear,
   formatCourseCode,
+  formatCourseDescription,
   formatCreditHours,
   parseCourseSlug,
   reviewFormHref,
@@ -114,6 +115,52 @@ describe("formatCatalogYear", () => {
 
   it("trims surrounding whitespace", () => {
     expect(formatCatalogYear("  2025-2026 ")).toBe("2025–2026 catalog");
+  });
+});
+
+describe("formatCourseDescription", () => {
+  it("returns null when there is no description", () => {
+    expect(formatCourseDescription(null)).toBeNull();
+    expect(formatCourseDescription("   ")).toBeNull();
+  });
+
+  it("strips the LEC./LAB. breakdown and every Pr. clause, keeping the prose (COMP 2210)", () => {
+    const raw =
+      "LEC. 3. LAB. 3. Pr. COMP 1210 or COMP 1213. Software development in the context of collections (e.g., lists, trees, graphs, hashtables). Communication, teamwork, and a design experience are integral course experience. Pr. COMP 1210 with a grade of C or higher.";
+    expect(formatCourseDescription(raw)).toBe(
+      "Software development in the context of collections (e.g., lists, trees, graphs, hashtables). Communication, teamwork, and a design experience are integral course experience.",
+    );
+  });
+
+  it("strips a mid-body Coreq. clause and the SU. flag (COMP 1201)", () => {
+    const raw =
+      "LAB. 1.  SU. Coreq. COMP 1200. Laboratory activities focused on computer programming in a high-level language.";
+    expect(formatCourseDescription(raw)).toBe(
+      "Laboratory activities focused on computer programming in a high-level language.",
+    );
+  });
+
+  it("strips a lone leading SU. flag (COMP 4920)", () => {
+    expect(formatCourseDescription("SU. Supervised practical experience.")).toBe(
+      "Supervised practical experience.",
+    );
+  });
+
+  it("leaves a clean description untouched", () => {
+    expect(
+      formatCourseDescription("Design and analysis of algorithms."),
+    ).toBe("Design and analysis of algorithms.");
+  });
+
+  it("does not mistake a mid-sentence abbreviation for a contact-hour code", () => {
+    // Only a LEADING run of codes is stripped; "e.g." and "i.e." inside prose stay.
+    expect(
+      formatCourseDescription("LEC. 3. Topics include AI, i.e. machine learning."),
+    ).toBe("Topics include AI, i.e. machine learning.");
+  });
+
+  it("returns null when nothing but codes and prereqs remain", () => {
+    expect(formatCourseDescription("LEC. 3. Pr. COMP 2210.")).toBeNull();
   });
 });
 
