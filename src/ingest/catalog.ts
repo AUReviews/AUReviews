@@ -19,6 +19,7 @@
  */
 
 import type { IncomingCourse } from "@/domain";
+import { toText } from "./html";
 
 /**
  * A raw catalog row as scraped from one bulletin course block. Structurally the
@@ -95,32 +96,4 @@ function extractPrereqText(description: string | null): string | null {
   const clauses = description.match(PREREQ_CLAUSE_RE);
   if (!clauses || clauses.length === 0) return null;
   return clauses.map((c) => c.trim()).join(" ");
-}
-
-/** Strip inline tags, decode the entities the bulletin uses, and collapse space. */
-function toText(fragment: string): string {
-  return decodeEntities(fragment.replace(/<[^>]+>/g, ""))
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function decodeEntities(input: string): string {
-  return input
-    .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&mdash;/g, "—")
-    .replace(/&ndash;/g, "–")
-    .replace(/&rsquo;/g, "’")
-    .replace(/&lsquo;/g, "‘")
-    .replace(/&rdquo;/g, "”")
-    .replace(/&ldquo;/g, "“")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x27;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, code: string) =>
-      String.fromCodePoint(parseInt(code, 16)),
-    );
 }

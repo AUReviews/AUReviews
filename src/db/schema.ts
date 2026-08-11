@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   jsonb,
   pgTable,
@@ -96,6 +97,106 @@ export const crosswalkPending = pgTable("crosswalk_pending", {
   title: text("title").notNull(),
   reason: text("reason").notNull(),
   candidateCourseIds: jsonb("candidate_course_ids")
+    .notNull()
+    .default(sql`'[]'::jsonb`),
+  payload: jsonb("payload").notNull(),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * Durable Instructor identities (v1-spec §3, ADR 0001; issue #23). Same
+ * philosophy as `courses`: `id` is minted by the offerings planner, NOT a DB
+ * default, and is never deleted by an import (ADR 0002). `displayName` is a
+ * mutable last-import-wins attribute. `bannerKey` is Banner's stable person
+ * key — the Auburn NetID lifted from the schedule page's `mailto:` link —
+ * unique where present; instructors Banner lists without one are keyed by
+ * `nameKey` (normalized display name) with ambiguous matches routed to
+ * `instructor_pending`, never auto-merged.
+ */
+export const instructors = pgTable(
+  "instructors",
+  {
+    id: uuid("id").primaryKey(),
+    displayName: text("display_name").notNull(),
+    bannerKey: text("banner_key").unique(),
+    nameKey: text("name_key").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("instructors_name_key_idx").on(t.nameKey)],
+);
+
+/**
+ * Offerings (v1-spec §3/§6; issue #23): the historical fact that a Course ran
+ * in a Term, at exactly `(course, term)` grain — Banner's section rows are
+ * collapsed before they get here, and Section is deliberately not modeled (no
+ * CRNs/seats/meeting times). `termCode` is the validated Banner `YYYYT0` code
+ * (`200810` = Fall 2007, the history floor). The composite key is the
+ * idempotency anchor: re-imports converge instead of duplicating. "Typically
+ * offered" is always computed from these rows at display time, never stored.
+ */
+export const offerings = pgTable(
+  "offerings",
+  {
+    courseId: uuid("course_id")
+      .notNull()
+      .references(() => courses.id),
+    termCode: text("term_code").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.courseId, t.termCode] })],
+);
+
+/**
+ * The instructor-of-record set carried by each Offering (v1-spec §3). Rows are
+ * catalog-side and re-derivable: a link may be dropped when a re-import shows
+ * Banner no longer lists that instructor for the term, but the referenced
+ * Instructor row itself is never deleted (ADR 0002). The composite key makes
+ * link writes idempotent.
+ */
+export const offeringInstructors = pgTable(
+  "offering_instructors",
+  {
+    courseId: uuid("course_id").notNull(),
+    termCode: text("term_code").notNull(),
+    instructorId: uuid("instructor_id")
+      .notNull()
+      .references(() => instructors.id),
+  },
+  (t) => [
+    primaryKey({ columns: [t.courseId, t.termCode, t.instructorId] }),
+    foreignKey({
+      columns: [t.courseId, t.termCode],
+      foreignColumns: [offerings.courseId, offerings.termCode],
+    }),
+    index("offering_instructors_instructor_idx").on(t.instructorId),
+  ],
+);
+
+/**
+ * Pending instructor-identity decisions (v1-spec §3; issue #23) — the
+ * instructor analog of `crosswalk_pending`. An ambiguous match (a new Banner
+ * key colliding with an existing instructor's name, or a keyless name matching
+ * several instructors) lands here for an explicit admin decision instead of
+ * being auto-merged. `nameKey` is unique so a repeated import doesn't re-queue
+ * the same undecided sighting; `payload` carries what the import saw.
+ */
+export const instructorPending = pgTable("instructor_pending", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  nameKey: text("name_key").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  bannerKey: text("banner_key"),
+  reason: text("reason").notNull(),
+  candidateInstructorIds: jsonb("candidate_instructor_ids")
     .notNull()
     .default(sql`'[]'::jsonb`),
   payload: jsonb("payload").notNull(),

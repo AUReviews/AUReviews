@@ -4,7 +4,7 @@ import type { BrowseCourse } from "@/lib/browse";
 import type { CourseDetail } from "@/lib/course-detail";
 import type { PrereqCatalogRow } from "@/lib/prereqs";
 import { getDb } from "./client";
-import { courses, placeholder } from "./schema";
+import { courses, offerings, placeholder } from "./schema";
 
 /**
  * Read the newest placeholder row — the skeleton's DB proof-of-life. Returns
@@ -150,6 +150,22 @@ export async function listPrereqRows(): Promise<PrereqCatalogRow[]> {
     title: r.title,
     prereqText: r.prereqText,
   }));
+}
+
+/**
+ * Load one course's Offering term codes for the "Typically offered" badge
+ * (issue #23). Raw `YYYYT0` codes — the semester rollup is display-time logic
+ * (`formatTypicallyOffered`), never stored (§6). An empty array is a course
+ * with no ingested Banner history, which renders as no badge. Cached behind
+ * the course page's `catalog` ISR tag like the rest of its reads.
+ */
+export async function listOfferingTermCodes(courseId: string): Promise<string[]> {
+  const db = getDb();
+  const rows = await db
+    .select({ termCode: offerings.termCode })
+    .from(offerings)
+    .where(eq(offerings.courseId, courseId));
+  return rows.map((r) => r.termCode);
 }
 
 /** Count the catalog for the landing page's honest "N courses" line (#20). */

@@ -421,6 +421,18 @@ td.muted {
   border-radius: 6px;
   padding: 3px 9px;
 }
+/* "Typically offered: Fall, Spring" — the Banner-derived rollup badge (#23).
+   Same pill treatment as the catalog stamp; no uppercase, the semester list
+   reads as prose. */
+.offered-stamp {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-chip);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 3px 9px;
+}
 .retired-note {
   margin: 12px 0 0;
   font-size: 13px;
