@@ -2,6 +2,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import type { PlaceholderRow } from "@/domain";
 import type { BrowseCourse } from "@/lib/browse";
 import type { CourseDetail } from "@/lib/course-detail";
+import type { PrereqCatalogRow } from "@/lib/prereqs";
 import { getDb } from "./client";
 import { courses, placeholder } from "./schema";
 
@@ -118,6 +119,37 @@ export async function getCourseByCode(
     workload: null,
     reviewCount: 0,
   };
+}
+
+/**
+ * Load every course's code, title, status, and verbatim prereq prose for the
+ * Prerequisites/Unlocks graph (issue #22). The course page derives BOTH
+ * directions from this one snapshot via `buildCoursePrereqView` — a course's own
+ * prerequisites AND its inverse "Unlocks" (the courses that require it) — so the
+ * two can never disagree (§6). The whole COMP catalog is small, and the read is
+ * cached behind the course page's `catalog` ISR tag, so loading all rows to
+ * compute one course's graph is cheap. `prereqText` is the same verbatim prose
+ * the parser structures; a null is a course with no listed prerequisites.
+ * Retired courses are included, not filtered — they keep their pages, so they
+ * stay valid Unlocks targets (matching {@link listCourses}).
+ */
+export async function listPrereqRows(): Promise<PrereqCatalogRow[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      subject: courses.subject,
+      number: courses.number,
+      title: courses.title,
+      prereqText: courses.prereqText,
+    })
+    .from(courses);
+
+  return rows.map((r) => ({
+    subject: r.subject,
+    number: r.number,
+    title: r.title,
+    prereqText: r.prereqText,
+  }));
 }
 
 /** Count the catalog for the landing page's honest "N courses" line (#20). */

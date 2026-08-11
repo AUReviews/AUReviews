@@ -488,6 +488,75 @@ td.muted {
   color: var(--text-primary);
 }
 
+/* Prerequisites / Unlocks chips (issue #22). A requirement is a conjunction of
+   groups stacked top-to-bottom (all required); a group with more than one chip
+   is a "one of" disjunction. */
+.req-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.req-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.req-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.req-conj {
+  font-size: 12px;
+  color: var(--text-body);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.req-fallback {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+.req-coreq {
+  margin-top: 16px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: var(--bg-chip);
+  border: 1px solid var(--border-default);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+a.chip-link {
+  color: var(--link);
+  transition: background 0.12s ease;
+}
+a.chip-link:hover {
+  background: var(--bg-chip-alt);
+}
+.chip-grade {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-body);
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg-chip-alt);
+}
+
 .no-reviews {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);

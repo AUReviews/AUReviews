@@ -27,6 +27,16 @@ export {
   type PlanIngestOptions,
   planIngest,
 } from "./crosswalk";
+export {
+  type ParsedPrereqs,
+  type PrereqCourseRef,
+  type PrereqGroup,
+  type PrereqRelation,
+  type PrereqRequirement,
+  parsePrereqs,
+  prereqCodeKey,
+  prerequisiteEdges,
+} from "./prereq";
 export { type PlaceholderRow, formatPlaceholder } from "./placeholder";
 export {
   type IdentityHash,

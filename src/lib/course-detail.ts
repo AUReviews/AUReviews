@@ -73,6 +73,37 @@ export function formatCatalogYear(catalogYear: string): string {
   return `${catalogYear.trim().replace(/-/g, "–")} catalog`;
 }
 
+// A `Pr.`/`Coreq.` clause, marker through the first terminating period — the
+// same shape the ingest lifts into `prereqText` and the parser structures.
+const PREREQ_CLAUSE_RE = /(?:Pr\.|Coreq\.)[^.]*\./g;
+// The leading run of bulletin contact-type codes and their hour numbers that
+// heads a course body (`LEC. 3. LAB. 3.`). An allowlist, not a generic all-caps
+// match, so a description that opens on a real abbreviation (`AI, …`) is safe.
+const LOAD_PREFIX_RE =
+  /^\s*(?:(?:LEC|LAB|REC|SEM|STU|FLD|IND|LST|SU)\.\s*|LEC\/LAB\.\s*|\d+\.\s*)+/;
+
+/**
+ * Clean a raw bulletin course body into just its prose description for display
+ * (issue #22). The stored `description` is the lossless body — it still carries
+ * the `LEC./LAB.` contact-hour breakdown (now in the header credit line) and the
+ * `Pr./Coreq.` prerequisite prose (now the Prerequisites/Unlocks chips). This
+ * drops that duplicated scaffolding: every `Pr.`/`Coreq.` clause, then the
+ * leading run of contact-type codes. Returns null when only scaffolding remains
+ * (or there was no description), so the page shows its "No catalog description on
+ * file." state. Purely presentational — the lossless body stays in the DB.
+ */
+export function formatCourseDescription(
+  description: string | null,
+): string | null {
+  if (!description) return null;
+  const cleaned = description
+    .replace(PREREQ_CLAUSE_RE, " ")
+    .replace(LOAD_PREFIX_RE, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned || null;
+}
+
 /** Link to a course's detail page. */
 export function courseHref(subject: string, number: string): string {
   return `/courses/${courseSlug(subject, number)}`;
