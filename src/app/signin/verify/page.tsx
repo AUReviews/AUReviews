@@ -9,7 +9,7 @@ export default function VerifyRequestPage() {
     <main style={{ maxWidth: 440, margin: "4rem auto", padding: "0 1.5rem" }}>
       <h1 style={{ marginBottom: "0.25rem" }}>Check your email</h1>
       <p style={{ color: "#444" }}>
-        If that address is a valid Auburn affiliate address, a single-use sign-in
+        If that address is a valid Auburn student address, a single-use sign-in
         link is on its way. It expires in about 30 minutes.
       </p>
       <p style={{ fontSize: "0.85rem", color: "#888", marginTop: "1.5rem" }}>

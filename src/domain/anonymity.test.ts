@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeIdentityHash,
-  isAuburnAffiliateEmail,
+  isAuburnStudentEmail,
   normalizeEmail,
 } from "./anonymity";
 
@@ -18,35 +18,35 @@ describe("normalizeEmail", () => {
   });
 });
 
-describe("isAuburnAffiliateEmail", () => {
+describe("isAuburnStudentEmail", () => {
   it("accepts @auburn.edu", () => {
-    expect(isAuburnAffiliateEmail("abc1234@auburn.edu")).toBe(true);
+    expect(isAuburnStudentEmail("abc1234@auburn.edu")).toBe(true);
   });
 
   it("accepts @tigermail.auburn.edu", () => {
-    expect(isAuburnAffiliateEmail("abc1234@tigermail.auburn.edu")).toBe(true);
+    expect(isAuburnStudentEmail("abc1234@tigermail.auburn.edu")).toBe(true);
   });
 
   it("is case- and whitespace-insensitive", () => {
-    expect(isAuburnAffiliateEmail("  ABC1234@AUBURN.EDU  ")).toBe(true);
+    expect(isAuburnStudentEmail("  ABC1234@AUBURN.EDU  ")).toBe(true);
   });
 
   it("rejects non-Auburn domains", () => {
-    expect(isAuburnAffiliateEmail("someone@gmail.com")).toBe(false);
-    expect(isAuburnAffiliateEmail("someone@ua.edu")).toBe(false);
+    expect(isAuburnStudentEmail("someone@gmail.com")).toBe(false);
+    expect(isAuburnStudentEmail("someone@ua.edu")).toBe(false);
   });
 
   it("rejects look-alike domains that merely contain the string", () => {
     // Substring matches must not pass — only a true suffix on the domain.
-    expect(isAuburnAffiliateEmail("attacker@auburn.edu.evil.com")).toBe(false);
-    expect(isAuburnAffiliateEmail("attacker@notauburn.edu")).toBe(false);
-    expect(isAuburnAffiliateEmail("attacker@fauburn.edu")).toBe(false);
+    expect(isAuburnStudentEmail("attacker@auburn.edu.evil.com")).toBe(false);
+    expect(isAuburnStudentEmail("attacker@notauburn.edu")).toBe(false);
+    expect(isAuburnStudentEmail("attacker@fauburn.edu")).toBe(false);
   });
 
   it("rejects malformed / empty input", () => {
-    expect(isAuburnAffiliateEmail("")).toBe(false);
-    expect(isAuburnAffiliateEmail("not-an-email")).toBe(false);
-    expect(isAuburnAffiliateEmail("@auburn.edu")).toBe(false);
+    expect(isAuburnStudentEmail("")).toBe(false);
+    expect(isAuburnStudentEmail("not-an-email")).toBe(false);
+    expect(isAuburnStudentEmail("@auburn.edu")).toBe(false);
   });
 });
 

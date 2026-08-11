@@ -31,6 +31,6 @@ export { type PlaceholderRow, formatPlaceholder } from "./placeholder";
 export {
   type IdentityHash,
   computeIdentityHash,
-  isAuburnAffiliateEmail,
+  isAuburnStudentEmail,
   normalizeEmail,
 } from "./anonymity";

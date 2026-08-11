@@ -1,7 +1,7 @@
 /**
  * Anonymity core (v1-spec §7, research/edu-verification-auth.md §4).
  *
- * The three load-bearing pure functions behind "verify an Auburn affiliate, then
+ * The three load-bearing pure functions behind "verify an Auburn student, then
  * hold only a non-reversible token." This module is deliberately framework- and
  * persistence-agnostic (ADR 0002 boundary): it takes a pepper and an email and
  * returns values; it never reads env, a DB, or a request. The auth layer
@@ -14,7 +14,7 @@
  */
 import { createHmac } from "node:crypto";
 
-/** The two deliverable Auburn affiliate domains (v1-spec §7). Both resolve to
+/** The two deliverable Auburn student domains (v1-spec §7). Both resolve to
  * the same person; either is accepted. */
 const AUBURN_DOMAINS = ["auburn.edu", "tigermail.auburn.edu"] as const;
 
@@ -35,11 +35,11 @@ export function normalizeEmail(email: string): string {
 }
 
 /**
- * True iff the address is a verified-Auburn-affiliate address — the §7 gate,
+ * True iff the address is a verified-Auburn-student address — the §7 gate,
  * applied "before doing anything else." Matches on the domain as a whole label,
  * not a substring, so `auburn.edu.evil.com` and `notauburn.edu` are rejected.
  */
-export function isAuburnAffiliateEmail(email: string): boolean {
+export function isAuburnStudentEmail(email: string): boolean {
   const normalized = normalizeEmail(email);
   const at = normalized.lastIndexOf("@");
   // Reject no-`@`, empty local part, or empty domain.

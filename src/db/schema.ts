@@ -106,7 +106,7 @@ export const crosswalkPending = pgTable("crosswalk_pending", {
 });
 
 /**
- * Verified-affiliate identities (v1-spec §7, research §4 option C; issue #19).
+ * Verified-student identities (v1-spec §7, research §4 option C; issue #19).
  *
  * This is BOTH the anonymity store and the Auth.js "user" table. It holds only a
  * non-reversible `identity_hash = HMAC(PEPPER, normalize(email))` and when it was

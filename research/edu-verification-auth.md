@@ -26,7 +26,7 @@ Every non-obvious claim is cited. Where a primary source could not be read direc
 ### Alumni retention
 
 - Auburn maintains **alumni/retiree email**: there is a dedicated IT knowledge-base article, "Microsoft Multi-Factor Authentication (MFA) Overview: Alumni and Retiree Email" (KB0011897), and a KB "Email after Graduation or Retirement" (KB0012546). The existence of an alumni-email MFA procedure is strong evidence that **graduates keep a working Auburn mailbox.** ([Auburn IT Service Portal search results listing KB0011897 and KB0012546](https://auburn.service-now.com/it?id=kb_article_view&sysparm_article=KB0012546))
-- **[uncertain — confirm]**: the exact grace period, whether the address changes on transition to alumni status, and any long-term deletion policy. The Auburn IT portal (`auburn.service-now.com`) is a JavaScript SPA and its article bodies could not be fetched as static text; the article *titles* are visible in search but the *terms* are not. Product decision this feeds: **if alumni retain a working address, alumni can and will review** — good for cold-start review volume, but it widens the eligible population and means "is a current student" is not something we can assert, only "has/had an Auburn mailbox." Design the copy and data model to say "verified Auburn affiliate," not "current student."
+- **[uncertain — confirm]**: the exact grace period, whether the address changes on transition to alumni status, and any long-term deletion policy. The Auburn IT portal (`auburn.service-now.com`) is a JavaScript SPA and its article bodies could not be fetched as static text; the article *titles* are visible in search but the *terms* are not. Product decision this feeds: **if alumni retain a working address, alumni can and will review** — good for cold-start review volume, but it widens the eligible population and means "is a current student" is not something we can assert, only "has/had an Auburn mailbox." The later product decision (v1-spec §7) calls verified users "Auburn students" in copy — while keeping the honest caveat that verification proves mailbox control, not enrollment.
 
 ---
 
@@ -114,7 +114,7 @@ Microsoft additionally weighs **identity alignment** — the From domain, DKIM `
 ## 4. Anonymity architecture (the part most likely to be gotten wrong)
 
 The goal has three requirements in tension:
-1. **Prove** a review came from a verified Auburn affiliate.
+1. **Prove** a review came from a verified Auburn student.
 2. **Enforce** one review per course per person (and support edit/delete of *your own* review).
 3. **Make it hard for anyone — including a subpoena — to map a published review back to an email address.**
 
@@ -169,7 +169,7 @@ This gives you: display anonymity, one-per-course, working edit/delete, resistan
 
 **What .edu verification does NOT stop, even done perfectly:**
 - **Alias farming (bounded).** A real student can request an alias (section 1), giving them a second/third deliverable address = a second/third `identity_hash` = the ability to post multiple reviews to the same course. Bounded by the friction of requesting aliases, so this is "a few sockpuppets per determined person," not mass astroturfing.
-- **Alumni and any current affiliate** can review (section 1). "Verified" means "controls an Auburn mailbox," not "took this course." Nothing about email verification proves enrollment in COMP 3500. A determined actor can review courses they never took.
+- **Alumni and any current student** can review (section 1). "Verified" means "controls an Auburn mailbox," not "took this course." Nothing about email verification proves enrollment in COMP 3500. A determined actor can review courses they never took.
 - **Ballot-stuffing within the population.** Verification gates *who* can post, not *what* they post. A cluster of real students can coordinate to inflate/tank a course or instructor. This is a content/moderation problem, not an auth problem — flag it to the moderation ticket.
 - **No stop on defamatory or false content** — again a moderation concern, not solved here.
 

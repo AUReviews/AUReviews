@@ -185,7 +185,7 @@ Free forever, full schema control, lowest lock-in. Clerk was rejected (domain al
 
 **What this buys, stated honestly:** a database breach or a "produce the database" subpoena yields only non-reversible hashes. A **targeted** court order compelling the pepper *and* a suspected address can still confirm authorship of one specific review — a deliberate, documented residual, not a gap (§10).
 
-**Alumni.** Auburn retains alumni/retiree email access, so **alumni can and do review.** Copy should say "verified Auburn affiliate," never "current student" — nothing about email verification proves current enrollment or that the reviewer took the specific course.
+**Audience.** The site is built for current Auburn students planning their courses, and user-facing copy calls verified users **"Auburn students."** Eligibility is email-based, so it is technically broader than current enrollment — Auburn retains alumni/retiree email, and email verification proves mailbox control, never enrollment or that the reviewer took the specific course. That is an accepted, documented limit (see "Known, accepted abuse ceiling" below and §10), not something the copy claims away.
 
 **Rate limits:**
 - Email-send throttle: ≤3 sends/address/hour, ≤10 sends/IP/hour, global ceiling well under Resend's 100/day.
