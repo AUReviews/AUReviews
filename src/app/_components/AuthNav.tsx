@@ -13,7 +13,7 @@ export default function AuthNav() {
   if (status === "authenticated") {
     return (
       <span style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem" }}>
-        <span style={{ color: "#0a7" }}>Verified Auburn affiliate</span>
+        <span style={{ color: "#0a7" }}>Verified Auburn student</span>
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}

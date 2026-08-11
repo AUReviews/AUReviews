@@ -19,7 +19,7 @@
  */
 import NextAuth from "next-auth";
 import Resend from "next-auth/providers/resend";
-import { isAuburnAffiliateEmail, normalizeEmail } from "@/domain";
+import { isAuburnStudentEmail, normalizeEmail } from "@/domain";
 import { createHashingAdapter } from "./adapter";
 import { sendMagicLinkEmail } from "./mailer";
 
@@ -50,7 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async sendVerificationRequest({ identifier, url }) {
         // Defense in depth: the signIn callback already rejected non-Auburn
         // addresses, but never deliver to one even on an unexpected code path.
-        if (!isAuburnAffiliateEmail(identifier)) {
+        if (!isAuburnStudentEmail(identifier)) {
           throw new Error("Refusing to send to a non-Auburn address.");
         }
         await sendMagicLinkEmail({ to: identifier, url, from: fromAddress() });
@@ -64,7 +64,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // carries no email; by then Auburn control is already proven, so allow it.
     signIn({ user, email }) {
       if (email?.verificationRequest) {
-        return isAuburnAffiliateEmail(user.email ?? "");
+        return isAuburnStudentEmail(user.email ?? "");
       }
       return true;
     },

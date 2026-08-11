@@ -5,7 +5,7 @@
  * DMARC are a DNS launch-checklist item, not code — v1-spec §7). When
  * `RESEND_API_KEY` is absent (local dev, tests), we fall back to logging the link
  * to the server console so the whole verify flow is exercisable without a key or
- * a real mailbox. The copy says "verified Auburn affiliate," never "current
+ * a real mailbox. The copy says "verified Auburn student," never "current
  * student" — alumni can review (v1-spec §7).
  */
 import { Resend } from "resend";
@@ -16,7 +16,7 @@ function subject(): string {
 
 function textBody(url: string): string {
   return [
-    "Sign in to AUReviews as a verified Auburn affiliate.",
+    "Sign in to AUReviews as a verified Auburn student.",
     "",
     "Click the link below to finish signing in. It is single-use and expires soon:",
     url,
@@ -30,7 +30,7 @@ function textBody(url: string): string {
 function htmlBody(url: string): string {
   return `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;color:#111">
   <h2 style="margin:0 0 .5rem">Sign in to AUReviews</h2>
-  <p>Sign in as a <strong>verified Auburn affiliate</strong>. This link is single-use and expires soon.</p>
+  <p>Sign in as a <strong>verified Auburn student</strong>. This link is single-use and expires soon.</p>
   <p><a href="${url}" style="display:inline-block;padding:.6rem 1rem;background:#0a7;color:#fff;border-radius:6px;text-decoration:none">Finish signing in</a></p>
   <p style="font-size:.85rem;color:#555">Or paste this URL into your browser:<br>${url}</p>
   <p style="font-size:.75rem;color:#888;margin-top:2rem">If you didn't request this, ignore this email — no account is created until the link is used.<br>
