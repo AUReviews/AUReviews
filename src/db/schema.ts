@@ -1,7 +1,9 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   foreignKey,
   index,
+  integer,
   jsonb,
   pgTable,
   primaryKey,
@@ -224,6 +226,103 @@ export const identities = pgTable("identities", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * User-authored reviews (v1-spec §4; issue #24). The one permanent, append-only
+ * Review-side record. References the durable `Course.id` and an optional durable
+ * `Instructor.id` — both captured at write time, so no catalog refresh ever
+ * moves a review (ADR 0001/0002); an import never touches this table.
+ *
+ * The instructor field is *required* at the form, but resolves to one of three
+ * things: a real `instructorId`, or an explicit unknown recorded in
+ * `instructorUnknown` (`not-listed` | `dont-remember`) with `instructorId` null.
+ * An explicit unknown beats a bare null (§4) — a null `instructorId` with a null
+ * `instructorUnknown` is never written.
+ *
+ * The optional "Course details" zone (`workloadShape` … `prep`) never blocks
+ * submission (§4); multi-selects are stored as jsonb arrays, single-selects as
+ * text, all nullable.
+ *
+ * `identityHash` is the author's HMAC token (§7), stored so an operator can
+ * correlate one person's reviews — deliberately NOT a uniqueness key: there is
+ * NO `(identity_hash, course_id)` unique index, so multiple correlated reviews
+ * per person per course are allowed (§4 contradiction callout). `status`
+ * defaults to `published`; `edited`/`contested` back the moderation flows (§11).
+ */
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    courseId: uuid("course_id")
+      .notNull()
+      .references(() => courses.id),
+    // Null when the author chose an unknown escape; then `instructorUnknown`
+    // carries which one. Never both null (an explicit unknown beats a null, §4).
+    instructorId: uuid("instructor_id").references(() => instructors.id),
+    // null | 'not-listed' | 'dont-remember' — the two §4 escape hatches.
+    instructorUnknown: text("instructor_unknown"),
+    // The validated Banner `YYYYT0` code of the term the review describes. The
+    // actual term is always stored; the rolling window (§4) governs only what
+    // can be selected at submit time, never what persists here.
+    termCode: text("term_code").notNull(),
+    // Required core (§4): 1–5, 1–5, 1–40. Ranges are enforced at the door
+    // (domain/review.ts) and re-checked in the submit action.
+    overall: integer("overall").notNull(),
+    difficulty: integer("difficulty").notNull(),
+    workloadHours: integer("workload_hours").notNull(),
+    // Free text, ≥100 chars (door-blocked, §11). No maximum.
+    body: text("body").notNull(),
+    // Optional "Course details" (§4) — none can block submission.
+    workloadShape: jsonb("workload_shape")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    grade: text("grade"),
+    languages: jsonb("languages").notNull().default(sql`'[]'::jsonb`),
+    languagesOther: text("languages_other"),
+    curved: text("curved"),
+    attendance: text("attendance"),
+    prep: text("prep"),
+    // System fields (§4). `identity_hash` is correlation-only, NOT unique here.
+    identityHash: text("identity_hash").notNull(),
+    // 'published' (default) | 'pending' | 'removed' | 'deleted' — text, no enum,
+    // so the panic-switch/takedown states need no migration (§4/§11).
+    status: text("status").notNull().default("published"),
+    edited: boolean("edited").notNull().default(false),
+    contested: boolean("contested").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // Aggregates and the by-instructor breakdown (§5) scan by course; the author
+    // correlation trail (§7) scans by identity. Neither index is unique — the
+    // absence of a `(identity_hash, course_id)` unique constraint is deliberate.
+    index("reviews_course_idx").on(t.courseId),
+    index("reviews_identity_idx").on(t.identityHash),
+  ],
+);
+
+/**
+ * Per-voter helpful votes (v1-spec §4/§5; issue #24). Votes are retractable and
+ * flippable (§10), so they are tracked per voter — one row per
+ * `(review, identity)` — not as two bare counters on the review. `direction` is
+ * `up` | `down`; the composite primary key makes a re-vote an upsert and caps
+ * each identity at one live vote per review. Removing the row is a retraction.
+ */
+export const reviewVotes = pgTable(
+  "review_votes",
+  {
+    reviewId: uuid("review_id")
+      .notNull()
+      .references(() => reviews.id, { onDelete: "cascade" }),
+    identityHash: text("identity_hash").notNull(),
+    direction: text("direction").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.reviewId, t.identityHash] })],
+);
 
 /**
  * Auth.js database sessions (issue #19). An opaque `session_token` cookie maps

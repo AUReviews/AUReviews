@@ -1,10 +1,17 @@
 import { and, desc, eq, sql } from "drizzle-orm";
-import type { PlaceholderRow } from "@/domain";
+import type { InstructorUnknown, PlaceholderRow } from "@/domain";
 import type { BrowseCourse } from "@/lib/browse";
 import type { CourseDetail } from "@/lib/course-detail";
 import type { PrereqCatalogRow } from "@/lib/prereqs";
 import { getDb } from "./client";
-import { courses, offerings, placeholder } from "./schema";
+import {
+  courses,
+  instructors,
+  offeringInstructors,
+  offerings,
+  placeholder,
+  reviews,
+} from "./schema";
 
 /**
  * Read the newest placeholder row — the skeleton's DB proof-of-life. Returns
@@ -166,6 +173,99 @@ export async function listOfferingTermCodes(courseId: string): Promise<string[]>
     .from(offerings)
     .where(eq(offerings.courseId, courseId));
   return rows.map((r) => r.termCode);
+}
+
+/** One instructor eligible for a course's review-form dropdown (issue #24). */
+export interface CourseInstructor {
+  id: string;
+  displayName: string;
+}
+
+/**
+ * The instructors who have taught a course, for the review form's *scoped*
+ * instructor dropdown (§4/§7; issue #24). Derived from the Banner
+ * instructor-of-record links on the course's Offerings — the same data the
+ * by-instructor breakdown (§5) is built from — so the dropdown offers exactly
+ * the people who actually taught it, never the whole faculty. Distinct by
+ * durable Instructor id and ordered by display name for a stable list. The two
+ * "unknown" escapes (§4) are added by the form, not here — they aren't
+ * instructors. An empty array is a course with no ingested offering history,
+ * where the form falls back to the escapes alone.
+ */
+export async function listCourseInstructors(
+  courseId: string,
+): Promise<CourseInstructor[]> {
+  const db = getDb();
+  const rows = await db
+    .selectDistinct({
+      id: instructors.id,
+      displayName: instructors.displayName,
+    })
+    .from(offeringInstructors)
+    .innerJoin(instructors, eq(offeringInstructors.instructorId, instructors.id))
+    .where(eq(offeringInstructors.courseId, courseId))
+    .orderBy(instructors.displayName);
+
+  return rows.map((r) => ({ id: r.id, displayName: r.displayName }));
+}
+
+/**
+ * The persisted shape of a validated review submission (issue #24). The caller
+ * (the submit action) has already run the full §4/§11 gate and resolved the
+ * instructor choice into `instructorId` XOR `instructorUnknown`; this layer only
+ * writes. Optional "Course details" arrive as already-normalized arrays/strings.
+ */
+export interface NewReview {
+  courseId: string;
+  instructorId: string | null;
+  instructorUnknown: InstructorUnknown | null;
+  termCode: string;
+  overall: number;
+  difficulty: number;
+  workloadHours: number;
+  body: string;
+  identityHash: string;
+  workloadShape: string[];
+  grade: string | null;
+  languages: string[];
+  languagesOther: string | null;
+  curved: string | null;
+  attendance: string | null;
+  prep: string | null;
+}
+
+/**
+ * Insert a review (issue #24) and return its new id. `status` defaults to
+ * `published` (§4/§11 publish-on-submit) via the schema. There is deliberately
+ * NO pre-insert dedupe on `(identity_hash, course_id)` — multiple correlated
+ * reviews per person per course are allowed (§4), so a second submission simply
+ * inserts a second row. The row's durable `courseId`/`instructorId` are captured
+ * here at write time and never moved by a later import (ADR 0001/0002).
+ */
+export async function insertReview(review: NewReview): Promise<string> {
+  const db = getDb();
+  const [row] = await db
+    .insert(reviews)
+    .values({
+      courseId: review.courseId,
+      instructorId: review.instructorId,
+      instructorUnknown: review.instructorUnknown,
+      termCode: review.termCode,
+      overall: review.overall,
+      difficulty: review.difficulty,
+      workloadHours: review.workloadHours,
+      body: review.body,
+      identityHash: review.identityHash,
+      workloadShape: review.workloadShape,
+      grade: review.grade,
+      languages: review.languages,
+      languagesOther: review.languagesOther,
+      curved: review.curved,
+      attendance: review.attendance,
+      prep: review.prep,
+    })
+    .returning({ id: reviews.id });
+  return row.id;
 }
 
 /** Count the catalog for the landing page's honest "N courses" line (#20). */
