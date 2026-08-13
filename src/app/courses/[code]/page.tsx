@@ -433,11 +433,12 @@ function NoReviewsCta({
 }
 
 // The course headline (§5): three separate metrics — never a composite — one
-// per row, with WORKLOAD as the hero row (first and largest; the north-star
-// metric, §4). Averages are already gated by the N ≥ 2 low-data rule before
-// they get here (`getCourseAggregates`), so a sub-threshold course shows "—"
-// with its true count; the note says why. The headline is course-wide and
-// fixed — the Reviews tab's instructor filter never touches it.
+// per row, equal weight, in Overall / Difficulty / Workload order (the
+// maintainer's chosen presentation over §5's hero-tile emphasis). Averages
+// are already gated by the N ≥ 2 low-data rule before they get here
+// (`getCourseAggregates`), so a sub-threshold course shows "—" with its true
+// count; the note says why. The headline is course-wide and fixed — the
+// Reviews tab's instructor filter never touches it.
 function Metrics({ aggregates }: { aggregates: CourseAggregates }) {
   const n = aggregates.reviewCount;
   const note =
@@ -450,12 +451,6 @@ function Metrics({ aggregates }: { aggregates: CourseAggregates }) {
   return (
     <div className="stats">
       <MetricRow
-        label="Workload"
-        unit="hrs/wk"
-        value={formatAverage(aggregates.workload, n)}
-        hero
-      />
-      <MetricRow
         label="Overall"
         unit="/5"
         value={formatAverage(aggregates.overall, n)}
@@ -464,6 +459,11 @@ function Metrics({ aggregates }: { aggregates: CourseAggregates }) {
         label="Difficulty"
         unit="/5"
         value={formatAverage(aggregates.difficulty, n)}
+      />
+      <MetricRow
+        label="Workload"
+        unit="hrs/wk"
+        value={formatAverage(aggregates.workload, n)}
       />
       <p className="stats-note">{note}</p>
     </div>
@@ -474,15 +474,13 @@ function MetricRow({
   label,
   unit,
   value,
-  hero = false,
 }: {
   label: string;
   unit: string;
   value: string;
-  hero?: boolean;
 }) {
   return (
-    <div className={`stat-row${hero ? " hero" : ""}`}>
+    <div className="stat-row">
       <span className="lbl">{label}</span>
       <strong className={`val${value === "—" ? " muted" : ""}`}>
         {value}

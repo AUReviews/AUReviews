@@ -1020,15 +1020,6 @@ a.chip-link:hover {
 
 /* ---- Reviews, aggregates, by-instructor breakdown (issue #25, §5) -------- */
 
-/* The three-metric headline: one full-width .stat-row per metric, workload
-   first and largest — the hero row (§5). */
-.stat-row.hero .lbl {
-  color: var(--text-secondary);
-}
-.stat-row.hero .val {
-  font-size: 28px;
-}
-
 /* Review list (ported from prototype/index.html's review cards). */
 .stack {
   display: flex;
