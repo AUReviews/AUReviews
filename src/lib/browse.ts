@@ -14,8 +14,9 @@
 export type CourseStatus = "active" | "retired";
 
 /** One row of the browse table. The three averages are `null` until a course
- * has N ≥ 2 reviews (§5's low-data rule); `reviewCount` is always the true N.
- * All averages are `null` / `reviewCount` 0 in v1 until reviews land (#6). */
+ * clears the low-data gate (`gateAverage` in domain/aggregate.ts — the db
+ * layer nulls them before they get here); `reviewCount` is always the true
+ * N. */
 export interface BrowseCourse {
   id: string;
   subject: string;
@@ -139,17 +140,18 @@ export function sortBrowseCourses(
 }
 
 /**
- * Render a metric average for the table (§5). Returns "—" whenever there is no
- * computed average — either the value is `null` or N < 2 (the low-data rule:
- * one data point never earns a headline number). Otherwise, two decimals.
+ * Render a metric average (§5): two decimals, or "—" when there is no
+ * computed average. A `null` here means the low-data gate already withheld it
+ * (`gateAverage` — the single place the threshold lives); this function only
+ * formats.
  */
-export function formatAverage(value: number | null, reviewCount: number): string {
-  if (value === null || reviewCount < 2) return "—";
+export function formatAverage(value: number | null): string {
+  if (value === null) return "—";
   return value.toFixed(2);
 }
 
-/** Render the true review count — shown even when it's 0 or 1, since data is
- * never hidden; only the computed average waits for N ≥ 2 (§5). */
+/** Render the true review count — shown even when it's 0, since data is never
+ * hidden; only the computed average waits for the low-data gate (§5). */
 export function formatReviewCount(reviewCount: number): string {
   return String(reviewCount);
 }

@@ -57,7 +57,7 @@ export async function getLatestPlaceholder(): Promise<PlaceholderRow | null> {
  *
  * The rating columns aggregate each course's published reviews in SQL — plain
  * arithmetic means (§5), computed at revalidation time — then pass §5's low-data
- * gate: below N = 2 the averages are `null`ed so the row renders "—" (and sinks
+ * gate: below its threshold the averages are `null`ed so the row renders "—" (and sinks
  * under a rating sort) while `reviewCount` stays the true N. The submission
  * window (§4) gates what can be *submitted*, never what is counted — every
  * published review is in the aggregate, with no recency decay (§5). Retired
@@ -332,7 +332,7 @@ export async function insertReview(review: NewReview): Promise<string> {
 }
 
 /** A course's headline numbers (§5; issue #25): averages already gated under
- * the N ≥ 2 low-data rule, count always the true N. */
+ * the low-data rule, count always the true N. */
 export interface CourseAggregates {
   overall: number | null;
   difficulty: number | null;
@@ -343,7 +343,7 @@ export interface CourseAggregates {
 /**
  * The course-wide headline aggregates (§5; issue #25): plain arithmetic means
  * over the course's published reviews, computed in SQL at revalidation time and
- * gated under N ≥ 2 before they leave this layer. Deliberately NOT behind the
+ * run through the low-data gate before they leave this layer. Deliberately NOT behind the
  * "catalog" tag — the course page reads this fresh on every (re)render, so a
  * review submit's `revalidatePath` refreshes the headline without an import.
  * The headline is fixed course-wide and never mutates on an instructor filter
@@ -456,7 +456,7 @@ export async function listCourseReviews(
  * Raw per-instructor aggregates over a course's published reviews (§5; issue
  * #25) — the review side of the by-instructor breakdown. UNGATED here: the
  * pure `buildInstructorRows` merges these with the taught-instructor list
- * ({@link listCourseInstructors}) and applies the N ≥ 2 gate per row, so the
+ * ({@link listCourseInstructors}) and applies the low-data gate per row, so the
  * low-data rule lives in one testable place. Reviews recording an §4 unknown
  * have no instructor and are course-wide only — they appear in the headline
  * and the list, never in a breakdown row.

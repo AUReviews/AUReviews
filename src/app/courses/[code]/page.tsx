@@ -437,35 +437,29 @@ function NoReviewsCta({
 // The course headline (§5): three separate metrics — never a composite — one
 // per row, equal weight, in Overall / Difficulty / Workload order (the
 // maintainer's chosen presentation over §5's hero-tile emphasis). Averages
-// are already gated by the N ≥ 2 low-data rule before they get here
+// are already run through the low-data gate before they get here
 // (`getCourseAggregates`), so a sub-threshold course shows "—" with its true
-// count; the note says why. The headline is course-wide and fixed — the
-// Reviews tab's instructor filter never touches it.
+// count. The headline is course-wide and fixed — the Reviews tab's instructor
+// filter never touches it.
 function Metrics({ aggregates }: { aggregates: CourseAggregates }) {
   const n = aggregates.reviewCount;
   const note =
-    n >= 2
-      ? `Averages over ${n} reviews.`
-      : n === 1
-        ? "1 review — averages appear once a course has two or more."
-        : "No reviews yet — averages appear once a course has two or more.";
+    n === 0
+      ? "No reviews yet — be the first to write one."
+      : `Averages over ${n} ${n === 1 ? "review" : "reviews"}.`;
 
   return (
     <div className="stats">
-      <MetricRow
-        label="Overall"
-        unit="/5"
-        value={formatAverage(aggregates.overall, n)}
-      />
+      <MetricRow label="Overall" unit="/5" value={formatAverage(aggregates.overall)} />
       <MetricRow
         label="Difficulty"
         unit="/5"
-        value={formatAverage(aggregates.difficulty, n)}
+        value={formatAverage(aggregates.difficulty)}
       />
       <MetricRow
         label="Workload"
         unit="hrs/wk"
-        value={formatAverage(aggregates.workload, n)}
+        value={formatAverage(aggregates.workload)}
       />
       <p className="stats-note">{note}</p>
     </div>

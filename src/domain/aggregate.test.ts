@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { gateAverage, gateAverages, wilsonLowerBound } from "./aggregate";
 
-describe("gateAverage — the N ≥ 2 low-data rule (§5)", () => {
-  it("returns the average once a course has two or more reviews", () => {
+describe("gateAverage — the low-data rule (§5, launch-relaxed to N ≥ 1)", () => {
+  it("returns the average once a course clears the threshold", () => {
+    // The launch threshold is 1: a course's only review already reports its
+    // numbers (maintainer decision; §5's N ≥ 2 restorable via the constant).
+    expect(gateAverage(5, 1)).toBe(5);
     expect(gateAverage(3.125, 2)).toBe(3.125);
     expect(gateAverage(4.5, 17)).toBe(4.5);
   });
 
-  it("withholds the average at N = 1 — one data point never earns a headline", () => {
-    expect(gateAverage(5, 1)).toBeNull();
-  });
-
   it("withholds the average at N = 0", () => {
     expect(gateAverage(null, 0)).toBeNull();
+    expect(gateAverage(5, 0)).toBeNull();
   });
 
   it("treats a missing average as withheld regardless of the count", () => {
@@ -25,12 +25,12 @@ describe("gateAverage — the N ≥ 2 low-data rule (§5)", () => {
 describe("gateAverages — the gate across the metric triple", () => {
   const triple = { overall: 4, difficulty: 3, workload: 12 };
 
-  it("passes all three through at N ≥ 2", () => {
-    expect(gateAverages(triple, 2)).toEqual(triple);
+  it("passes all three through at the threshold", () => {
+    expect(gateAverages(triple, 1)).toEqual(triple);
   });
 
-  it("withholds all three below N = 2", () => {
-    expect(gateAverages(triple, 1)).toEqual({
+  it("withholds all three below it", () => {
+    expect(gateAverages(triple, 0)).toEqual({
       overall: null,
       difficulty: null,
       workload: null,

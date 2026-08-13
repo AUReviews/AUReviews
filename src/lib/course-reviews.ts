@@ -7,7 +7,7 @@
  * Two §5 rules are centralized in this module:
  *  - the review list's sort options (helpful — the Wilson ranking that sinks
  *    low-quality reviews — plus newest and term; no recency decay anywhere);
- *  - the N ≥ 2 low-data gate applied to each per-instructor row via
+ *  - the low-data gate applied to each per-instructor row via
  *    `gateAverages` (the same gate the course headline and browse rows use).
  */
 import {
@@ -143,7 +143,7 @@ export interface InstructorStats {
   reviewCount: number;
 }
 
-/** One per-instructor row: averages already gated (§5's N ≥ 2 rule), count
+/** One per-instructor row: averages already gated (§5's low-data rule), count
  * always the true N. Feeds the Reviews tab's professor filter tabs (the "By
  * professor" ratings table itself was cut by maintainer decision). */
 export interface InstructorRow {
@@ -161,7 +161,7 @@ export interface InstructorRow {
  * in **neutral order — alphabetical, not ranked**. Instructors who taught but
  * have no reviews get an honest zero row; an instructor with reviews whose
  * offering link a later re-import dropped is kept (reviews are never hidden).
- * Averages are gated per row: a professor with one review shows "—" and N = 1.
+ * Averages are gated per row by the domain's low-data threshold.
  */
 export function buildInstructorRows(
   taught: readonly { id: string; displayName: string }[],

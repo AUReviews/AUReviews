@@ -5,25 +5,35 @@
  * rules layered on top of those raw numbers, so both are unit-testable and
  * applied identically everywhere they appear:
  *
- *   1. the **low-data gate** — a computed average requires N ≥ 2 (course
- *      headline, browse row, each by-instructor row); and
+ *   1. the **low-data gate** — a computed average requires N ≥
+ *      {@link MIN_REVIEWS_FOR_AVERAGE} (course headline, browse row, each
+ *      per-instructor row); and
  *   2. the **Wilson lower bound** the helpful-vote ranking sorts by (§4's
  *      anti-junk model: voting sinks low-quality reviews rather than blocking
  *      them).
  */
 
 /**
- * Apply §5's low-data rule to a raw SQL average: the average is only reportable
- * once a course (or by-instructor row) has N ≥ 2 reviews. Below that — or when
- * SQL had no rows to average — the caller gets `null`, which every surface
- * renders as "—" with the true count still visible. Data is never hidden; only
- * the computed average waits.
+ * How many reviews a course (or per-instructor row) needs before its computed
+ * average is reportable. §5 specifies N ≥ 2, but the maintainer relaxed it to
+ * 1 for launch (2026-08): with a young review pool, hiding a course's only
+ * review's numbers behind "—" buried real signal. Restore §5's rule by setting
+ * this back to 2 — every gate reads it from here.
+ */
+export const MIN_REVIEWS_FOR_AVERAGE = 1;
+
+/**
+ * Apply the low-data rule to a raw SQL average: the average is only reportable
+ * at N ≥ {@link MIN_REVIEWS_FOR_AVERAGE}. Below that — or when SQL had no rows
+ * to average — the caller gets `null`, which every surface renders as "—" with
+ * the true count still visible. Data is never hidden; only the computed
+ * average waits.
  */
 export function gateAverage(
   average: number | null,
   reviewCount: number,
 ): number | null {
-  if (average === null || reviewCount < 2) return null;
+  if (average === null || reviewCount < MIN_REVIEWS_FOR_AVERAGE) return null;
   return average;
 }
 

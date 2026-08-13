@@ -178,22 +178,28 @@ describe("buildInstructorRows", () => {
     expect(rows.map((r) => r.displayName)).toEqual(["Al Adams", "Beth Byrd"]);
   });
 
-  it("shows true counts but gates averages under N ≥ 2", () => {
+  it("shows true counts and withholds averages below the low-data gate", () => {
+    const rows = buildInstructorRows(taught, stats);
+    const beth = rows.find((r) => r.id === "i-b")!;
+    expect(beth.reviewCount).toBe(2);
+    expect(beth.overall).toBe(4.5);
+    // Al taught but has no reviews — an honest zero row with no averages.
+    const al = rows.find((r) => r.id === "i-a")!;
+    expect(al.reviewCount).toBe(0);
+    expect(al.overall).toBeNull();
+  });
+
+  it("passes gated averages through above the threshold", () => {
+    // The launch threshold is 1 (domain MIN_REVIEWS_FOR_AVERAGE), so a
+    // professor's single review already reports its numbers.
     const oneReview: InstructorStats[] = [
       { id: "i-a", displayName: "Al Adams", overall: 5, difficulty: 5, workload: 9, reviewCount: 1 },
     ];
     const rows = buildInstructorRows(taught, oneReview);
     const al = rows.find((r) => r.id === "i-a")!;
     expect(al.reviewCount).toBe(1);
-    expect(al.overall).toBeNull();
-    const beth = rows.find((r) => r.id === "i-b")!;
-    expect(beth.reviewCount).toBe(0);
-    expect(beth.overall).toBeNull();
-  });
-
-  it("passes gated averages through at N ≥ 2", () => {
-    const rows = buildInstructorRows(taught, stats);
-    const beth = rows.find((r) => r.id === "i-b")!;
+    expect(al.overall).toBe(5);
+    const beth = buildInstructorRows(taught, stats).find((r) => r.id === "i-b")!;
     expect(beth.overall).toBe(4.5);
     expect(beth.workload).toBe(12);
   });
