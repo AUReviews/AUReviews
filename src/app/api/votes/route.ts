@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentIdentityHash } from "@/auth/session";
+import { isUuid } from "@/domain";
 import { listViewerVotes } from "@/db/queries";
 
 /**
@@ -12,12 +13,9 @@ import { listViewerVotes } from "@/db/queries";
  */
 export const dynamic = "force-dynamic";
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export async function GET(request: Request): Promise<NextResponse> {
   const courseId = new URL(request.url).searchParams.get("course");
-  if (!courseId || !UUID_RE.test(courseId)) {
+  if (!courseId || !isUuid(courseId)) {
     return NextResponse.json(
       { error: "`course` must be a course id." },
       { status: 400 },

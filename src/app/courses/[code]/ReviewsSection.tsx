@@ -16,7 +16,7 @@ import {
   sortCourseReviews,
   sortInstructorRows,
 } from "@/lib/course-reviews";
-import type { VoteDirection } from "@/db/queries";
+import type { VoteDirection } from "@/domain";
 import { castReviewVote } from "./vote-actions";
 
 // The Reviews tab island (issue #25, §5). All rows arrive as props from the

@@ -27,6 +27,27 @@ export function gateAverage(
   return average;
 }
 
+/** The three §5 metrics as one raw-averages bundle — always reported together
+ * (no composite is ever computed from them). */
+export interface RatingAverages {
+  overall: number | null;
+  difficulty: number | null;
+  workload: number | null;
+}
+
+/** {@link gateAverage} across the metric triple at once — the shape every
+ * aggregate consumer (course headline, browse row, by-instructor row) gates. */
+export function gateAverages(
+  averages: RatingAverages,
+  reviewCount: number,
+): RatingAverages {
+  return {
+    overall: gateAverage(averages.overall, reviewCount),
+    difficulty: gateAverage(averages.difficulty, reviewCount),
+    workload: gateAverage(averages.workload, reviewCount),
+  };
+}
+
 // 95% two-sided confidence — the conventional z for Wilson ranking.
 const WILSON_Z = 1.96;
 

@@ -1,5 +1,10 @@
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
-import { type InstructorUnknown, type PlaceholderRow, gateAverage } from "@/domain";
+import {
+  type InstructorUnknown,
+  type PlaceholderRow,
+  type VoteDirection,
+  gateAverages,
+} from "@/domain";
 import type { BrowseCourse } from "@/lib/browse";
 import type { CourseDetail } from "@/lib/course-detail";
 import type { CourseReview, InstructorStats } from "@/lib/course-reviews";
@@ -18,6 +23,11 @@ import {
 /** Only `published` reviews ever reach an aggregate or a page; `pending`,
  * `removed`, and `deleted` rows drop out of everything immediately (§11). */
 const publishedReviews = () => eq(reviews.status, "published");
+
+/** Tally of joined `review_votes` rows in one direction (issue #25). With a
+ * LEFT JOIN and no votes, the filter counts nothing — an honest zero. */
+const voteTally = (direction: VoteDirection) =>
+  sql<number>`count(*) filter (where ${reviewVotes.direction} = ${direction})::int`;
 
 /**
  * Read the newest placeholder row — the skeleton's DB proof-of-life. Returns
@@ -80,9 +90,7 @@ export async function listCourses(): Promise<BrowseCourse[]> {
     number: r.number,
     title: r.title,
     status: r.status === "retired" ? "retired" : "active",
-    overall: gateAverage(r.overall, r.reviewCount),
-    difficulty: gateAverage(r.difficulty, r.reviewCount),
-    workload: gateAverage(r.workload, r.reviewCount),
+    ...gateAverages(r, r.reviewCount),
     reviewCount: r.reviewCount,
   }));
 }
@@ -320,9 +328,14 @@ export async function getCourseAggregates(
 
   const count = row?.reviewCount ?? 0;
   return {
-    overall: gateAverage(row?.overall ?? null, count),
-    difficulty: gateAverage(row?.difficulty ?? null, count),
-    workload: gateAverage(row?.workload ?? null, count),
+    ...gateAverages(
+      {
+        overall: row?.overall ?? null,
+        difficulty: row?.difficulty ?? null,
+        workload: row?.workload ?? null,
+      },
+      count,
+    ),
     reviewCount: count,
   };
 }
@@ -367,8 +380,8 @@ export async function listCourseReviews(
       attendance: reviews.attendance,
       prep: reviews.prep,
       createdAt: reviews.createdAt,
-      helpfulUp: sql<number>`count(*) filter (where ${reviewVotes.direction} = 'up')::int`,
-      helpfulDown: sql<number>`count(*) filter (where ${reviewVotes.direction} = 'down')::int`,
+      helpfulUp: voteTally("up"),
+      helpfulDown: voteTally("down"),
     })
     .from(reviews)
     .leftJoin(instructors, eq(reviews.instructorId, instructors.id))
@@ -459,9 +472,6 @@ export async function getReviewCourse(
   return row ?? null;
 }
 
-/** A helpful-vote direction; a vote is one of these, never a bare boolean. */
-export type VoteDirection = "up" | "down";
-
 /**
  * Set (or clear) one identity's helpful vote on a review (§4/§5/§10; issue
  * #25). Votes are per-voter rows, retractable and flippable: the composite
@@ -502,10 +512,7 @@ export async function getReviewVoteCounts(
 ): Promise<{ up: number; down: number }> {
   const db = getDb();
   const [row] = await db
-    .select({
-      up: sql<number>`count(*) filter (where ${reviewVotes.direction} = 'up')::int`,
-      down: sql<number>`count(*) filter (where ${reviewVotes.direction} = 'down')::int`,
-    })
+    .select({ up: voteTally("up"), down: voteTally("down") })
     .from(reviewVotes)
     .where(eq(reviewVotes.reviewId, reviewId));
   return { up: row?.up ?? 0, down: row?.down ?? 0 };
@@ -530,6 +537,7 @@ export async function listViewerVotes(
     .where(
       and(
         eq(reviews.courseId, courseId),
+        publishedReviews(),
         eq(reviewVotes.identityHash, identityHash),
       ),
     );

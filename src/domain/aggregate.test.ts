@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gateAverage, wilsonLowerBound } from "./aggregate";
+import { gateAverage, gateAverages, wilsonLowerBound } from "./aggregate";
 
 describe("gateAverage — the N ≥ 2 low-data rule (§5)", () => {
   it("returns the average once a course has two or more reviews", () => {
@@ -19,6 +19,22 @@ describe("gateAverage — the N ≥ 2 low-data rule (§5)", () => {
     // A count without a computable average (e.g. SQL avg over zero joined rows)
     // must never surface a number.
     expect(gateAverage(null, 5)).toBeNull();
+  });
+});
+
+describe("gateAverages — the gate across the metric triple", () => {
+  const triple = { overall: 4, difficulty: 3, workload: 12 };
+
+  it("passes all three through at N ≥ 2", () => {
+    expect(gateAverages(triple, 2)).toEqual(triple);
+  });
+
+  it("withholds all three below N = 2", () => {
+    expect(gateAverages(triple, 1)).toEqual({
+      overall: null,
+      difficulty: null,
+      workload: null,
+    });
   });
 });
 

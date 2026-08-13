@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentIdentityHash } from "@/auth/session";
+import { type VoteDirection, isUuid } from "@/domain";
 import {
-  type VoteDirection,
   getReviewCourse,
   getReviewVoteCounts,
   setReviewVote,
@@ -55,10 +55,4 @@ export async function castReviewVote(
 
   revalidatePath(courseHref(review.subject, review.number));
   return { ok: true, up: counts.up, down: counts.down, myVote: direction };
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    value,
-  );
 }

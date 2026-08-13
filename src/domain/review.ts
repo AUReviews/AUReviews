@@ -82,6 +82,10 @@ export type InstructorChoice =
 export const INSTRUCTOR_UNKNOWN_VALUES = ["not-listed", "dont-remember"] as const;
 export type InstructorUnknown = (typeof INSTRUCTOR_UNKNOWN_VALUES)[number];
 
+/** A helpful-vote direction (§4/§5). A live vote is exactly one of these —
+ * never a bare boolean — and per-voter votes are retractable/flippable. */
+export type VoteDirection = "up" | "down";
+
 /**
  * Resolve a raw dropdown value into an {@link InstructorChoice}, or `null` when
  * nothing valid is selected (the empty placeholder). The two sentinels are the

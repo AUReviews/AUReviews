@@ -15,7 +15,7 @@
 import {
   type InstructorUnknown,
   formatTerm,
-  gateAverage,
+  gateAverages,
   parseTermCode,
   wilsonLowerBound,
 } from "@/domain";
@@ -192,9 +192,14 @@ function toRow(
   return {
     id,
     displayName,
-    overall: gateAverage(s?.overall ?? null, count),
-    difficulty: gateAverage(s?.difficulty ?? null, count),
-    workload: gateAverage(s?.workload ?? null, count),
+    ...gateAverages(
+      {
+        overall: s?.overall ?? null,
+        difficulty: s?.difficulty ?? null,
+        workload: s?.workload ?? null,
+      },
+      count,
+    ),
     reviewCount: count,
   };
 }
