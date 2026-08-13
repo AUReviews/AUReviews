@@ -285,9 +285,7 @@ export default function ReviewForm({
           <FieldError message={errorFor("workloadHours")} />
         </div>
         <div style={{ flex: 1 }}>
-          {/* Displayed as "Professor" (CONTEXT.md display label); the field
-              name and domain term stay `instructor`. */}
-          <div className="field-label">Professor</div>
+          <div className="field-label">Instructor</div>
           <select
             name="instructor"
             className="select-input"
@@ -308,7 +306,7 @@ export default function ReviewForm({
                 {i.displayName}
               </option>
             ))}
-            <option value="not-listed">Professor not listed</option>
+            <option value="not-listed">Instructor not listed</option>
             <option value="dont-remember">Don&apos;t remember</option>
           </select>
           <FieldError message={errorFor("instructor")} />
@@ -632,7 +630,7 @@ function GuidelinesPanel({ open, onToggle }: { open: boolean; onToggle: () => vo
       </button>
       {open && (
         <div className="guidelines">
-          <p>Reviews cover the course and its professor of record. Please don’t post:</p>
+          <p>Reviews cover the course and its instructor of record. Please don’t post:</p>
           <ul>
             <li>Named accusations of misconduct or illegal activity.</li>
             <li>Comments on a protected characteristic or someone’s appearance.</li>

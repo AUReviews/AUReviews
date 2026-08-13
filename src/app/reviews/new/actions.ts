@@ -134,7 +134,7 @@ export async function submitReview(
     const taught = await listCourseInstructors(course.id);
     if (!taught.some((i) => i.id === choice.id)) {
       return {
-        errors: [{ field: "instructor", message: "Choose a professor from the list." }],
+        errors: [{ field: "instructor", message: "Choose an instructor from the list." }],
       };
     }
     instructorId = choice.id;

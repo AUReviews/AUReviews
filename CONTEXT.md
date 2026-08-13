@@ -23,7 +23,7 @@ _Avoid_: section, class, CRN
 
 **Instructor**:
 A first-class entity with a durable internal id, minted and owned by us — the person who teaches. Display name is a *mutable attribute*, so the identity survives a name change; the durable id, not the name, is what Offerings and Reviews reference. Populated from Banner instructor-of-record data, keyed on Banner's stable person id where one exists, else on a normalized name with admin de-duplication (adjuncts and name collisions are the residual hard cases). Same identity philosophy as Course. A Review's instructor reference is optional — the #6 *not-listed* / *don't-remember* escapes are sentinels, not a hard reference.
-_Avoid_: professor, teacher, prof (as data terms); "instructor" is canonical in code, schema, and docs. The **UI display label is "Professor"** (owner decision, Aug 2026) — user-facing copy says "Professor" while every identifier, column, and domain term stays `instructor`.
+_Avoid_: professor, teacher, prof (as data terms); "instructor" is canonical
 
 **Review**:
 A user-authored, permanent, append-only record on the Review side. References the durable `Course.id`, an optional `Instructor.id`, and the `Term` it describes — all durable identities captured at write time, so no catalog refresh ever alters or moves a Review. Its captured contents are settled in #6. Reviews are never created, modified, or deleted by an import.

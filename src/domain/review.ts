@@ -224,9 +224,7 @@ export function validateReviewCore(
     errors.push({ field: "termCode", message: "Choose the term you took this course." });
   }
   if (!input.instructor) {
-    // Displayed as "Professor" in the UI (CONTEXT.md); the field/data term
-    // stays `instructor`.
-    errors.push({ field: "instructor", message: "Choose a professor, or an unknown option." });
+    errors.push({ field: "instructor", message: "Choose an instructor, or an unknown option." });
   }
   for (const block of checkReviewBody(input.body)) {
     errors.push({ field: "body", message: block.message });
