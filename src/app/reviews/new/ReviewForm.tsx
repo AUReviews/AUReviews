@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 // Imported from the deep `@/domain/review` path, NOT the `@/domain` barrel, on
 // purpose: the barrel re-exports `anonymity.ts`, which pulls in `node:crypto`
 // and can't be bundled into this client component. `review.ts` is pure and
@@ -18,22 +18,42 @@ import {
   parseInstructorChoice,
   validateReviewCore,
 } from "@/domain/review";
-import { type ReviewFormState, submitReview } from "./actions";
+import type { CourseOption } from "@/lib/course-search";
+import {
+  type ReviewFormState,
+  listInstructorOptions,
+  searchCourseOptions,
+  submitReview,
+} from "./actions";
 
-// The review submission form (v1-spec §4/§11/§13; issue #24) — the one client
-// island. It renders the required core, the collapsible optional "Course
-// details" zone, the inline Review Guidelines panel, and the assent line. Its
-// defining behavior is the LIVE door: every keystroke re-runs the SAME
-// `validateReviewCore` the server action re-runs authoritatively, so Submit is
-// disabled — never merely error-on-click — until the submission is clean (§11.A:
-// "before Submit is clickable, never after"). The optional zone is uncontrolled
-// and never feeds the gate, so nothing in it can block submission (§4).
+// The review submission form (v1-spec §4/§11/§13; issues #24/#40) — the one
+// client island. It renders the course picker, the required core, the
+// collapsible optional "Course details" zone, the inline Review Guidelines
+// panel, and the assent line. Its defining behavior is the LIVE door: every
+// keystroke re-runs the SAME `validateReviewCore` the server action re-runs
+// authoritatively, so Submit is disabled — never merely error-on-click — until
+// the submission is clean (§11.A: "before Submit is clickable, never after").
+// The optional zone is uncontrolled and never feeds the gate, so nothing in it
+// can block submission (§4).
+//
+// The course is data on the review, not a location (issue #40): arriving with
+// a prefill (`?course=`) and picking a course in the form converge on the same
+// selected `CourseOption`, post the same slug, and land on the same course
+// page. "change" simply drops back to the search.
+
+export interface InstructorOption {
+  id: string;
+  displayName: string;
+}
+
+/** The server-resolved `?course=` prefill: the course plus its scoped dropdown. */
+export interface ReviewFormPrefill {
+  course: CourseOption;
+  instructors: InstructorOption[];
+}
 
 export interface ReviewFormProps {
-  courseSlug: string;
-  courseLabel: string;
-  courseHref: string;
-  instructors: { id: string; displayName: string }[];
+  prefill: ReviewFormPrefill | null;
   terms: { code: string; label: string }[];
   signedIn: boolean;
   signInHref: string;
@@ -42,10 +62,7 @@ export interface ReviewFormProps {
 const RATING_VALUES = [1, 2, 3, 4, 5];
 
 export default function ReviewForm({
-  courseSlug,
-  courseLabel,
-  courseHref,
-  instructors,
+  prefill,
   terms,
   signedIn,
   signInHref,
@@ -58,6 +75,17 @@ export default function ReviewForm({
     {},
   );
 
+  // The selected course and its scoped instructor list move together: a pick
+  // loads the dropdown for that course, a "change" clears both, so the
+  // dropdown can never show people from a previously selected course.
+  const [course, setCourse] = useState<CourseOption | null>(
+    prefill?.course ?? null,
+  );
+  const [instructors, setInstructors] = useState<InstructorOption[]>(
+    prefill?.instructors ?? [],
+  );
+  const [instructorsLoading, setInstructorsLoading] = useState(false);
+
   // Required-core state — the only inputs the live gate reads.
   const [overall, setOverall] = useState<number | null>(null);
   const [difficulty, setDifficulty] = useState<number | null>(null);
@@ -68,6 +96,42 @@ export default function ReviewForm({
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
+
+  // Surface a field's error only once the user has engaged it, so the form
+  // doesn't open shouting. Once engaged, the LIVE result governs — so a field
+  // the user has since corrected stops showing its message immediately, and a
+  // stale server error from an earlier bounce can't linger past the fix. A
+  // server error still shows for a field the user hasn't touched yet.
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Monotonic token so only the LATEST instructor load may land: a slow
+  // response for a since-changed course is dropped, never shown.
+  const instructorLoadToken = useRef(0);
+
+  const selectCourse = (option: CourseOption) => {
+    setCourse(option);
+    // The old selection (and any shown error) is meaningless for the new
+    // course's list, so reset the field to untouched.
+    setInstructor("");
+    setTouched((t) => ({ ...t, instructor: false }));
+    setInstructors([]);
+    setInstructorsLoading(true);
+    const token = ++instructorLoadToken.current;
+    void listInstructorOptions(option.id).then((list) => {
+      if (instructorLoadToken.current !== token) return;
+      setInstructors(list);
+      setInstructorsLoading(false);
+    });
+  };
+
+  const clearCourse = () => {
+    instructorLoadToken.current++;
+    setCourse(null);
+    setInstructor("");
+    setTouched((t) => ({ ...t, instructor: false }));
+    setInstructors([]);
+    setInstructorsLoading(false);
+  };
 
   // The live gate: exactly what the server re-checks (§11.A). Recomputed every
   // render from the controlled core, so the messages and the disabled Submit
@@ -88,12 +152,6 @@ export default function ReviewForm({
     [overall, difficulty, workload, termCode, instructor, body, selectableTermCodes],
   );
 
-  // Surface a field's error only once the user has engaged it, so the form
-  // doesn't open shouting. Once engaged, the LIVE result governs — so a field
-  // the user has since corrected stops showing its message immediately, and a
-  // stale server error from an earlier bounce can't linger past the fix. A
-  // server error still shows for a field the user hasn't touched yet.
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const serverErrors = state.errors ?? [];
   const errorFor = (field: ReviewFieldError["field"]): string | null => {
     if (touched[field]) {
@@ -103,11 +161,15 @@ export default function ReviewForm({
   };
 
   const bodyLength = body.trim().length;
-  const canSubmit = signedIn && liveErrors.length === 0 && !pending;
+  // A course is part of the door too: the core gate doesn't know about it, so
+  // Submit stays disabled until one is selected (the action re-resolves it).
+  const canSubmit =
+    signedIn && course !== null && liveErrors.length === 0 && !pending;
+  const cancelHref = course ? `/courses/${course.slug}` : "/courses";
 
   return (
     <form action={formAction} className="add-card" noValidate>
-      <input type="hidden" name="courseSlug" value={courseSlug} />
+      <input type="hidden" name="courseSlug" value={course?.slug ?? ""} />
       <input type="hidden" name="overall" value={overall ?? ""} />
       <input type="hidden" name="difficulty" value={difficulty ?? ""} />
 
@@ -121,12 +183,16 @@ export default function ReviewForm({
       <div className="frow">
         <div style={{ flex: 2 }}>
           <div className="field-label">Course</div>
-          <div className="fake-input between">
-            <span>{courseLabel}</span>
-            <Link href={courseHref} className="change">
-              change
-            </Link>
-          </div>
+          {course ? (
+            <div className="fake-input between">
+              <span>{course.label}</span>
+              <button type="button" className="change" onClick={clearCourse}>
+                change
+              </button>
+            </div>
+          ) : (
+            <CourseSearch onSelect={selectCourse} />
+          )}
         </div>
         <div style={{ flex: 1 }}>
           <div className="field-label">Term</div>
@@ -205,10 +271,17 @@ export default function ReviewForm({
             name="instructor"
             className="select-input"
             value={instructor}
+            disabled={!course}
             onChange={(e) => setInstructor(e.target.value)}
             onBlur={() => setTouched((t) => ({ ...t, instructor: true }))}
           >
-            <option value="">Select…</option>
+            <option value="">
+              {course
+                ? instructorsLoading
+                  ? "Loading…"
+                  : "Select…"
+                : "Select a course first"}
+            </option>
             {instructors.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.displayName}
@@ -269,7 +342,7 @@ export default function ReviewForm({
             By posting you agree to our Terms and Privacy Policy, and confirm you are 18 or older.
           </p>
           <div className="add-actions">
-            <Link href={courseHref} className="btn-ghost">
+            <Link href={cancelHref} className="btn-ghost">
               Cancel
             </Link>
             <button type="submit" className="btn-post" disabled={!canSubmit}>
@@ -290,6 +363,72 @@ export default function ReviewForm({
         </div>
       )}
     </form>
+  );
+}
+
+// The server-backed course typeahead (issue #40): the user types a code or
+// title fragment, the `searchCourseOptions` action returns a handful of
+// matches, and picking one hands the option up to the form. Debounced so a
+// fast typist doesn't fire an action per keystroke, and each response is
+// dropped unless it answers the CURRENT query, so a slow early response can't
+// overwrite a later one.
+function CourseSearch({ onSelect }: { onSelect: (option: CourseOption) => void }) {
+  const [query, setQuery] = useState("");
+  // Responses are stored WITH the query they answered; the render below only
+  // shows hits that answer the current query, so staleness is filtered at
+  // render time rather than by resetting state in the effect.
+  const [hits, setHits] = useState<{
+    query: string;
+    options: CourseOption[];
+  } | null>(null);
+
+  // Mirrors the server's minimum-query rule so we don't fire actions the
+  // server would answer with nothing anyway.
+  const searchable = query.trim().length >= 2;
+
+  useEffect(() => {
+    if (!searchable) return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void searchCourseOptions(query).then((options) => {
+        if (!cancelled) setHits({ query, options });
+      });
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, searchable]);
+
+  const current = searchable && hits?.query === query ? hits : null;
+  const results = current?.options ?? [];
+
+  return (
+    <div className="course-search">
+      <input
+        type="text"
+        className="num-input"
+        placeholder="Search by code or title, e.g. COMP 3270"
+        value={query}
+        aria-label="Search for a course"
+        autoComplete="off"
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      {results.length > 0 && (
+        <ul className="course-search-results">
+          {results.map((option) => (
+            <li key={option.id}>
+              <button type="button" onClick={() => onSelect(option)}>
+                {option.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {current !== null && results.length === 0 && (
+        <p className="course-search-empty">No matching courses.</p>
+      )}
+    </div>
   );
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addReviewNavHref,
   type CourseDetail,
   courseHref,
   courseSlug,
@@ -170,14 +171,48 @@ describe("hrefs", () => {
     expect(courseHref("COMP", "3270")).toBe("/courses/comp-3270");
   });
 
-  it("reviewFormHref points at the course-scoped review placeholder route", () => {
-    expect(reviewFormHref("COMP", "3270")).toBe("/courses/comp-3270/review");
+  it("reviewFormHref points at /reviews/new with the course prefilled", () => {
+    expect(reviewFormHref("COMP", "3270")).toBe("/reviews/new?course=comp-3270");
   });
 
   it("derives both hrefs from a detail row", () => {
     const c = detail();
     expect(courseHref(c.subject, c.number)).toBe("/courses/comp-3270");
-    expect(reviewFormHref(c.subject, c.number)).toBe("/courses/comp-3270/review");
+    expect(reviewFormHref(c.subject, c.number)).toBe(
+      "/reviews/new?course=comp-3270",
+    );
+  });
+});
+
+describe("addReviewNavHref", () => {
+  it("is bare away from course pages", () => {
+    expect(addReviewNavHref("/")).toBe("/reviews/new");
+    expect(addReviewNavHref("/courses")).toBe("/reviews/new");
+    expect(addReviewNavHref("/reviews/new")).toBe("/reviews/new");
+    expect(addReviewNavHref("/signin")).toBe("/reviews/new");
+  });
+
+  it("carries the course slug from a course detail page", () => {
+    expect(addReviewNavHref("/courses/comp-3270")).toBe(
+      "/reviews/new?course=comp-3270",
+    );
+  });
+
+  it("normalizes the slug casing from the URL", () => {
+    expect(addReviewNavHref("/courses/COMP-3270")).toBe(
+      "/reviews/new?course=comp-3270",
+    );
+  });
+
+  it("tolerates a trailing slash on the course page path", () => {
+    expect(addReviewNavHref("/courses/comp-3270/")).toBe(
+      "/reviews/new?course=comp-3270",
+    );
+  });
+
+  it("stays bare on deeper or malformed course paths", () => {
+    expect(addReviewNavHref("/courses/comp-3270/anything")).toBe("/reviews/new");
+    expect(addReviewNavHref("/courses/not_a_slug")).toBe("/reviews/new");
   });
 });
 
