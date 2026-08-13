@@ -18,12 +18,14 @@ export const metadata: Metadata = {
     "Browse Auburn's COMP catalog. Sort by overall rating, difficulty, workload, or review count.",
 };
 
-// The catalog read sits behind the "catalog" cache tag so an import (#18) can
-// refresh every browse render on demand without waiting out the window.
+// The browse read sits behind two cache tags: "catalog" so an import (#18) can
+// refresh it on demand, and "reviews" (issue #25) so a review submit refreshes
+// the rating columns — its aggregates are recomputed at exactly those
+// revalidation moments (§5), never per request.
 const loadCourses = unstable_cache(
   async (): Promise<BrowseCourse[]> => listCourses(),
   ["browse-courses"],
-  { tags: ["catalog"] },
+  { tags: ["catalog", "reviews"] },
 );
 
 type PageState =

@@ -1,7 +1,8 @@
-import { and, desc, eq, sql } from "drizzle-orm";
-import type { InstructorUnknown, PlaceholderRow } from "@/domain";
+import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { type InstructorUnknown, type PlaceholderRow, gateAverage } from "@/domain";
 import type { BrowseCourse } from "@/lib/browse";
 import type { CourseDetail } from "@/lib/course-detail";
+import type { CourseReview, InstructorStats } from "@/lib/course-reviews";
 import type { PrereqCatalogRow } from "@/lib/prereqs";
 import { getDb } from "./client";
 import {
@@ -10,8 +11,13 @@ import {
   offeringInstructors,
   offerings,
   placeholder,
+  reviewVotes,
   reviews,
 } from "./schema";
+
+/** Only `published` reviews ever reach an aggregate or a page; `pending`,
+ * `removed`, and `deleted` rows drop out of everything immediately (§11). */
+const publishedReviews = () => eq(reviews.status, "published");
 
 /**
  * Read the newest placeholder row — the skeleton's DB proof-of-life. Returns
@@ -38,12 +44,14 @@ export async function getLatestPlaceholder(): Promise<PlaceholderRow | null> {
  * for ordering — the server renders the default sort and the client re-sorts the
  * same rows with the same comparator, so no ordering rule is duplicated in SQL.
  *
- * The three averages are hard-`null` and `reviewCount` is 0 here on purpose: no
- * review table exists yet (#6). This is the single seam where those columns get
- * wired — when reviews land, this becomes a LEFT JOIN + aggregate over §4's
- * rolling window, and the page above it does not change (it already renders
- * "—"/true-N for null averages). Retired courses are included, not filtered —
- * the table de-emphasizes them (issue #20) rather than hiding them.
+ * The rating columns aggregate each course's published reviews in SQL — plain
+ * arithmetic means (§5), computed at revalidation time — then pass §5's low-data
+ * gate: below N = 2 the averages are `null`ed so the row renders "—" (and sinks
+ * under a rating sort) while `reviewCount` stays the true N. The submission
+ * window (§4) gates what can be *submitted*, never what is counted — every
+ * published review is in the aggregate, with no recency decay (§5). Retired
+ * courses are included, not filtered — the table de-emphasizes them (issue #20)
+ * rather than hiding them.
  */
 export async function listCourses(): Promise<BrowseCourse[]> {
   const db = getDb();
@@ -54,8 +62,17 @@ export async function listCourses(): Promise<BrowseCourse[]> {
       number: courses.number,
       title: courses.title,
       status: courses.status,
+      reviewCount: sql<number>`count(${reviews.id})::int`,
+      overall: sql<number | null>`avg(${reviews.overall})::float8`,
+      difficulty: sql<number | null>`avg(${reviews.difficulty})::float8`,
+      workload: sql<number | null>`avg(${reviews.workloadHours})::float8`,
     })
-    .from(courses);
+    .from(courses)
+    .leftJoin(
+      reviews,
+      and(eq(reviews.courseId, courses.id), publishedReviews()),
+    )
+    .groupBy(courses.id);
 
   return rows.map((r) => ({
     id: r.id,
@@ -63,10 +80,10 @@ export async function listCourses(): Promise<BrowseCourse[]> {
     number: r.number,
     title: r.title,
     status: r.status === "retired" ? "retired" : "active",
-    overall: null,
-    difficulty: null,
-    workload: null,
-    reviewCount: 0,
+    overall: gateAverage(r.overall, r.reviewCount),
+    difficulty: gateAverage(r.difficulty, r.reviewCount),
+    workload: gateAverage(r.workload, r.reviewCount),
+    reviewCount: r.reviewCount,
   }));
 }
 
@@ -76,11 +93,12 @@ export async function listCourses(): Promise<BrowseCourse[]> {
  * matched case-insensitively so a `comp-3270` slug resolves the stored `COMP`
  * row. Returns `null` when no course matches, which the route renders as a 404.
  *
- * The three averages are hard-`null` and `reviewCount` is 0 here on purpose,
- * exactly as {@link listCourses}: no review table exists yet (#6). This is the
- * single seam where those columns get wired — when reviews land, this becomes a
- * LEFT JOIN + aggregate over §4's rolling window, and the page above it does not
- * change (it already renders the N = 0 "write the first review" state).
+ * The three averages stay hard-`null` and `reviewCount` 0 HERE deliberately:
+ * this catalog read sits behind the long-lived "catalog" cache tag, while the
+ * live aggregates must refresh on every review write. The course page overlays
+ * {@link getCourseAggregates} (fresh each revalidation) on this record, and the
+ * submit action only needs the durable id — so neither consumer reads these
+ * placeholder columns.
  */
 export async function getCourseByCode(
   subject: string,
@@ -266,6 +284,263 @@ export async function insertReview(review: NewReview): Promise<string> {
     })
     .returning({ id: reviews.id });
   return row.id;
+}
+
+/** A course's headline numbers (§5; issue #25): averages already gated under
+ * the N ≥ 2 low-data rule, count always the true N. */
+export interface CourseAggregates {
+  overall: number | null;
+  difficulty: number | null;
+  workload: number | null;
+  reviewCount: number;
+}
+
+/**
+ * The course-wide headline aggregates (§5; issue #25): plain arithmetic means
+ * over the course's published reviews, computed in SQL at revalidation time and
+ * gated under N ≥ 2 before they leave this layer. Deliberately NOT behind the
+ * "catalog" tag — the course page reads this fresh on every (re)render, so a
+ * review submit's `revalidatePath` refreshes the headline without an import.
+ * The headline is fixed course-wide and never mutates on an instructor filter
+ * (§5) — there is no instructor parameter here by design.
+ */
+export async function getCourseAggregates(
+  courseId: string,
+): Promise<CourseAggregates> {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      reviewCount: sql<number>`count(*)::int`,
+      overall: sql<number | null>`avg(${reviews.overall})::float8`,
+      difficulty: sql<number | null>`avg(${reviews.difficulty})::float8`,
+      workload: sql<number | null>`avg(${reviews.workloadHours})::float8`,
+    })
+    .from(reviews)
+    .where(and(eq(reviews.courseId, courseId), publishedReviews()));
+
+  const count = row?.reviewCount ?? 0;
+  return {
+    overall: gateAverage(row?.overall ?? null, count),
+    difficulty: gateAverage(row?.difficulty ?? null, count),
+    workload: gateAverage(row?.workload ?? null, count),
+    reviewCount: count,
+  };
+}
+
+// jsonb columns come back untyped; the writer only ever stores string arrays
+// (sanitized multi-selects), so anything else collapses to empty.
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((v): v is string => typeof v === "string")
+    : [];
+}
+
+/**
+ * A course's published reviews for its Reviews tab (§5; issue #25), each with
+ * its resolved instructor display name (null when the review recorded an §4
+ * unknown) and its live helpful tallies from `review_votes`. Unordered — the
+ * sort options (helpful/newest/term) are `sortCourseReviews`'s job, client and
+ * server sharing the one comparator. Like {@link getCourseAggregates}, read
+ * fresh on every page (re)render, never behind the "catalog" tag, so submits
+ * and votes surface on the next revalidation.
+ */
+export async function listCourseReviews(
+  courseId: string,
+): Promise<CourseReview[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: reviews.id,
+      instructorId: reviews.instructorId,
+      instructorName: instructors.displayName,
+      instructorUnknown: reviews.instructorUnknown,
+      termCode: reviews.termCode,
+      overall: reviews.overall,
+      difficulty: reviews.difficulty,
+      workloadHours: reviews.workloadHours,
+      body: reviews.body,
+      workloadShape: reviews.workloadShape,
+      grade: reviews.grade,
+      languages: reviews.languages,
+      languagesOther: reviews.languagesOther,
+      curved: reviews.curved,
+      attendance: reviews.attendance,
+      prep: reviews.prep,
+      createdAt: reviews.createdAt,
+      helpfulUp: sql<number>`count(*) filter (where ${reviewVotes.direction} = 'up')::int`,
+      helpfulDown: sql<number>`count(*) filter (where ${reviewVotes.direction} = 'down')::int`,
+    })
+    .from(reviews)
+    .leftJoin(instructors, eq(reviews.instructorId, instructors.id))
+    .leftJoin(reviewVotes, eq(reviewVotes.reviewId, reviews.id))
+    .where(and(eq(reviews.courseId, courseId), publishedReviews()))
+    .groupBy(reviews.id, instructors.displayName);
+
+  return rows.map((r) => ({
+    id: r.id,
+    instructorId: r.instructorId,
+    instructorName: r.instructorName,
+    instructorUnknown:
+      r.instructorUnknown === "not-listed" || r.instructorUnknown === "dont-remember"
+        ? r.instructorUnknown
+        : null,
+    termCode: r.termCode,
+    overall: r.overall,
+    difficulty: r.difficulty,
+    workloadHours: r.workloadHours,
+    body: r.body,
+    workloadShape: asStringArray(r.workloadShape),
+    grade: r.grade,
+    languages: asStringArray(r.languages),
+    languagesOther: r.languagesOther,
+    curved: r.curved,
+    attendance: r.attendance,
+    prep: r.prep,
+    createdAt: r.createdAt,
+    helpfulUp: r.helpfulUp,
+    helpfulDown: r.helpfulDown,
+  }));
+}
+
+/**
+ * Raw per-instructor aggregates over a course's published reviews (§5; issue
+ * #25) — the review side of the by-instructor breakdown. UNGATED here: the
+ * pure `buildInstructorRows` merges these with the taught-instructor list
+ * ({@link listCourseInstructors}) and applies the N ≥ 2 gate per row, so the
+ * low-data rule lives in one testable place. Reviews recording an §4 unknown
+ * have no instructor and are course-wide only — they appear in the headline
+ * and the list, never in a breakdown row.
+ */
+export async function listInstructorStats(
+  courseId: string,
+): Promise<InstructorStats[]> {
+  const db = getDb();
+  return db
+    .select({
+      id: instructors.id,
+      displayName: instructors.displayName,
+      reviewCount: sql<number>`count(*)::int`,
+      overall: sql<number | null>`avg(${reviews.overall})::float8`,
+      difficulty: sql<number | null>`avg(${reviews.difficulty})::float8`,
+      workload: sql<number | null>`avg(${reviews.workloadHours})::float8`,
+    })
+    .from(reviews)
+    .innerJoin(instructors, eq(reviews.instructorId, instructors.id))
+    .where(
+      and(
+        eq(reviews.courseId, courseId),
+        publishedReviews(),
+        isNotNull(reviews.instructorId),
+      ),
+    )
+    .groupBy(instructors.id, instructors.displayName);
+}
+
+/**
+ * Resolve a review id to what the vote action needs (issue #25): that it
+ * exists and is published (only live reviews accept votes), and its course's
+ * current code so the action can revalidate that course page. Null for an
+ * unknown or unpublished review.
+ */
+export async function getReviewCourse(
+  reviewId: string,
+): Promise<{ courseId: string; subject: string; number: string } | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      courseId: reviews.courseId,
+      subject: courses.subject,
+      number: courses.number,
+    })
+    .from(reviews)
+    .innerJoin(courses, eq(reviews.courseId, courses.id))
+    .where(and(eq(reviews.id, reviewId), publishedReviews()))
+    .limit(1);
+  return row ?? null;
+}
+
+/** A helpful-vote direction; a vote is one of these, never a bare boolean. */
+export type VoteDirection = "up" | "down";
+
+/**
+ * Set (or clear) one identity's helpful vote on a review (§4/§5/§10; issue
+ * #25). Votes are per-voter rows, retractable and flippable: the composite
+ * primary key makes a re-vote an upsert (flip), and `null` deletes the row
+ * (retraction). Idempotent — the client states the desired end state rather
+ * than toggling, so a double-fire can't invert the intent.
+ */
+export async function setReviewVote(
+  reviewId: string,
+  identityHash: string,
+  direction: VoteDirection | null,
+): Promise<void> {
+  const db = getDb();
+  if (direction === null) {
+    await db
+      .delete(reviewVotes)
+      .where(
+        and(
+          eq(reviewVotes.reviewId, reviewId),
+          eq(reviewVotes.identityHash, identityHash),
+        ),
+      );
+    return;
+  }
+  await db
+    .insert(reviewVotes)
+    .values({ reviewId, identityHash, direction })
+    .onConflictDoUpdate({
+      target: [reviewVotes.reviewId, reviewVotes.identityHash],
+      set: { direction },
+    });
+}
+
+/** A review's current helpful tallies, re-read after a vote write so the
+ * action returns authoritative counts, not client arithmetic. */
+export async function getReviewVoteCounts(
+  reviewId: string,
+): Promise<{ up: number; down: number }> {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      up: sql<number>`count(*) filter (where ${reviewVotes.direction} = 'up')::int`,
+      down: sql<number>`count(*) filter (where ${reviewVotes.direction} = 'down')::int`,
+    })
+    .from(reviewVotes)
+    .where(eq(reviewVotes.reviewId, reviewId));
+  return { up: row?.up ?? 0, down: row?.down ?? 0 };
+}
+
+/**
+ * The signed-in viewer's live votes across one course's reviews (issue #25),
+ * so the vote buttons can render their current state. Course pages are shared
+ * CDN-static HTML — per-viewer state must never bake into them (§8) — so this
+ * is read through the dynamic `/api/votes` route after mount, keyed by the
+ * server-resolved identity (§7: the hash itself never reaches the client).
+ */
+export async function listViewerVotes(
+  courseId: string,
+  identityHash: string,
+): Promise<Record<string, VoteDirection>> {
+  const db = getDb();
+  const rows = await db
+    .select({ reviewId: reviewVotes.reviewId, direction: reviewVotes.direction })
+    .from(reviewVotes)
+    .innerJoin(reviews, eq(reviewVotes.reviewId, reviews.id))
+    .where(
+      and(
+        eq(reviews.courseId, courseId),
+        eq(reviewVotes.identityHash, identityHash),
+      ),
+    );
+
+  const votes: Record<string, VoteDirection> = {};
+  for (const row of rows) {
+    if (row.direction === "up" || row.direction === "down") {
+      votes[row.reviewId] = row.direction;
+    }
+  }
+  return votes;
 }
 
 /** Count the catalog for the landing page's honest "N courses" line (#20). */

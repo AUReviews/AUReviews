@@ -6,6 +6,7 @@
  * imports THEM (the one-way seam of ADR 0002, enforced by eslint
  * `import/no-restricted-paths` and by src/domain/boundary.test.ts).
  */
+export { gateAverage, wilsonLowerBound } from "./aggregate";
 export {
   type CourseId,
   type InstructorId,
