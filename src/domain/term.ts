@@ -55,6 +55,63 @@ export function formatTerm(term: Term): string {
 }
 
 /**
+ * The inverse of {@link parseTermCode}: the Banner `YYYYT0` code for a semester
+ * and its calendar year. Fall belongs to the following academic year, so its
+ * prefix is `year + 1` (Fall 2026 → `202710`); Spring/Summer keep the calendar
+ * year (Spring 2026 → `202620`, Summer 2026 → `202630`). Round-trips with
+ * `parseTermCode` for every valid term.
+ */
+export function termToCode(semester: Semester, year: number): string {
+  const digits = semester === "Fall" ? "10" : semester === "Spring" ? "20" : "30";
+  const prefix = semester === "Fall" ? year + 1 : year;
+  return `${prefix}${digits}`;
+}
+
+// Ascending order within a calendar year, so a term ordinal (`year * 3 + rank`)
+// increases monotonically with real time — the basis for walking the recent
+// window back from "now" (§4).
+const SEMESTER_RANK: Record<Semester, number> = {
+  Spring: 0,
+  Summer: 1,
+  Fall: 2,
+};
+
+const RANK_TO_SEMESTER: Semester[] = ["Spring", "Summer", "Fall"];
+
+/**
+ * The term in progress on a given date — the anchor the rolling submission
+ * window counts back from (§4). Auburn's calendar maps roughly to Jan–Apr =
+ * Spring, May–Jul = Summer, Aug–Dec = Fall; this is the coarse month split, not
+ * exact session boundaries, which is all the term dropdown needs.
+ */
+export function currentTerm(date: Date): Term {
+  const month = date.getMonth(); // 0 = January
+  const year = date.getFullYear();
+  const semester: Semester =
+    month <= 3 ? "Spring" : month <= 6 ? "Summer" : "Fall";
+  return { code: termToCode(semester, year), semester, year };
+}
+
+/**
+ * The most recent `count` terms up to and including the one in progress on
+ * `date`, newest first (§4's rolling window is just a count of these). Uses a
+ * monotonic term ordinal so the walk-back crosses year boundaries correctly:
+ * from Spring the previous term is the prior Fall, and so on.
+ */
+export function recentTerms(date: Date, count: number): Term[] {
+  const anchor = currentTerm(date);
+  const anchorOrdinal = anchor.year * 3 + SEMESTER_RANK[anchor.semester];
+  const terms: Term[] = [];
+  for (let i = 0; i < count; i++) {
+    const ordinal = anchorOrdinal - i;
+    const year = Math.floor(ordinal / 3);
+    const semester = RANK_TO_SEMESTER[ordinal % 3];
+    terms.push({ code: termToCode(semester, year), semester, year });
+  }
+  return terms;
+}
+
+/**
  * Whether a code names a term the offering ingest should cover: well-formed
  * and Fall 2007 or later. Codes are fixed-width numerics, so string comparison
  * orders them chronologically.

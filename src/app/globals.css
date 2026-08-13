@@ -34,6 +34,7 @@
   --brand-text: #fff;
   --accent-bg: oklch(0.72 0.14 52);
   --accent-text: #1a1206;
+  --danger: oklch(0.52 0.17 25);
   --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
@@ -60,6 +61,7 @@
     --brand-text: oklch(0.15 0.02 262);
     --accent-bg: oklch(0.72 0.14 52);
     --accent-text: #1a1206;
+    --danger: oklch(0.72 0.15 25);
     --shadow-btn: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
 }
@@ -653,5 +655,287 @@ a.chip-link:hover {
   }
   .side {
     width: 100%;
+  }
+}
+
+/* ---- Review submission form (issue #24, §4/§11/§13) --------------------- */
+/* Ported from prototype/index.html's Add-review view; the slider is replaced by
+   a real number input (§4), and live door-block/counter styling is added. */
+.add {
+  display: flex;
+  justify-content: center;
+  padding: 44px 24px 64px;
+}
+.add-card {
+  max-width: 640px;
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  height: fit-content;
+}
+.add-card h1 {
+  font-size: 23px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: var(--text-heading);
+}
+.add-card .lede {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+.frow {
+  display: flex;
+  gap: 14px;
+}
+.field-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 7px;
+}
+.fake-input {
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  padding: 11px 13px;
+  font-size: 13.5px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+.fake-input.between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.change {
+  font-size: 12px;
+  color: var(--link);
+  font-weight: 600;
+}
+
+/* Real form controls (native, keyboard-accessible). */
+.select-input,
+.num-input,
+.textarea-input {
+  width: 100%;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  padding: 11px 13px;
+  font-size: 13.5px;
+  font-family: inherit;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+.textarea-input {
+  height: 130px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.textarea-input::placeholder {
+  color: var(--text-placeholder);
+}
+.select-input:focus,
+.num-input:focus,
+.textarea-input:focus {
+  outline: 2px solid var(--link);
+  outline-offset: 1px;
+}
+
+/* The 1–5 segmented scale. */
+.scale {
+  display: flex;
+  gap: 6px;
+}
+.scale button {
+  flex: 1;
+  text-align: center;
+  padding: 9px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: inherit;
+}
+.scale button:hover {
+  background: var(--bg-chip);
+}
+.scale button.sel {
+  border-color: transparent;
+  background: var(--accent-bg);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+.scale-anchors {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Body character counter + inline door-block messages. */
+.body-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+.counter {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.counter.under {
+  color: var(--text-muted);
+}
+.counter.ok {
+  color: var(--link);
+}
+.field-error {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+}
+.form-error {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+  background: color-mix(in oklch, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in oklch, var(--danger) 35%, transparent);
+}
+
+/* Collapsible optional-details and guidelines panels. */
+.details {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 16px;
+}
+.details-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+}
+.details-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+.check-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.check-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--border-input);
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.guidelines {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-body);
+}
+.guidelines ul {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+.guidelines li {
+  margin: 4px 0;
+}
+.guidelines .muted {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* Sign-in gate (shown when the author isn't verified yet). */
+.auth {
+  background: var(--bg-page);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.auth strong {
+  font-size: 14px;
+  color: var(--text-heading);
+}
+.auth .note {
+  font-size: 12.5px;
+  color: var(--text-body);
+}
+
+.assent {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.add-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.btn-ghost {
+  padding: 9px 16px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+.btn-ghost:hover {
+  background: var(--bg-chip);
+}
+.btn-post {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent-bg);
+  color: var(--accent-text);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-post:hover:not(:disabled) {
+  filter: brightness(0.94);
+}
+.btn-post:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .add-card {
+    padding: 24px 20px;
+  }
+  .frow {
+    flex-direction: column;
   }
 }
