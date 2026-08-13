@@ -18,7 +18,10 @@ import {
   parseInstructorChoice,
   validateReviewCore,
 } from "@/domain/review";
-import type { CourseOption } from "@/lib/course-search";
+import {
+  type CourseOption,
+  normalizeCourseSearchQuery,
+} from "@/lib/course-search";
 import {
   type ReviewFormState,
   listInstructorOptions,
@@ -41,6 +44,10 @@ import {
 // selected `CourseOption`, post the same slug, and land on the same course
 // page. "change" simply drops back to the search.
 
+// Structurally the db layer's `CourseInstructor`, redeclared on purpose: this
+// client island imports only pure, browser-safe modules, and a value import of
+// `@/db/queries` (drizzle + the Neon client) must never be one bundler slip
+// away. The submit action re-checks instructor-taught-course anyway.
 export interface InstructorOption {
   id: string;
   displayName: string;
@@ -60,6 +67,10 @@ export interface ReviewFormProps {
 }
 
 const RATING_VALUES = [1, 2, 3, 4, 5];
+
+// Long enough to coalesce a fast typist's keystrokes into one search action,
+// short enough that results still feel live.
+const SEARCH_DEBOUNCE_MS = 200;
 
 export default function ReviewForm({
   prefill,
@@ -117,11 +128,19 @@ export default function ReviewForm({
     setInstructors([]);
     setInstructorsLoading(true);
     const token = ++instructorLoadToken.current;
-    void listInstructorOptions(option.id).then((list) => {
-      if (instructorLoadToken.current !== token) return;
-      setInstructors(list);
-      setInstructorsLoading(false);
-    });
+    void listInstructorOptions(option.id)
+      .then((list) => {
+        if (instructorLoadToken.current !== token) return;
+        setInstructors(list);
+        setInstructorsLoading(false);
+      })
+      // A failed load must not strand the dropdown on "Loading…": fall back to
+      // the two unknown escapes alone, the same state as a course with no
+      // ingested offering history.
+      .catch(() => {
+        if (instructorLoadToken.current !== token) return;
+        setInstructorsLoading(false);
+      });
   };
 
   const clearCourse = () => {
@@ -382,18 +401,22 @@ function CourseSearch({ onSelect }: { onSelect: (option: CourseOption) => void }
     options: CourseOption[];
   } | null>(null);
 
-  // Mirrors the server's minimum-query rule so we don't fire actions the
-  // server would answer with nothing anyway.
-  const searchable = query.trim().length >= 2;
+  // The server's own minimum-query rule, so we never fire an action it would
+  // answer with nothing anyway.
+  const searchable = normalizeCourseSearchQuery(query) !== null;
 
   useEffect(() => {
     if (!searchable) return;
     let cancelled = false;
     const timer = setTimeout(() => {
-      void searchCourseOptions(query).then((options) => {
-        if (!cancelled) setHits({ query, options });
-      });
-    }, 200);
+      // A failed search reads as "no results yet" (hits stay stale/absent);
+      // the next keystroke retries, so there is no stuck state to surface.
+      void searchCourseOptions(query)
+        .then((options) => {
+          if (!cancelled) setHits({ query, options });
+        })
+        .catch(() => {});
+    }, SEARCH_DEBOUNCE_MS);
     return () => {
       cancelled = true;
       clearTimeout(timer);

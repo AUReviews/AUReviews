@@ -49,9 +49,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { course } = await searchParams;
   const parsed = course ? parseCourseSlug(course) : null;
-  if (!parsed) return { title: "Add a review — AUReviews" };
+  // Resolve, don't just parse: a well-formed slug for a course we don't carry
+  // renders the search fallback, so the title must not claim that course.
+  const resolved = parsed
+    ? await getCourseByCode(parsed.subject, parsed.number)
+    : null;
+  if (!resolved) return { title: "Add a review — AUReviews" };
   return {
-    title: `Review ${formatCourseCode(parsed.subject, parsed.number)} — AUReviews`,
+    title: `Review ${formatCourseCode(resolved.subject, resolved.number)} — AUReviews`,
   };
 }
 
