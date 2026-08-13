@@ -285,7 +285,9 @@ export default function ReviewForm({
           <FieldError message={errorFor("workloadHours")} />
         </div>
         <div style={{ flex: 1 }}>
-          <div className="field-label">Instructor</div>
+          {/* Displayed as "Professor" (CONTEXT.md display label); the field
+              name and domain term stay `instructor`. */}
+          <div className="field-label">Professor</div>
           <select
             name="instructor"
             className="select-input"
@@ -306,7 +308,7 @@ export default function ReviewForm({
                 {i.displayName}
               </option>
             ))}
-            <option value="not-listed">Instructor not listed</option>
+            <option value="not-listed">Professor not listed</option>
             <option value="dont-remember">Don&apos;t remember</option>
           </select>
           <FieldError message={errorFor("instructor")} />
@@ -504,8 +506,9 @@ function Scale({
   );
 }
 
-// The optional "Course details" zone (§4) — collapsed by default, entirely
-// uncontrolled: it never feeds the live gate, so nothing here can block Submit.
+// The optional "Course details" zone (§4) — collapsed by default and (bar the
+// Languages "Other" reveal, pure visibility) uncontrolled: nothing here feeds
+// the live gate, so nothing here can block Submit.
 function OptionalDetails({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   return (
     <div className="details">
@@ -523,18 +526,49 @@ function OptionalDetails({ open, onToggle }: { open: boolean; onToggle: () => vo
             <SelectField label="Attendance" name="attendance" options={ATTENDANCE_OPTIONS} />
             <SelectField label="Preparation" name="prep" options={PREP_OPTIONS} />
           </div>
-          <CheckGroup label="Languages" name="languages" options={LANGUAGE_OPTIONS} />
-          <div>
-            <div className="field-label">Other language</div>
-            <input
-              name="languagesOther"
-              type="text"
-              className="num-input"
-              maxLength={60}
-              placeholder="Only if you picked “Other” above"
-            />
-          </div>
+          <LanguagesGroup />
         </div>
+      )}
+    </div>
+  );
+}
+
+// Languages with the "Other" write-in revealed only while Other is picked —
+// no permanent extra field. The one piece of state here is pure visibility; it
+// never feeds the gate, and unpicking Other unmounts the write-in so a
+// half-typed value can't ride along (the server ignores `languagesOther`
+// without "Other" anyway).
+function LanguagesGroup() {
+  const [otherPicked, setOtherPicked] = useState(false);
+  return (
+    <div>
+      <div className="field-label">Languages</div>
+      <div className="check-group">
+        {LANGUAGE_OPTIONS.map((opt) => (
+          <label key={opt} className="check-chip">
+            <input
+              type="checkbox"
+              name="languages"
+              value={opt}
+              onChange={
+                opt === "Other"
+                  ? (e) => setOtherPicked(e.target.checked)
+                  : undefined
+              }
+            />
+            {opt}
+          </label>
+        ))}
+      </div>
+      {otherPicked && (
+        <input
+          name="languagesOther"
+          type="text"
+          className="num-input check-other"
+          maxLength={60}
+          placeholder="Which language?"
+          aria-label="Other language"
+        />
       )}
     </div>
   );
@@ -598,7 +632,7 @@ function GuidelinesPanel({ open, onToggle }: { open: boolean; onToggle: () => vo
       </button>
       {open && (
         <div className="guidelines">
-          <p>Reviews cover the course and its instructor of record. Please don’t post:</p>
+          <p>Reviews cover the course and its professor of record. Please don’t post:</p>
           <ul>
             <li>Named accusations of misconduct or illegal activity.</li>
             <li>Comments on a protected characteristic or someone’s appearance.</li>
