@@ -8,7 +8,6 @@ import {
   instructorLabel,
   reviewPills,
   sortCourseReviews,
-  sortInstructorRows,
 } from "./course-reviews";
 
 function review(overrides: Partial<CourseReview> = {}): CourseReview {
@@ -208,52 +207,3 @@ describe("buildInstructorRows", () => {
   });
 });
 
-describe("sortInstructorRows", () => {
-  const rows = buildInstructorRows(
-    [
-      { id: "i-a", displayName: "Al Adams" },
-      { id: "i-b", displayName: "Beth Byrd" },
-      { id: "i-c", displayName: "Cam Cole" },
-    ],
-    [
-      { id: "i-b", displayName: "Beth Byrd", overall: 4.5, difficulty: 3, workload: 12, reviewCount: 2 },
-      { id: "i-c", displayName: "Cam Cole", overall: 3.5, difficulty: 4, workload: 15, reviewCount: 4 },
-    ],
-  );
-
-  it("returns neutral (alphabetical) order when no sort is active", () => {
-    expect(sortInstructorRows(rows, null).map((r) => r.id)).toEqual([
-      "i-a",
-      "i-b",
-      "i-c",
-    ]);
-  });
-
-  it("sorts by a rating in either direction", () => {
-    expect(
-      sortInstructorRows(rows, { key: "overall", direction: "desc" }).map((r) => r.id),
-    ).toEqual(["i-b", "i-c", "i-a"]);
-    expect(
-      sortInstructorRows(rows, { key: "overall", direction: "asc" }).map((r) => r.id),
-    ).toEqual(["i-c", "i-b", "i-a"]);
-  });
-
-  it("sinks '—' rows (no computed average) in both directions", () => {
-    for (const direction of ["asc", "desc"] as const) {
-      const sorted = sortInstructorRows(rows, { key: "workload", direction });
-      expect(sorted[sorted.length - 1].id).toBe("i-a");
-    }
-  });
-
-  it("sorts by review count", () => {
-    expect(
-      sortInstructorRows(rows, { key: "reviews", direction: "desc" }).map((r) => r.id),
-    ).toEqual(["i-c", "i-b", "i-a"]);
-  });
-
-  it("never mutates its input", () => {
-    const before = rows.map((r) => r.id);
-    sortInstructorRows(rows, { key: "overall", direction: "desc" });
-    expect(rows.map((r) => r.id)).toEqual(before);
-  });
-});

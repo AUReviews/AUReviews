@@ -1165,15 +1165,6 @@ a.chip-link:hover {
   color: var(--text-primary);
 }
 
-/* The by-instructor table reuses the browse table's .ctable/.col-head styles;
-   the unsortable name header keeps the look but not the affordance. */
-.col-head.static {
-  cursor: default;
-}
-.col-head.static:hover {
-  color: var(--text-muted);
-}
-
 @media (max-width: 560px) {
   .review-controls {
     flex-direction: column;

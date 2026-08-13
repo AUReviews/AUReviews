@@ -4,13 +4,11 @@
  * layer supplies rows, the course page renders them, and every ordering and
  * formatting decision lives here where it is unit-testable.
  *
- * Three §5 rules are centralized in this module:
+ * Two §5 rules are centralized in this module:
  *  - the review list's sort options (helpful — the Wilson ranking that sinks
  *    low-quality reviews — plus newest and term; no recency decay anywhere);
- *  - the by-instructor breakdown's **neutral default order** (alphabetical,
- *    never ranked) with user-sortable rating columns whose "—" rows sink; and
- *  - the N ≥ 2 low-data gate applied to each by-instructor row via
- *    `gateAverage` (the same gate the course headline and browse rows use).
+ *  - the N ≥ 2 low-data gate applied to each per-instructor row via
+ *    `gateAverages` (the same gate the course headline and browse rows use).
  */
 import {
   type InstructorUnknown,
@@ -19,7 +17,6 @@ import {
   parseTermCode,
   wilsonLowerBound,
 } from "@/domain";
-import type { SortDirection } from "./browse";
 
 /** One published review as the course page renders it: the required core, the
  * optional pills, the resolved instructor display name (null when the review
@@ -146,8 +143,9 @@ export interface InstructorStats {
   reviewCount: number;
 }
 
-/** One row of the by-instructor breakdown: averages already gated (§5's N ≥ 2
- * rule), count always the true N. */
+/** One per-instructor row: averages already gated (§5's N ≥ 2 rule), count
+ * always the true N. Feeds the Reviews tab's professor filter tabs (the "By
+ * professor" ratings table itself was cut by maintainer decision). */
 export interface InstructorRow {
   id: string;
   displayName: string;
@@ -158,10 +156,10 @@ export interface InstructorRow {
 }
 
 /**
- * Build the breakdown rows (§5): one row per instructor who taught the course
- * (from the Banner offering links), merged with the review aggregates, in the
- * **neutral default order — alphabetical, not ranked**. Instructors who taught
- * but have no reviews get an honest zero row; an instructor with reviews whose
+ * Build the per-instructor rows (§5): one row per instructor who taught the
+ * course (from the Banner offering links), merged with the review aggregates,
+ * in **neutral order — alphabetical, not ranked**. Instructors who taught but
+ * have no reviews get an honest zero row; an instructor with reviews whose
  * offering link a later re-import dropped is kept (reviews are never hidden).
  * Averages are gated per row: a professor with one review shows "—" and N = 1.
  */
@@ -208,39 +206,4 @@ function byName(a: InstructorRow, b: InstructorRow): number {
   return a.displayName.localeCompare(b.displayName, undefined, {
     sensitivity: "base",
   });
-}
-
-/** The breakdown's sortable columns — every rating plus the count. */
-export type InstructorSortKey = "overall" | "difficulty" | "workload" | "reviews";
-
-export interface InstructorSort {
-  key: InstructorSortKey;
-  direction: SortDirection;
-}
-
-/**
- * Sort a copy of the breakdown rows. `null` sort = the neutral alphabetical
- * default (§5 — the breakdown never opens ranked). Under an active sort the
- * same two browse-table rules apply: rows without a computed average ("—")
- * sink in BOTH directions, and ties fall back to the neutral name order so
- * the table never reshuffles arbitrarily.
- */
-export function sortInstructorRows(
-  rows: readonly InstructorRow[],
-  sort: InstructorSort | null,
-): InstructorRow[] {
-  if (!sort) return [...rows].sort(byName);
-  const sign = sort.direction === "asc" ? 1 : -1;
-
-  const primary = (a: InstructorRow, b: InstructorRow): number => {
-    if (sort.key === "reviews") return sign * (a.reviewCount - b.reviewCount);
-    const va = a[sort.key];
-    const vb = b[sort.key];
-    if (va === null && vb === null) return 0;
-    if (va === null) return 1;
-    if (vb === null) return -1;
-    return sign * (va - vb);
-  };
-
-  return [...rows].sort((a, b) => primary(a, b) || byName(a, b));
 }

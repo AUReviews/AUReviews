@@ -43,8 +43,8 @@ import CourseTabs from "./CourseTabs";
 
 // Course detail page (issues #21/#25, v1-spec §5/§6/§13). The catalog side —
 // the full standalone record plus a clear path to write the first review — and
-// the review side: the three-metric headline (workload hero), the by-instructor
-// breakdown, and the review list with helpful voting.
+// the review side: the three-metric headline and the review list with
+// professor filter tabs and helpful voting.
 //
 // ISR: CDN-static with a time-based fallback, refreshable on demand via the
 // "catalog" cache tag after an import (§8). Review-side reads run UNCACHED
@@ -381,10 +381,12 @@ function UnlocksCard({ unlocks }: { unlocks: UnlockChipView[] }) {
 }
 
 // The Reviews tab (issues #21/#25, §5): with N = 0, the "No reviews — write
-// one" CTA into the review form; otherwise the by-instructor breakdown,
-// instructor filter tabs, and the votable review list. All data is fetched
-// server-side and handed to the client island, which only re-orders/filters
-// the same rows — the full list is in the static HTML, readable with JS off.
+// one" CTA into the review form; otherwise the votable review list with
+// professor filter tabs (the per-professor rows feed the tabs only — the "By
+// professor" ratings table was cut by maintainer decision). All data is
+// fetched server-side and handed to the client island, which only re-orders/
+// filters the same rows — the full list is in the static HTML, readable with
+// JS off.
 function ReviewsPanel({
   course,
   reviewHref,

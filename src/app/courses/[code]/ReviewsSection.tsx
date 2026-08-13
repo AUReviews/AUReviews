@@ -2,29 +2,26 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { formatAverage, formatReviewCount, type SortDirection } from "@/lib/browse";
 import {
   type CourseReview,
   type InstructorRow,
-  type InstructorSort,
-  type InstructorSortKey,
   type ReviewSortKey,
   formatReviewDate,
   formatReviewTerm,
   instructorLabel,
   reviewPills,
   sortCourseReviews,
-  sortInstructorRows,
 } from "@/lib/course-reviews";
 import type { VoteDirection } from "@/domain";
 import { castReviewVote } from "./vote-actions";
 
 // The Reviews tab island (issue #25, §5). All rows arrive as props from the
-// server render, so the full breakdown table and review list are in the
-// static/ISR HTML; this island only re-orders and filters that same data, and
-// runs the helpful-vote flow. Per-viewer vote state is fetched from the
-// dynamic /api/votes route after mount — it can never bake into the shared
-// CDN-static page (§8).
+// server render, so the full review list is in the static/ISR HTML; this
+// island only re-orders and filters that same data, and runs the helpful-vote
+// flow. Per-viewer vote state is fetched from the dynamic /api/votes route
+// after mount — it can never bake into the shared CDN-static page (§8).
+// The per-professor rows feed only the filter tabs: the maintainer cut the
+// §5 "By professor" ratings table from this tab.
 
 /** Post-vote reconciliation: the authoritative tallies + own-vote returned by
  * the server action, overriding the static render's counts for this session. */
@@ -81,14 +78,11 @@ export default function ReviewsSection({
   }, [reviews, filter, reviewSort]);
 
   // Filter tabs offer only instructors who actually have reviews — a tab that
-  // filters to nothing helps no one. The breakdown table below still carries
-  // every instructor who taught the course, including zero-review rows.
+  // filters to nothing helps no one.
   const filterTabs = instructorRows.filter((r) => r.reviewCount > 0);
 
   return (
     <div className="panel-stack">
-      <InstructorBreakdown rows={instructorRows} />
-
       <section>
         <div className="review-controls">
           {filterTabs.length > 0 && (
@@ -164,113 +158,6 @@ function FilterTab({
       {label}
     </button>
   );
-}
-
-// The by-instructor breakdown (§5): one row per instructor who taught the
-// course, in NEUTRAL default order (alphabetical — never ranked), each column
-// user-sortable. Sorting here re-orders this table only; the course headline
-// in the sidebar is fixed course-wide and never mutates (§5).
-const BREAKDOWN_COLUMNS: { key: InstructorSortKey; label: string }[] = [
-  { key: "overall", label: "Overall" },
-  { key: "difficulty", label: "Difficulty" },
-  { key: "workload", label: "Workload" },
-  { key: "reviews", label: "Reviews" },
-];
-
-function InstructorBreakdown({ rows }: { rows: InstructorRow[] }) {
-  const [sort, setSort] = useState<InstructorSort | null>(null);
-
-  const sorted = useMemo(() => sortInstructorRows(rows, sort), [rows, sort]);
-  if (rows.length === 0) return null;
-
-  // First click sorts ascending (no "worst/hardest" opening framing, matching
-  // the browse table); second flips; the neutral order is the pre-click state.
-  function toggleSort(key: InstructorSortKey) {
-    setSort((current) =>
-      current?.key === key
-        ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
-        : { key, direction: "asc" },
-    );
-  }
-
-  return (
-    <section>
-      <strong className="subhead">By professor</strong>
-      <div className="table">
-        <div className="table-scroll">
-          <table className="ctable">
-            <thead>
-              <tr>
-                <th scope="col">
-                  <span className="col-head static">Professor</span>
-                </th>
-                {BREAKDOWN_COLUMNS.map((col) => (
-                  <BreakdownHeader
-                    key={col.key}
-                    columnKey={col.key}
-                    label={col.label}
-                    sort={sort}
-                    onSort={toggleSort}
-                  />
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((row) => (
-                <tr key={row.id}>
-                  <td className="title">{row.displayName}</td>
-                  <BreakdownCell value={row.overall} count={row.reviewCount} />
-                  <BreakdownCell value={row.difficulty} count={row.reviewCount} />
-                  <BreakdownCell value={row.workload} count={row.reviewCount} />
-                  <td className="numeric">{formatReviewCount(row.reviewCount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BreakdownHeader({
-  columnKey,
-  label,
-  sort,
-  onSort,
-}: {
-  columnKey: InstructorSortKey;
-  label: string;
-  sort: InstructorSort | null;
-  onSort: (key: InstructorSortKey) => void;
-}) {
-  const active = sort?.key === columnKey;
-  const ariaSort: "ascending" | "descending" | "none" = active
-    ? sort.direction === "asc"
-      ? "ascending"
-      : "descending"
-    : "none";
-  const direction: SortDirection | null = active ? sort.direction : null;
-
-  return (
-    <th aria-sort={ariaSort} scope="col">
-      <button
-        type="button"
-        className="col-head numeric"
-        onClick={() => onSort(columnKey)}
-      >
-        {label}
-        <span className="sort-caret" aria-hidden="true">
-          {direction ? (direction === "asc" ? "▲" : "▼") : ""}
-        </span>
-      </button>
-    </th>
-  );
-}
-
-function BreakdownCell({ value, count }: { value: number | null; count: number }) {
-  const text = formatAverage(value, count);
-  return <td className={`numeric${text === "—" ? " muted" : ""}`}>{text}</td>;
 }
 
 // One review (§5/§13): its three numbers, professor, term, and date; the body;
