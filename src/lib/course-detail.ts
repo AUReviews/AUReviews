@@ -124,10 +124,24 @@ export function courseHref(subject: string, number: string): string {
 }
 
 /**
- * Link to the review form for a course. The form itself is a later ticket (§13);
- * this course-scoped route is the placeholder target the "write a review" CTA
- * points at for now (issue #21).
+ * Link to the review form with this course prefilled (issue #40). Authoring
+ * lives at the single `/reviews/new` route; the course rides along as a query
+ * param the page resolves server-side — the course is data on the review, not
+ * a location, so every entry path lands on the same form.
  */
 export function reviewFormHref(subject: string, number: string): string {
-  return `/courses/${courseSlug(subject, number)}/review`;
+  return `/reviews/new?course=${courseSlug(subject, number)}`;
+}
+
+/**
+ * Where the header's "+ Add Review" button points from a given pathname
+ * (issue #40): on a course detail page it carries that course as prefill,
+ * everywhere else it is the bare authoring route. Pure so the context rule is
+ * unit-testable; the client child feeds it `usePathname()`.
+ */
+export function addReviewNavHref(pathname: string): string {
+  const match = /^\/courses\/([^/]+)\/?$/.exec(pathname);
+  const parsed = match ? parseCourseSlug(match[1]) : null;
+  if (!parsed) return "/reviews/new";
+  return reviewFormHref(parsed.subject, parsed.number);
 }
