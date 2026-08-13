@@ -7,8 +7,15 @@
  * `import/no-restricted-paths` and by src/domain/boundary.test.ts).
  */
 export {
+  type RatingAverages,
+  gateAverage,
+  gateAverages,
+  wilsonLowerBound,
+} from "./aggregate";
+export {
   type CourseId,
   type InstructorId,
+  isUuid,
   mintCourseId,
   mintInstructorId,
   normalizeCatalogKey,
@@ -51,6 +58,7 @@ export {
   type ReviewFieldError,
   type SelectableTerm,
   type TermWindowMode,
+  type VoteDirection,
   ATTENDANCE_OPTIONS,
   BODY_MIN_LENGTH,
   CURVED_OPTIONS,

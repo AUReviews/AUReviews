@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isUuid,
   mintCourseId,
   mintInstructorId,
   normalizeCatalogKey,
@@ -25,6 +26,19 @@ describe("mintInstructorId", () => {
     expect(a).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     );
+  });
+});
+
+describe("isUuid", () => {
+  it("accepts minted ids, either case", () => {
+    expect(isUuid(mintCourseId())).toBe(true);
+    expect(isUuid("D9428888-122B-11E1-B85C-61CD3CBB3210")).toBe(true);
+  });
+
+  it("rejects anything else before it can reach a query", () => {
+    expect(isUuid("")).toBe(false);
+    expect(isUuid("not-a-uuid")).toBe(false);
+    expect(isUuid("d9428888122b11e1b85c61cd3cbb3210")).toBe(false);
   });
 });
 

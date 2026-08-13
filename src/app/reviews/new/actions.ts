@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   ATTENDANCE_OPTIONS,
@@ -171,12 +171,18 @@ export async function submitReview(
     prep: sanitizeSingleSelect(str(formData.get("prep")), PREP_OPTIONS),
   });
 
-  // 6. Revalidate the affected course page so its Reviews tab / count refresh on
-  //    the next read while every other page stays CDN-served (§4/§8), then land
-  //    the author back on the course they just reviewed. `redirect` throws, so
-  //    control never falls through to a return.
+  // 6. Revalidate what the new review changed (§4/§5/§8): the affected course
+  //    page (headline, list), and the "reviews" tag so the browse index's
+  //    rating columns recompute — every other page stays CDN-served. The tag
+  //    must go through `updateTag`, the Server-Action read-your-own-writes
+  //    form that expires immediately: `revalidateTag(tag, "max")` is
+  //    stale-while-revalidate, which left the browse table serving the old
+  //    numbers on the author's very next visit. Then land the author back on
+  //    the course they just reviewed. `redirect` throws, so control never
+  //    falls through to a return.
   const href = courseHref(course.subject, course.number);
   revalidatePath(href);
+  updateTag("reviews");
   redirect(href);
 }
 

@@ -130,22 +130,15 @@ describe("sortBrowseCourses", () => {
 });
 
 describe("formatAverage", () => {
-  it("shows an em dash when there are no reviews", () => {
-    expect(formatAverage(null, 0)).toBe("—");
+  it("shows an em dash when the low-data gate withheld the average", () => {
+    // The gate itself (threshold and all) lives in domain gateAverage; a null
+    // arriving here just formats as "—".
+    expect(formatAverage(null)).toBe("—");
   });
 
-  it("shows an em dash for a single review (N < 2, the low-data rule)", () => {
-    // Even if an average were computed, one data point never earns a headline.
-    expect(formatAverage(4, 1)).toBe("—");
-  });
-
-  it("shows the two-decimal mean once N >= 2", () => {
-    expect(formatAverage(3.124, 8)).toBe("3.12");
-    expect(formatAverage(4, 2)).toBe("4.00");
-  });
-
-  it("shows an em dash when the value is null even with N >= 2", () => {
-    expect(formatAverage(null, 5)).toBe("—");
+  it("shows the two-decimal mean when one is reportable", () => {
+    expect(formatAverage(3.124)).toBe("3.12");
+    expect(formatAverage(4)).toBe("4.00");
   });
 });
 

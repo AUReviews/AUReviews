@@ -27,6 +27,18 @@ export function mintInstructorId(): InstructorId {
 }
 
 /**
+ * Whether a string has the shape of one of our minted ids (a UUID). Public
+ * endpoints (vote action, votes API) check incoming ids against this before
+ * they reach a query, so a crafted value is bounced with a clean rejection
+ * instead of surfacing as a Postgres invalid-uuid cast error.
+ */
+export function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+/**
  * Normalize an instructor display name for *matching* (issue #23): trimmed,
  * inner whitespace collapsed (Banner pads names irregularly), upper-cased.
  * Used only to key instructors that expose no stable Banner person key and to

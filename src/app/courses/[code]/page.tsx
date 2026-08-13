@@ -3,11 +3,23 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { unstable_cache } from "next/cache";
 import {
+  type CourseAggregates,
+  getCourseAggregates,
   getCourseByCode,
+  listCourseInstructors,
+  listCourseReviews,
   listCourses,
+  listInstructorStats,
   listOfferingTermCodes,
   listPrereqRows,
 } from "@/db/queries";
+import { formatAverage } from "@/lib/browse";
+import {
+  type CourseReview,
+  type InstructorRow,
+  buildInstructorRows,
+} from "@/lib/course-reviews";
+import ReviewsSection from "./ReviewsSection";
 import {
   type CourseDetail,
   courseSlug,
@@ -29,14 +41,16 @@ import {
 } from "@/lib/prereqs";
 import CourseTabs from "./CourseTabs";
 
-// Course detail page — the catalog side (issue #21, v1-spec §6/§13). One page per
-// Course that stands alone before any review exists: the full catalog record
-// (title, COMP code, credit hours, description, verbatim prereq prose, and a
-// catalog-year stamp) plus a clear path to write the first review.
+// Course detail page (issues #21/#25, v1-spec §5/§6/§13). The catalog side —
+// the full standalone record plus a clear path to write the first review — and
+// the review side: the three-metric headline and the review list with
+// professor filter tabs and helpful voting.
 //
 // ISR: CDN-static with a time-based fallback, refreshable on demand via the
-// "catalog" cache tag after an import (§8). When reviews land (#6), a per-course
-// revalidatePath on write will refresh a single course page without an import.
+// "catalog" cache tag after an import (§8). Review-side reads run UNCACHED
+// inside each (re)render: a review submit or a vote calls `revalidatePath` on
+// this page, so aggregates and tallies recompute then — "a SQL query computed
+// at revalidation time" (§5) — while reads stay CDN-served between writes.
 export const revalidate = 3600;
 
 // Behind the "catalog" tag so a catalog import (#18) refreshes every course page
@@ -122,6 +136,19 @@ export default async function CoursePage({
   const credits = formatCreditHours(course.creditHours);
   const reviewHref = reviewFormHref(course.subject, course.number);
 
+  // The review side (§5, issue #25), read fresh each revalidation — never
+  // behind the "catalog" tag, so a submit/vote's revalidatePath recomputes it.
+  // The headline aggregates are fixed course-wide and never mutate on the
+  // instructor filter (§5) — the filter is client-side display state only.
+  const [aggregates, reviews, instructorStats, taughtInstructors] =
+    await Promise.all([
+      getCourseAggregates(course.id),
+      listCourseReviews(course.id),
+      listInstructorStats(course.id),
+      listCourseInstructors(course.id),
+    ]);
+  const instructorRows = buildInstructorRows(taughtInstructors, instructorStats);
+
   // Display-time rollup over the course's Offering history — never a stored
   // flag (§6, issue #23). Null (no ingested history) renders as no badge.
   const typicallyOffered = formatTypicallyOffered(
@@ -167,15 +194,23 @@ export default async function CoursePage({
       <div className="course-body">
         <div className="course-main">
           <CourseTabs
-            reviewCount={course.reviewCount}
+            reviewCount={aggregates.reviewCount}
             overview={
               <Overview
                 course={course}
+                reviewCount={aggregates.reviewCount}
                 prereqView={prereqView}
                 reviewHref={reviewHref}
               />
             }
-            reviews={<ReviewsPanel course={course} reviewHref={reviewHref} />}
+            reviews={
+              <ReviewsPanel
+                course={course}
+                reviewHref={reviewHref}
+                reviews={reviews}
+                instructorRows={instructorRows}
+              />
+            }
           />
         </div>
 
@@ -183,14 +218,7 @@ export default async function CoursePage({
           <Link href={reviewHref} className="btn-accent btn-block">
             Review this course
           </Link>
-          <div className="stats">
-            <StatRow label="Overall" unit="/5" />
-            <StatRow label="Difficulty" unit="/5" />
-            <StatRow label="Workload" unit="hrs" />
-            <p className="stats-note">
-              No reviews yet — averages appear once a course has two or more.
-            </p>
-          </div>
+          <Metrics aggregates={aggregates} />
         </aside>
       </div>
     </div>
@@ -206,10 +234,12 @@ export default async function CoursePage({
 // first clicking into Reviews.
 function Overview({
   course,
+  reviewCount,
   prereqView,
   reviewHref,
 }: {
   course: CourseDetail;
+  reviewCount: number;
   prereqView: CoursePrereqView;
   reviewHref: string;
 }) {
@@ -232,7 +262,7 @@ function Overview({
       <PrerequisitesCard view={prereqView} />
       <UnlocksCard unlocks={prereqView.unlocks} />
 
-      {course.reviewCount === 0 && (
+      {reviewCount === 0 && (
         <NoReviewsCta course={course} reviewHref={reviewHref} />
       )}
     </div>
@@ -350,22 +380,34 @@ function UnlocksCard({ unlocks }: { unlocks: UnlockChipView[] }) {
   );
 }
 
-// The Reviews tab scaffold (issue #21): the review list is a later ticket (#6),
-// so with N = 0 this is the "No reviews — write one" CTA into the review form
-// (§5's zero-review state). When reviews land this panel renders the list.
+// The Reviews tab (issues #21/#25, §5): with N = 0, the "No reviews — write
+// one" CTA into the review form; otherwise the votable review list with
+// professor filter tabs (the per-professor rows feed the tabs only — the "By
+// professor" ratings table was cut by maintainer decision). All data is
+// fetched server-side and handed to the client island, which only re-orders/
+// filters the same rows — the full list is in the static HTML, readable with
+// JS off.
 function ReviewsPanel({
   course,
   reviewHref,
+  reviews,
+  instructorRows,
 }: {
   course: CourseDetail;
   reviewHref: string;
+  reviews: CourseReview[];
+  instructorRows: InstructorRow[];
 }) {
-  if (course.reviewCount === 0) {
+  if (reviews.length === 0) {
     return <NoReviewsCta course={course} reviewHref={reviewHref} />;
   }
-  // Review list rendering arrives with #6; the catalog-side ticket only needs the
-  // scaffold and the zero-review CTA above.
-  return null;
+  return (
+    <ReviewsSection
+      courseId={course.id}
+      reviews={reviews}
+      instructorRows={instructorRows}
+    />
+  );
 }
 
 // §5's N = 0 state: "the catalog page still stands alone with a 'No reviews —
@@ -392,14 +434,53 @@ function NoReviewsCta({
   );
 }
 
-function StatRow({ label, unit }: { label: string; unit: string }) {
-  // N = 0 everywhere in v1 → the low-data rule (§5) shows "—", never a headline
-  // average built from too little data.
+// The course headline (§5): three separate metrics — never a composite — one
+// per row, equal weight, in Overall / Difficulty / Workload order (the
+// maintainer's chosen presentation over §5's hero-tile emphasis). Averages
+// are already run through the low-data gate before they get here
+// (`getCourseAggregates`), so a sub-threshold course shows "—" with its true
+// count. The headline is course-wide and fixed — the Reviews tab's instructor
+// filter never touches it.
+function Metrics({ aggregates }: { aggregates: CourseAggregates }) {
+  const n = aggregates.reviewCount;
+  const note =
+    n === 0
+      ? "No reviews yet — be the first to write one."
+      : `Averages over ${n} ${n === 1 ? "review" : "reviews"}.`;
+
+  return (
+    <div className="stats">
+      <MetricRow label="Overall" unit="/5" value={formatAverage(aggregates.overall)} />
+      <MetricRow
+        label="Difficulty"
+        unit="/5"
+        value={formatAverage(aggregates.difficulty)}
+      />
+      <MetricRow
+        label="Workload"
+        unit="hrs/wk"
+        value={formatAverage(aggregates.workload)}
+      />
+      <p className="stats-note">{note}</p>
+    </div>
+  );
+}
+
+function MetricRow({
+  label,
+  unit,
+  value,
+}: {
+  label: string;
+  unit: string;
+  value: string;
+}) {
   return (
     <div className="stat-row">
       <span className="lbl">{label}</span>
-      <strong className="val muted">
-        —<small> {unit}</small>
+      <strong className={`val${value === "—" ? " muted" : ""}`}>
+        {value}
+        <small> {unit}</small>
       </strong>
     </div>
   );

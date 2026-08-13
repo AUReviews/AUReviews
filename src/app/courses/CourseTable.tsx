@@ -90,9 +90,9 @@ export default function CourseTable({ courses }: { courses: BrowseCourse[] }) {
                     <span className="retired-tag">retired</span>
                   )}
                 </td>
-                <RatingCell value={course.overall} reviewCount={course.reviewCount} />
-                <RatingCell value={course.difficulty} reviewCount={course.reviewCount} />
-                <RatingCell value={course.workload} reviewCount={course.reviewCount} />
+                <RatingCell value={course.overall} />
+                <RatingCell value={course.difficulty} />
+                <RatingCell value={course.workload} />
                 <td className="numeric">{formatReviewCount(course.reviewCount)}</td>
               </tr>
             ))}
@@ -135,13 +135,7 @@ function ColumnHeader({
   );
 }
 
-function RatingCell({
-  value,
-  reviewCount,
-}: {
-  value: number | null;
-  reviewCount: number;
-}) {
-  const text = formatAverage(value, reviewCount);
+function RatingCell({ value }: { value: number | null }) {
+  const text = formatAverage(value);
   return <td className={`numeric${text === "—" ? " muted" : ""}`}>{text}</td>;
 }
