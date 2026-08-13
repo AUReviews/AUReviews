@@ -1020,44 +1020,12 @@ a.chip-link:hover {
 
 /* ---- Reviews, aggregates, by-instructor breakdown (issue #25, §5) -------- */
 
-/* The three-metric headline: workload is the hero tile (§5) — full-width and
-   larger — with overall/difficulty side by side beneath it. */
-.metric-tiles {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+/* The three-metric headline: one full-width .stat-row per metric, workload
+   first and largest — the hero row (§5). */
+.stat-row.hero .lbl {
+  color: var(--text-secondary);
 }
-.metric-tile {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: var(--bg-chip);
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-.metric-tile .lbl {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-.metric-tile .val {
-  font-size: 20px;
-  color: var(--text-heading);
-  font-weight: 700;
-}
-.metric-tile .val.muted {
-  color: var(--text-muted);
-}
-.metric-tile .val small {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-.metric-tile.hero {
-  grid-column: 1 / -1;
-}
-.metric-tile.hero .val {
+.stat-row.hero .val {
   font-size: 28px;
 }
 

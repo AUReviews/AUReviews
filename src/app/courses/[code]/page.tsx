@@ -432,12 +432,12 @@ function NoReviewsCta({
   );
 }
 
-// The course headline (§5): three separate metrics side by side — never a
-// composite — with WORKLOAD as the hero tile (the north-star metric, §4).
-// Averages are already gated by the N ≥ 2 low-data rule before they get here
-// (`getCourseAggregates`), so a sub-threshold course shows "—" with its true
-// count; the note says why. The headline is course-wide and fixed — the
-// Reviews tab's instructor filter never touches it.
+// The course headline (§5): three separate metrics — never a composite — one
+// per row, with WORKLOAD as the hero row (first and largest; the north-star
+// metric, §4). Averages are already gated by the N ≥ 2 low-data rule before
+// they get here (`getCourseAggregates`), so a sub-threshold course shows "—"
+// with its true count; the note says why. The headline is course-wide and
+// fixed — the Reviews tab's instructor filter never touches it.
 function Metrics({ aggregates }: { aggregates: CourseAggregates }) {
   const n = aggregates.reviewCount;
   const note =
@@ -449,30 +449,28 @@ function Metrics({ aggregates }: { aggregates: CourseAggregates }) {
 
   return (
     <div className="stats">
-      <div className="metric-tiles">
-        <MetricTile
-          label="Workload"
-          unit="hrs/wk"
-          value={formatAverage(aggregates.workload, n)}
-          hero
-        />
-        <MetricTile
-          label="Overall"
-          unit="/5"
-          value={formatAverage(aggregates.overall, n)}
-        />
-        <MetricTile
-          label="Difficulty"
-          unit="/5"
-          value={formatAverage(aggregates.difficulty, n)}
-        />
-      </div>
+      <MetricRow
+        label="Workload"
+        unit="hrs/wk"
+        value={formatAverage(aggregates.workload, n)}
+        hero
+      />
+      <MetricRow
+        label="Overall"
+        unit="/5"
+        value={formatAverage(aggregates.overall, n)}
+      />
+      <MetricRow
+        label="Difficulty"
+        unit="/5"
+        value={formatAverage(aggregates.difficulty, n)}
+      />
       <p className="stats-note">{note}</p>
     </div>
   );
 }
 
-function MetricTile({
+function MetricRow({
   label,
   unit,
   value,
@@ -484,7 +482,7 @@ function MetricTile({
   hero?: boolean;
 }) {
   return (
-    <div className={`metric-tile${hero ? " hero" : ""}`}>
+    <div className={`stat-row${hero ? " hero" : ""}`}>
       <span className="lbl">{label}</span>
       <strong className={`val${value === "—" ? " muted" : ""}`}>
         {value}
