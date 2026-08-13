@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import {
   type InstructorUnknown,
   type PlaceholderRow,
@@ -8,6 +8,7 @@ import {
 import type { BrowseCourse } from "@/lib/browse";
 import type { CourseDetail } from "@/lib/course-detail";
 import type { CourseReview, InstructorStats } from "@/lib/course-reviews";
+import { type CourseSearchRow, escapeLikePattern } from "@/lib/course-search";
 import type { PrereqCatalogRow } from "@/lib/prereqs";
 import { getDb } from "./client";
 import {
@@ -199,6 +200,42 @@ export async function listOfferingTermCodes(courseId: string): Promise<string[]>
     .from(offerings)
     .where(eq(offerings.courseId, courseId));
   return rows.map((r) => r.termCode);
+}
+
+/**
+ * Match catalog courses against a typed fragment for the review form's course
+ * picker (§4/§13; issue #40). Server-backed on purpose: the client posts the
+ * query and gets back at most `limit` rows, so the whole catalog never ships
+ * to the browser. Matches the `SUBJ NUMBER` code form (with or without the
+ * space, so `comp3270` works) and the title, case-insensitively; the caller
+ * has already normalized the query and this escapes it, so typed `%`/`_`
+ * match literally. Retired courses are included, matching {@link listCourses}
+ * — they keep their pages and can still be reviewed within the term window.
+ */
+export async function searchCoursesByText(
+  query: string,
+  limit = 8,
+): Promise<CourseSearchRow[]> {
+  const db = getDb();
+  const contains = `%${escapeLikePattern(query)}%`;
+  const compact = `%${escapeLikePattern(query.replace(/ /g, ""))}%`;
+  return db
+    .select({
+      id: courses.id,
+      subject: courses.subject,
+      number: courses.number,
+      title: courses.title,
+    })
+    .from(courses)
+    .where(
+      or(
+        sql`(${courses.subject} || ' ' || ${courses.number}) ilike ${contains}`,
+        sql`(${courses.subject} || ${courses.number}) ilike ${compact}`,
+        sql`${courses.title} ilike ${contains}`,
+      ),
+    )
+    .orderBy(courses.subject, courses.number)
+    .limit(limit);
 }
 
 /** One instructor eligible for a course's review-form dropdown (issue #24). */

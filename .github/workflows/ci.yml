@@ -1,0 +1,51 @@
+# CI only — CD stays with Vercel's Git integration (previews per PR,
+# production on merge to main). The `ci` job below is the single required
+# status check in the `main` ruleset, so its name must stay stable.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      # No DB env vars: the build is deliberately DB-tolerant (lazy client,
+      # generateStaticParams falls back to on-demand ISR), so this only proves
+      # the app compiles — Vercel's deploy does the real build with real vars.
+      - run: npm run build
+
+      # drizzle-kit generate never connects to a database, but drizzle.config.ts
+      # refuses to load without DATABASE_URL_UNPOOLED — hence the placeholder.
+      - name: Schema drift check
+        env:
+          DATABASE_URL_UNPOOLED: postgres://placeholder-for-drift-check
+        run: |
+          npx drizzle-kit generate
+          if [ -n "$(git status --porcelain drizzle)" ]; then
+            echo "::error::src/db/schema.ts changed without a generated migration. Run 'npm run db:generate' and commit the result."
+            git status --porcelain drizzle
+            exit 1
+          fi

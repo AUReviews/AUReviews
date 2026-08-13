@@ -18,12 +18,53 @@ import {
 } from "@/domain";
 import { getCurrentIdentityHash } from "@/auth/session";
 import {
+  type CourseInstructor,
   getCourseByCode,
   insertReview,
   listCourseInstructors,
+  searchCoursesByText,
 } from "@/db/queries";
 import { courseHref, parseCourseSlug } from "@/lib/course-detail";
+import {
+  type CourseOption,
+  normalizeCourseSearchQuery,
+  toCourseOption,
+} from "@/lib/course-search";
 import { currentSelectableTerms } from "@/lib/review-window";
+
+/**
+ * The course picker's server-backed typeahead (issue #40): match the typed
+ * fragment against catalog code + title and return at most a handful of
+ * options, so the catalog itself never ships to the client. A too-short query
+ * is no results, not an error — the picker just keeps prompting.
+ */
+export async function searchCourseOptions(
+  rawQuery: string,
+): Promise<CourseOption[]> {
+  const query = normalizeCourseSearchQuery(String(rawQuery ?? ""));
+  if (!query) return [];
+  const rows = await searchCoursesByText(query);
+  return rows.map(toCourseOption);
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Load the instructor dropdown for a just-picked course (issue #40): the same
+ * course-scoped `listCourseInstructors` read the prefilled path uses, exposed
+ * as an action so the picker can populate the dropdown on select. The two
+ * "unknown" escapes stay client-side (§4) — they aren't instructors. A
+ * malformed id returns the empty list rather than erroring: the id is only
+ * ever one we handed out in a search option, so anything else is a crafted
+ * call, and the submit action re-checks instructor-taught-course anyway.
+ */
+export async function listInstructorOptions(
+  courseId: string,
+): Promise<CourseInstructor[]> {
+  if (!UUID_RE.test(courseId)) return [];
+  return listCourseInstructors(courseId);
+}
 
 /**
  * The result the submit action hands back to the form island (issue #24). A
