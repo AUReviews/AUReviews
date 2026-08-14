@@ -5,9 +5,9 @@
  * the session — exactly what the anonymity architecture forbids. This adapter
  * inverts that: the moment an address is known (createUser / getUserByEmail /
  * updateUser) it is folded into `identity_hash = HMAC(PEPPER, normalize(email))`
- * and only the hash is persisted (in `identities`). The email is never written
- * to `identities`; it lives only in `verification_tokens`, transiently, until the
- * link is used or expires.
+ * and only the hash is persisted (in `identities`). The email is never at rest
+ * anywhere: `verification_tokens` stores the same peppered hash as its
+ * identifier (issue #43), so even the transient token row carries no address.
  *
  * The `AdapterUser` type demands an `email` field, so we return the empty string
  * for it everywhere — no read path ever exposes the real address, and the
@@ -15,12 +15,22 @@
  * attribute a write resolves the session to `identity_hash` via ./session.ts,
  * never through this synthetic user object.
  */
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Adapter, AdapterSession, AdapterUser } from "next-auth/adapters";
 import { getDb } from "@/db/client";
 import { identities, sessions, verificationTokens } from "@/db/schema";
 import { computeIdentityHash } from "@/domain";
 import { getPepper } from "./pepper";
+
+/** Wrong guesses allowed against one code before it is invalidated (issue #43).
+ * Bounds the 10^6 six-digit space: 5 tries ≈ a 0.0005% per-token ceiling. */
+export const MAX_CODE_ATTEMPTS = 5;
+
+/** The stored form of a token identifier: the same peppered HMAC as
+ * `identity_hash` (normalization included), so no address is ever at rest. */
+function hashTokenIdentifier(identifier: string): string {
+  return computeIdentityHash(getPepper(), identifier);
+}
 
 /** Shape returned for every user read/write. The email is deliberately blanked —
  * we hold only the hash, and this object never reaches the client. */
@@ -166,31 +176,52 @@ export function createHashingAdapter(): Adapter {
 
     async createVerificationToken(token) {
       const db = getDb();
-      // One live token per address (v1-spec §7): drop any prior token for this
-      // identifier before issuing a new one, so an old link can't still work.
+      const identifier = hashTokenIdentifier(token.identifier);
+      // One live code per address (v1-spec §7): drop any prior token for this
+      // identifier before issuing a new one, so an old code can't still work.
       await db
         .delete(verificationTokens)
-        .where(eq(verificationTokens.identifier, token.identifier));
-      const [row] = await db
+        .where(eq(verificationTokens.identifier, identifier));
+      await db
         .insert(verificationTokens)
-        .values(token)
-        .returning();
-      return row;
+        .values({ identifier, token: token.token, expires: token.expires });
+      // Echo the input: Auth.js expects the identifier it passed, not our hash.
+      return token;
     },
 
     async useVerificationToken({ identifier, token }) {
       const db = getDb();
-      // Single-use: delete-and-return, so a token works exactly once.
-      const [row] = await db
+      const hashedIdentifier = hashTokenIdentifier(identifier);
+      // Single-use: delete-and-return, so a correct code works exactly once.
+      const [match] = await db
         .delete(verificationTokens)
         .where(
           and(
-            eq(verificationTokens.identifier, identifier),
+            eq(verificationTokens.identifier, hashedIdentifier),
             eq(verificationTokens.token, token),
           ),
         )
         .returning();
-      return row ?? null;
+      if (match) {
+        // Auth.js compares the returned identifier against its email param and
+        // then builds the user from it — hand back the caller's raw address.
+        return { identifier, token: match.token, expires: match.expires };
+      }
+      // Wrong code: count the guess against the address's live token (if any),
+      // atomically, and invalidate it once the cap is reached (issue #43). The
+      // caller sees only null either way — wrong, expired, and exhausted are
+      // indistinguishable from outside.
+      const [counted] = await db
+        .update(verificationTokens)
+        .set({ attempts: sql`${verificationTokens.attempts} + 1` })
+        .where(eq(verificationTokens.identifier, hashedIdentifier))
+        .returning();
+      if (counted && counted.attempts >= MAX_CODE_ATTEMPTS) {
+        await db
+          .delete(verificationTokens)
+          .where(eq(verificationTokens.identifier, hashedIdentifier));
+      }
+      return null;
     },
   };
 }

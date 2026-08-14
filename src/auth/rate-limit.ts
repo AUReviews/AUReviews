@@ -8,7 +8,7 @@
  *
  * The gate is called from the sign-in server action BEFORE `signIn` runs, so a
  * throttled request never reaches token issuance — it can't rotate a victim's
- * live magic link (v1-spec §7: "one live verification token per address").
+ * live sign-in code (v1-spec §7: "one live verification token per address").
  *
  * Addresses are logged as a keyed hash, never plaintext (v1-spec §7): the same
  * HMAC used for `identity_hash` feeds per-address counting, so no email is
@@ -82,7 +82,7 @@ async function countSince(
 /**
  * DB-backed gate: count this address's and this IP's sends in the trailing hour
  * and all sends in the trailing day, apply {@link evaluateSendRateLimit}, and
- * record the attempt when allowed. Call this BEFORE issuing a magic link. `now`
+ * record the attempt when allowed. Call this BEFORE issuing a sign-in code. `now`
  * is injectable for tests.
  */
 export async function checkAndRecordSend(input: {

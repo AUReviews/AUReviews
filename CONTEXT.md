@@ -35,11 +35,15 @@ The imported, refreshable, disposable half of the model — a Course's current c
 The user-authored, permanent, append-only half — `Review`s plus the durable `Course` / `Instructor` identities and the crosswalk that anchor them. The precious data; the reason durable ids exist.
 
 **Verified Auburn student**:
-Anyone who has proven control of an `@auburn.edu` / `@tigermail.auburn.edu` mailbox via the magic-link flow — the eligibility gate for authoring on the Review side. The site is built for current Auburn students choosing and sequencing courses, so user-facing copy calls verified users "Auburn students." One honest technical limit stands behind that copy: the gate proves mailbox control, not enrollment or that the reviewer took the course — a gap the anti-junk and legal posture (v1-spec §7/§10) account for, not one the copy claims away.
+Anyone who has proven control of an `@auburn.edu` / `@tigermail.auburn.edu` mailbox via the sign-in code flow (an emailed single-use 6-digit code, typed back on the sign-in page) — the eligibility gate for authoring on the Review side. The site is built for current Auburn students choosing and sequencing courses, so user-facing copy calls verified users "Auburn students." One honest technical limit stands behind that copy: the gate proves mailbox control, not enrollment or that the reviewer took the course — a gap the anti-junk and legal posture (v1-spec §7/§10) account for, not one the copy claims away.
 _Avoid_: affiliate (retired in favor of "student")
 
+**Sign-in code**:
+The emailed single-use 6-digit code a student types back on the sign-in page to prove mailbox control — the verification token of the auth flow (#43). One live code per address; expires in ~10 minutes; invalidated after 5 wrong guesses (wrong, expired, and exhausted are indistinguishable from outside). Stored only as a secret-hashed token against a peppered identifier hash, so neither the code nor the address is ever at rest. The email deliberately contains no URL: Auburn mail passes through Microsoft 365 Safe Links, which rewrites and pre-fetches links.
+_Avoid_: magic link (retired in #43), OTP, verification link
+
 **Identity hash**:
-The durable, non-reversible author token for a verified student: `identity_hash = HMAC_SHA256(PEPPER, normalize(email))`, where the `PEPPER` lives outside the database. It is the only thing linking a person to their reviews, votes, and edits — the plaintext email is never persisted past verification. A Review-side identity, minted at verification and stable across an author's actions, but **not a uniqueness key**: a person may hold more than one review per course (see #6/#8). Never sent to the client, and never exposed on any public or session surface.
+The durable, non-reversible author token for a verified student: `identity_hash = HMAC_SHA256(PEPPER, normalize(email))`, where the `PEPPER` lives outside the database. It is the only thing linking a person to their reviews, votes, and edits — the plaintext email is never at rest anywhere, even transiently (verification tokens store this same peppered hash as their identifier). A Review-side identity, minted at verification and stable across an author's actions, but **not a uniqueness key**: a person may hold more than one review per course (see #6/#8). Never sent to the client, and never exposed on any public or session surface.
 _Avoid_: user id, email hash (the pepper, not a bare hash, is what makes it non-reversible)
 
 **Import contract**:
