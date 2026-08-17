@@ -785,11 +785,15 @@ a.chip-link:hover {
 .textarea-input::placeholder {
   color: var(--text-placeholder);
 }
+/* Focus ring ON the border, not floating outside it: the 2px ring is inset by
+   1px so it replaces the 1px border edge-for-edge (omscentral pattern, owner
+   review PR #48). Being inside the control's own box also means an attached
+   addon (the @auburn.edu suffix) can never paint over it. */
 .select-input:focus,
 .num-input:focus,
 .textarea-input:focus {
   outline: 2px solid var(--link);
-  outline-offset: 1px;
+  outline-offset: -1px;
 }
 
 /* The 1–5 segmented scale. */
@@ -923,7 +927,7 @@ a.chip-link:hover {
 }
 .check-chip:has(input:focus-visible) {
   outline: 2px solid var(--link);
-  outline-offset: 1px;
+  outline-offset: -1px;
 }
 /* The Languages "Other" write-in, shown only while Other is picked. */
 .check-other {
