@@ -340,12 +340,14 @@ export const sessions = pgTable("sessions", {
 });
 
 /**
- * Auth.js magic-link tokens (issue #19). Single-use and expiring (v1-spec §7:
- * one live token per address, 15–60 min). `identifier` is the target address,
- * held ONLY transiently here until the link is clicked or expires — it is the
- * one place an address touches the DB, and it is never copied into `identities`.
- * The adapter deletes any prior token for an identifier before issuing a new one
- * so only one link is ever live per address.
+ * Auth.js sign-in code tokens (issues #19, #43). Single-use and expiring
+ * (v1-spec §7: one live token per address). `identifier` is the PEPPERED HASH
+ * of the target address — `HMAC(PEPPER, normalize(email))`, the same derivation
+ * as `identity_hash` — so the plaintext address is never at rest anywhere, even
+ * transiently. `token` is the 6-digit code hashed with the Auth.js secret.
+ * The adapter deletes any prior token for an identifier before issuing a new
+ * one so only one code is ever live per address, and `attempts` counts wrong
+ * guesses so the code dies after a bounded number of tries (#43).
  */
 export const verificationTokens = pgTable(
   "verification_tokens",
@@ -353,13 +355,14 @@ export const verificationTokens = pgTable(
     identifier: text("identifier").notNull(),
     token: text("token").notNull(),
     expires: timestamp("expires", { withTimezone: true }).notNull(),
+    attempts: integer("attempts").notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.identifier, t.token] })],
 );
 
 /**
  * Email-send throttle log (v1-spec §7, research §5; issue #19). One row per
- * issued magic link, used to enforce ≤3 sends/address/hour and ≤10 sends/IP/hour.
+ * issued sign-in code, used to enforce ≤3 sends/address/hour and ≤10 sends/IP/hour.
  * The address is stored as the same keyed hash as `identities.identity_hash`,
  * never plaintext, so per-address throttling costs no additional PII. Composite
  * indexes make the trailing-hour count a fast range scan; rows are prunable

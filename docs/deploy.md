@@ -102,7 +102,7 @@ PowerShell these surface as a thrown "response status code does not indicate
 success" error — that is the expected rejection). The secret in `.env.local`
 must match the `REVALIDATE_SECRET` set in Vercel, or the call returns `401`.
 
-## 8. Auth: @auburn.edu magic-link ([#19](https://github.com/AUReviews/AUReviews/issues/19))
+## 8. Auth: @auburn.edu sign-in code ([#19](https://github.com/AUReviews/AUReviews/issues/19), [#43](https://github.com/AUReviews/AUReviews/issues/43))
 
 Auth.js (NextAuth) self-hosted, owning its tables in the same Neon Postgres
 (v1-spec [§7](v1-spec.md#7-auth-identity-and-anonymity)). Migrations in step 4
@@ -120,8 +120,8 @@ tables (`drizzle/0002_*.sql`).
   secret that keeps `identity_hash` non-reversible. Rotating it orphans every
   existing identity (they can no longer be re-derived from a re-verified email),
   so treat it like a private key.
-- **`RESEND_API_KEY`** — Resend API key. When unset (local dev), magic links are
-  logged to the server console instead of emailed, so the flow is testable
+- **`RESEND_API_KEY`** — Resend API key. When unset (local dev), sign-in codes
+  are logged to the server console instead of emailed, so the flow is testable
   without a mailbox.
 - **`EMAIL_FROM`** — from-address on the dedicated sending subdomain, e.g.
   `AUReviews <no-reply@mail.aureviews.com>`.
@@ -129,14 +129,16 @@ tables (`drizzle/0002_*.sql`).
 **DNS (launch-checklist item, not code — v1-spec §7):** deliverability into
 Auburn's Microsoft 365 tenant requires **SPF + DKIM + DMARC** published on the
 Resend sending subdomain. Verify the domain in Resend, publish the records it
-generates, and confirm a test link lands in an Auburn inbox (not Junk) **before**
+generates, and confirm a test email lands in an Auburn inbox (not Junk) **before**
 opening the review-submission flow.
 
 **What's enforced in code** (`src/auth/`): non-Auburn addresses are rejected at
-sign-in before any email is sent; each magic link is single-use and expires in
-~30 min with only one live token per address; send rate limits are ≤3/address/hr
-and ≤10/IP/hr; only `identity_hash` + `verified_at` are stored (never the email);
-and the client session exposes neither the hash nor the address.
+sign-in before any email is sent; each sign-in code is single-use, expires in
+~10 min, dies after 5 wrong guesses, and only one is live per address; send rate
+limits are ≤3/address/hr and ≤10/IP/hr; only `identity_hash` + `verified_at` are
+stored (never the email — the code email contains no URL, so Microsoft 365 Safe
+Links has nothing to pre-fetch); and the client session exposes neither the hash
+nor the address.
 
 ## What this proves (acceptance, #17)
 

@@ -1,30 +1,40 @@
 /**
- * Auth.js (NextAuth) wiring for AUReviews (issue #19, v1-spec §7).
+ * Auth.js (NextAuth) wiring for AUReviews (issue #19, v1-spec §7; issue #43).
+ *
+ * Sign-in is a typed 6-digit code, not a magic link (issue #43): the emailed
+ * message contains no URL for Microsoft 365 Safe Links to rewrite or pre-fetch,
+ * and the code works cross-device. The code IS the verification token
+ * (`generateVerificationToken`), so the stock email-provider flow — secret-
+ * hashed storage, single use, expiry — applies to it unchanged; the sign-in
+ * form submits email + code to the provider's standard callback route.
  *
  * The anonymity guarantees are enforced here across three seams:
  *   1. `signIn` callback rejects any non-Auburn address BEFORE a token is created
  *      or an email sent (AC #1).
- *   2. `sendVerificationRequest` re-asserts the domain and delivers the link. The
+ *   2. `sendVerificationRequest` re-asserts the domain and delivers the code. The
  *      send RATE limits (AC #5) are enforced upstream in the sign-in server
- *      action (see src/app/signin/page.tsx) — before `signIn` runs, so a
+ *      action (see src/app/signin/actions.ts) — before `signIn` runs, so a
  *      throttled request never reaches token rotation and can't invalidate a
- *      victim's live link (v1-spec §7: "one live verification token per address").
+ *      victim's live code (v1-spec §7: "one live verification token per address").
  *   3. `session` callback strips the user object to nothing identifying — the
  *      client never receives `identity_hash`, the raw address, or even the
  *      internal user id (AC #4). Server code resolves the session to
  *      `identity_hash` via ./session.ts instead.
  *
  * The custom adapter (./adapter.ts) persists only `identity_hash`, never the
- * email (AC #3). The pepper lives in env, never the DB (AC #4).
+ * email (AC #3) — including in `verification_tokens`, whose identifier is the
+ * same peppered hash. The pepper lives in env, never the DB (AC #4).
  */
 import NextAuth from "next-auth";
 import Resend from "next-auth/providers/resend";
 import { isAuburnStudentEmail, normalizeEmail } from "@/domain";
 import { createHashingAdapter } from "./adapter";
-import { sendMagicLinkEmail } from "./mailer";
+import { generateSignInCode } from "./code";
+import { sendSignInCodeEmail } from "./mailer";
 
-/** Single live token, 15–60 min expiry (v1-spec §7). 30 min sits in the middle. */
-const TOKEN_MAX_AGE_SECONDS = 30 * 60;
+/** A typed code is used the moment it is read — 10 minutes is ample, and a
+ * shorter life further shrinks the guessing window (issue #43 triage). */
+const TOKEN_MAX_AGE_SECONDS = 10 * 60;
 
 /** From-address on the dedicated sending subdomain (v1-spec §7). */
 function fromAddress(): string {
@@ -37,30 +47,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "database" },
   pages: {
     signIn: "/signin",
-    verifyRequest: "/signin/verify",
+    // The requester is redirected to the sent state explicitly by the sign-in
+    // server action; this is the fallback for direct hits on the auth route.
+    verifyRequest: "/signin",
     error: "/signin",
   },
   providers: [
     Resend({
       from: fromAddress(),
       maxAge: TOKEN_MAX_AGE_SECONDS,
+      // The token the user exchanges is the typed 6-digit code (issue #43).
+      generateVerificationToken: generateSignInCode,
       // Normalize so the same person always maps to the same token identifier
       // and, downstream, the same identity_hash.
       normalizeIdentifier: normalizeEmail,
-      async sendVerificationRequest({ identifier, url }) {
+      async sendVerificationRequest({ identifier, token }) {
         // Defense in depth: the signIn callback already rejected non-Auburn
         // addresses, but never deliver to one even on an unexpected code path.
         if (!isAuburnStudentEmail(identifier)) {
           throw new Error("Refusing to send to a non-Auburn address.");
         }
-        await sendMagicLinkEmail({ to: identifier, url, from: fromAddress() });
+        await sendSignInCodeEmail({ to: identifier, code: token, from: fromAddress() });
       },
     }),
   ],
   callbacks: {
     // AC #1: reject a non-Auburn address at the verification-request phase —
     // before a token is created or an email sent. On the second phase (after the
-    // user clicks the link) `verificationRequest` is absent and the adapter user
+    // user submits the code) `verificationRequest` is absent and the adapter user
     // carries no email; by then Auburn control is already proven, so allow it.
     signIn({ user, email }) {
       if (email?.verificationRequest) {
