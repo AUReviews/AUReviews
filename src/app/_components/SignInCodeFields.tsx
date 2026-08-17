@@ -159,8 +159,7 @@ export default function SignInCodeFields({
         )}
         {sent && (
           <p role="status" className="code-alert ok">
-            Code sent — check your inbox, and your Junk folder (Auburn mail is
-            filtered by Microsoft 365). It expires in about 10 minutes.
+            Code sent! Check your inbox, and your Junk folder. It expires in about 10 minutes.
           </p>
         )}
       </div>
