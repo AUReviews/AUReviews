@@ -57,6 +57,21 @@ export function hashVerificationToken(token: string, secret: string): string {
   return createHash("sha256").update(`${token}${secret}`).digest("hex");
 }
 
+/** The Auth.js database-session cookie name, by whether the site runs over
+ * https (`@auth/core` `defaultCookies`): unprefixed in dev, `__Secure-` in
+ * production. The ONE definition — ./session.ts reads by these names, this
+ * module writes by them, and the round-trip test pins them to Auth.js. */
+export function sessionCookieName(secure: boolean): string {
+  return `${secure ? "__Secure-" : ""}authjs.session-token`;
+}
+
+/** What the user types plus where the code was sent — the input to every
+ * exchange call site (the /signin verify action, the review Post action). */
+export interface SignInCodeInput {
+  email: string;
+  code: string;
+}
+
 /** The Auth.js session cookie for a database session: name and attributes
  * exactly as `@auth/core`'s `defaultCookies` sets them, expiring with the
  * session row (as the email callback route does). */
@@ -76,7 +91,7 @@ export function sessionCookie(
   };
 } {
   return {
-    name: `${secure ? "__Secure-" : ""}authjs.session-token`,
+    name: sessionCookieName(secure),
     value: sessionToken,
     options: { httpOnly: true, sameSite: "lax", path: "/", secure, expires },
   };
@@ -116,7 +131,7 @@ export interface ExchangeDeps {
  * session (what the caller sets as the cookie).
  */
 export async function exchangeCode(
-  input: { email: string; code: string },
+  input: SignInCodeInput,
   deps: ExchangeDeps,
 ): Promise<
   | { ok: true; identityHash: IdentityHash; session: { sessionToken: string; expires: Date } }
@@ -143,11 +158,11 @@ export async function exchangeCode(
   //    is single-use (delete-and-return) and enforces the attempt cap; a miss
   //    of any kind is null. An expired-but-present token is a miss too — it
   //    has already been consumed by the lookup, as in Auth.js.
-  const invite = await adapter.useVerificationToken!({
+  const token = await adapter.useVerificationToken!({
     identifier: email,
     token: hashVerificationToken(code, secret),
   });
-  if (!invite || invite.expires.valueOf() < now().valueOf()) {
+  if (!token || token.expires.valueOf() < now().valueOf()) {
     return { ok: false, reason: "Verification" };
   }
 
@@ -193,10 +208,9 @@ function authSecret(): string {
  * written and the caller gets the reason to render; no navigation happens.
  * Safe to call from Server Actions only (it writes a cookie).
  */
-export async function exchangeCodeForSession(input: {
-  email: string;
-  code: string;
-}): Promise<ExchangeResult> {
+export async function exchangeCodeForSession(
+  input: SignInCodeInput,
+): Promise<ExchangeResult> {
   const result = await exchangeCode(input, {
     adapter: createHashingAdapter(),
     secret: authSecret(),
