@@ -70,7 +70,9 @@ export async function requestSignInCode(
 // Server action: exchange the typed code for a session. Normalizes the form
 // input, then hands off to the provider's standard email-callback route, which
 // consumes the token and establishes the session (issue #43: no hand-rolled
-// exchange endpoint). Deliberately no domain or existence checks here — every
+// exchange endpoint — a decision #47 supersedes: the exchange moves into a
+// server-only module so this form and the review form can verify without
+// navigating). Deliberately no domain or existence checks here — every
 // failed exchange resolves to the one generic "invalid or expired" message
 // (issue #43: wrong, expired, and exhausted are indistinguishable).
 export async function verifyCode(
