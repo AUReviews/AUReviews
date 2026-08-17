@@ -29,7 +29,7 @@ export function buildSignInCodeEmail(code: string): {
     text: [
       "Sign in to AUReviews as a verified Auburn student.",
       "",
-      "Enter this code on the sign-in page to finish signing in. It is single-use and expires in about 10 minutes:",
+      "Enter this code where you requested it — on the review form or the sign-in page. It is single-use and expires in about 10 minutes:",
       "",
       displayCode,
       "",
@@ -39,7 +39,7 @@ export function buildSignInCodeEmail(code: string): {
     ].join("\n"),
     html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;color:#111">
   <h2 style="margin:0 0 .5rem">Sign in to AUReviews</h2>
-  <p>Sign in as a <strong>verified Auburn student</strong>. Enter this code on the sign-in page. It is single-use and expires in about 10 minutes:</p>
+  <p>Sign in as a <strong>verified Auburn student</strong>. Enter this code where you requested it &mdash; on the review form or the sign-in page. It is single-use and expires in about 10 minutes:</p>
   <p style="font-size:1.75rem;font-weight:700;letter-spacing:.25rem;margin:.5rem 0">${displayCode}</p>
   <p style="font-size:.75rem;color:#888;margin-top:2rem">If you didn't request this, ignore this email — no account is created until the code is used.<br>
   AUReviews is an independent, student-run website. It is not affiliated with, endorsed by, or connected to Auburn University.</p>

@@ -946,7 +946,8 @@ a.chip-link:hover {
   font-size: 12px;
 }
 
-/* Sign-in gate (shown when the author isn't verified yet). */
+/* The inline Authentication section (issue #47): shown to a signed-out
+   author, above Post — the shared email + sign-in-code block lives inside. */
 .auth {
   background: var(--bg-page);
   border: 1px solid var(--border-default);
@@ -963,6 +964,140 @@ a.chip-link:hover {
 .auth .note {
   font-size: 12.5px;
   color: var(--text-body);
+}
+/* The signed-in counterpart: one quiet line where the section would be. */
+.auth-status {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-body);
+}
+.link-button {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--link);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* The shared email + sign-in-code fields (SignInCodeFields, issue #47) — the
+   one code path both /signin and the review form render. */
+.code-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.code-fields label {
+  display: block;
+}
+.code-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.code-row .num-input {
+  flex: 1;
+  min-width: 0;
+}
+.btn-send {
+  flex-shrink: 0;
+  padding: 0 14px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-send:hover:not(:disabled) {
+  background: var(--bg-chip);
+}
+.btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.code-input {
+  max-width: 200px;
+  letter-spacing: 0.15em;
+  font-variant-numeric: tabular-nums;
+}
+.code-alert {
+  margin: 8px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.code-alert.error {
+  font-weight: 600;
+  color: var(--danger);
+  background: color-mix(in oklch, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in oklch, var(--danger) 35%, transparent);
+}
+.code-alert.ok {
+  color: var(--text-body);
+  background: var(--bg-chip);
+  border: 1px solid var(--border-default);
+}
+@media (max-width: 480px) {
+  .code-row {
+    flex-direction: column;
+  }
+  .btn-send {
+    padding: 10px 14px;
+  }
+}
+
+/* The standalone /signin page — the same card language as the review form. */
+.signin {
+  display: flex;
+  justify-content: center;
+  padding: 44px 24px 64px;
+}
+.signin-card {
+  max-width: 460px;
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: fit-content;
+}
+.signin-card h1 {
+  font-size: 23px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-heading);
+}
+.signin-card .lede {
+  font-size: 13.5px;
+  color: var(--text-body);
+  margin: 0;
+  line-height: 1.5;
+}
+.signin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.btn-block {
+  width: 100%;
+  padding: 11px 18px;
+  font-size: 14px;
+}
+.signin-foot {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 
 .assent {

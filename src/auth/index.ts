@@ -5,8 +5,11 @@
  * message contains no URL for Microsoft 365 Safe Links to rewrite or pre-fetch,
  * and the code works cross-device. The code IS the verification token
  * (`generateVerificationToken`), so the stock email-provider flow — secret-
- * hashed storage, single use, expiry — applies to it unchanged; the sign-in
- * form submits email + code to the provider's standard callback route.
+ * hashed storage, single use, expiry — applies to it unchanged. The EXCHANGE
+ * of a typed code for a session does not go through the provider's callback
+ * route: it runs in-process via ./exchange.ts (issue #47, ADR 0003) so the
+ * review form can post and sign in inside one server action with no
+ * navigation. The route still exists; our UI just doesn't post to it.
  *
  * The anonymity guarantees are enforced here across three seams:
  *   1. `signIn` callback rejects any non-Auburn address BEFORE a token is created

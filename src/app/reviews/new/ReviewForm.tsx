@@ -1,7 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { signOut } from "next-auth/react";
+import {
+  type FormEvent,
+  startTransition,
+  useActionState,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import SignInCodeFields from "@/app/_components/SignInCodeFields";
 // Imported from the deep `@/domain/review` path, NOT the `@/domain` barrel, on
 // purpose: the barrel re-exports `anonymity.ts`, which pulls in `node:crypto`
 // and can't be bundled into this client component. `review.ts` is pure and
@@ -43,6 +53,14 @@ import {
 // a prefill (`?course=`) and picking a course in the form converge on the same
 // selected `CourseOption`, post the same slug, and land on the same course
 // page. "change" simply drops back to the search.
+//
+// Verification lives INSIDE the form (issue #47, omscentral pattern): a
+// signed-out author sees an Authentication section — the shared email +
+// sign-in-code block — above Post, and Post itself carries email + code to the
+// submit action, which exchanges them for a session and inserts the review in
+// one go. Nothing navigates until the redirect to the course page, so the
+// draft can't be lost to a sign-in round trip. A signed-in author gets no such
+// section; Post is live as soon as the review is.
 
 // Structurally the db layer's `CourseInstructor`, redeclared on purpose: this
 // client island imports only pure, browser-safe modules, and a value import of
@@ -63,7 +81,6 @@ export interface ReviewFormProps {
   prefill: ReviewFormPrefill | null;
   terms: { code: string; label: string }[];
   signedIn: boolean;
-  signInHref: string;
 }
 
 const RATING_VALUES = [1, 2, 3, 4, 5];
@@ -72,12 +89,7 @@ const RATING_VALUES = [1, 2, 3, 4, 5];
 // short enough that results still feel live.
 const SEARCH_DEBOUNCE_MS = 200;
 
-export default function ReviewForm({
-  prefill,
-  terms,
-  signedIn,
-  signInHref,
-}: ReviewFormProps) {
+export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps) {
   // The selectable window is exactly the terms offered; derive it here rather
   // than passing the same list twice from the server.
   const selectableTermCodes = useMemo(() => terms.map((t) => t.code), [terms]);
@@ -107,6 +119,12 @@ export default function ReviewForm({
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
+
+  // The sign-in code typed so far (signed-out authors only). Post needs all six
+  // digits before it can be clicked — the exchange in the action is the
+  // authoritative check; this just keeps a half-typed code from spending a
+  // guess.
+  const [codeDigits, setCodeDigits] = useState("");
 
   // Surface a field's error only once the user has engaged it, so the form
   // doesn't open shouting. Once engaged, the LIVE result governs — so a field
@@ -182,12 +200,27 @@ export default function ReviewForm({
   const bodyLength = body.trim().length;
   // A course is part of the door too: the core gate doesn't know about it, so
   // Submit stays disabled until one is selected (the action re-resolves it).
+  // So is verification: signed in, or a full 6-digit code typed (issue #47).
+  const verified = signedIn || codeDigits.length === 6;
   const canSubmit =
-    signedIn && course !== null && liveErrors.length === 0 && !pending;
+    verified && course !== null && liveErrors.length === 0 && !pending;
   const cancelHref = course ? `/courses/${course.slug}` : "/courses";
 
+  // Submit by hand rather than via `<form action>`: React resets a form after
+  // a form-action completes, which visually blanks the native selects and
+  // wipes the uncontrolled optional details — exactly the draft a bounced
+  // submit (wrong sign-in code, server-side rejection) must leave untouched
+  // (issue #47). Dispatching the same action from onSubmit inside a transition
+  // keeps `pending`/state semantics and skips the reset.
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    const formData = new FormData(e.currentTarget);
+    startTransition(() => formAction(formData));
+  };
+
   return (
-    <form action={formAction} className="add-card" noValidate>
+    <form onSubmit={handleSubmit} className="add-card" noValidate>
       <input type="hidden" name="courseSlug" value={course?.slug ?? ""} />
       <input type="hidden" name="overall" value={overall ?? ""} />
       <input type="hidden" name="difficulty" value={difficulty ?? ""} />
@@ -353,34 +386,51 @@ export default function ReviewForm({
       )}
 
       {signedIn ? (
-        <>
-          {/* The §13 ToS/Privacy/18+ assent line. Terms and Privacy are named
-              in plain text, not linked, until the legal pages ship (a separate
-              §13 ticket) — a live link to a 404 is worse than none. */}
-          <p className="assent">
-            By posting you agree to our Terms and Privacy Policy, and confirm you are 18 or older.
-          </p>
-          <div className="add-actions">
-            <Link href={cancelHref} className="btn-ghost">
-              Cancel
-            </Link>
-            <button type="submit" className="btn-post" disabled={!canSubmit}>
-              {pending ? "Posting…" : "Post anonymously"}
-            </button>
-          </div>
-        </>
+        <p className="auth-status">
+          Posting as a verified Auburn student ·{" "}
+          <button
+            type="button"
+            className="link-button"
+            // Sign out lands back on this same page (course prefill included)
+            // so a shared machine can hand the form to the next person.
+            onClick={() =>
+              signOut({
+                callbackUrl: window.location.pathname + window.location.search,
+              })
+            }
+          >
+            Sign out
+          </button>
+        </p>
       ) : (
         <div className="auth">
-          <strong>Sign in to post</strong>
+          <strong>Authentication</strong>
           <span className="note">
-            Only verified Auburn students can leave reviews. Verify your Auburn email, then come
-            back to this page to post.
+            Only verified Auburn students can post. Enter your Auburn email, send yourself a
+            code, and type it here — you&apos;ll be signed in when you post. Your address is
+            never stored with the review.
           </span>
-          <Link href={signInHref} className="btn-post" style={{ alignSelf: "flex-start" }}>
-            Sign in with your Auburn email
-          </Link>
+          <SignInCodeFields
+            errorCode={state.authError ?? null}
+            onCodeChange={setCodeDigits}
+          />
         </div>
       )}
+
+      {/* The §13 ToS/Privacy/18+ assent line. Terms and Privacy are named in
+          plain text, not linked, until the legal pages ship (a separate §13
+          ticket) — a live link to a 404 is worse than none. */}
+      <p className="assent">
+        By posting you agree to our Terms and Privacy Policy, and confirm you are 18 or older.
+      </p>
+      <div className="add-actions">
+        <Link href={cancelHref} className="btn-ghost">
+          Cancel
+        </Link>
+        <button type="submit" className="btn-post" disabled={!canSubmit}>
+          {pending ? "Posting…" : "Post anonymously"}
+        </button>
+      </div>
     </form>
   );
 }
