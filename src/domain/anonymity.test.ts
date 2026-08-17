@@ -12,9 +12,7 @@ describe("normalizeEmail", () => {
 
   it("collapses surrounding whitespace only, not inner", () => {
     // Addresses don't contain inner spaces; we only strip the edges.
-    expect(normalizeEmail("\tabc1234@tigermail.auburn.edu\n")).toBe(
-      "abc1234@tigermail.auburn.edu",
-    );
+    expect(normalizeEmail("\tabc1234@auburn.edu\n")).toBe("abc1234@auburn.edu");
   });
 });
 
@@ -23,8 +21,10 @@ describe("isAuburnStudentEmail", () => {
     expect(isAuburnStudentEmail("abc1234@auburn.edu")).toBe(true);
   });
 
-  it("accepts @tigermail.auburn.edu", () => {
-    expect(isAuburnStudentEmail("abc1234@tigermail.auburn.edu")).toBe(true);
+  it("rejects @tigermail.auburn.edu — only the canonical domain is accepted (PR #48)", () => {
+    // Same mailbox as @auburn.edu (an alias), so nobody is locked out; one
+    // domain keeps the sign-in field a single fixed suffix.
+    expect(isAuburnStudentEmail("abc1234@tigermail.auburn.edu")).toBe(false);
   });
 
   it("is case- and whitespace-insensitive", () => {

@@ -1,62 +1,43 @@
 import { describe, expect, it } from "vitest";
 import {
-  AUBURN_DOMAINS,
+  AUBURN_DOMAIN,
   isAuburnStudentEmail,
   isUsernameOnly,
-  splitTypedEmail,
+  resolveTypedUsername,
 } from "./email";
 
-describe("splitTypedEmail — username field with a fixed domain suffix", () => {
-  it("passes a bare username through and keeps the current domain", () => {
-    expect(splitTypedEmail("abc1234", "auburn.edu")).toEqual({
-      local: "abc1234",
-      domain: "auburn.edu",
-    });
+describe("resolveTypedUsername — username field with the fixed @auburn.edu suffix", () => {
+  it("passes a bare username through", () => {
+    expect(resolveTypedUsername("abc1234")).toBe("abc1234");
   });
 
-  it("splits a pasted full address and follows a known domain", () => {
-    expect(splitTypedEmail("abc1234@tigermail.auburn.edu", "auburn.edu")).toEqual({
-      local: "abc1234",
-      domain: "tigermail.auburn.edu",
-    });
-    expect(splitTypedEmail("ABC1234@Auburn.EDU ", "tigermail.auburn.edu")).toEqual({
-      local: "ABC1234",
-      domain: "auburn.edu",
-    });
+  it("reduces a pasted full @auburn.edu address to its username, any case", () => {
+    expect(resolveTypedUsername("abc1234@auburn.edu")).toBe("abc1234");
+    expect(resolveTypedUsername("ABC1234@Auburn.EDU ")).toBe("ABC1234");
   });
 
   it("leaves an @ typed mid-way exactly as typed — no keystroke is swallowed", () => {
-    // Typing "abc1234@tigermail.auburn.edu" one key at a time passes through
-    // these; each must round-trip until the domain is complete.
-    expect(splitTypedEmail("abc1234@", "auburn.edu")).toEqual({
-      local: "abc1234@",
-      domain: "auburn.edu",
-    });
-    expect(splitTypedEmail("abc1234@tigermail.auburn.ed", "auburn.edu")).toEqual({
-      local: "abc1234@tigermail.auburn.ed",
-      domain: "auburn.edu",
-    });
+    // Typing "abc1234@auburn.edu" one key at a time passes through these; each
+    // must round-trip until the domain is complete.
+    expect(resolveTypedUsername("abc1234@")).toBe("abc1234@");
+    expect(resolveTypedUsername("abc1234@auburn.ed")).toBe("abc1234@auburn.ed");
   });
 
-  it("leaves an unknown domain as typed rather than guessing", () => {
-    expect(splitTypedEmail("someone@gmail.com", "auburn.edu")).toEqual({
-      local: "someone@gmail.com",
-      domain: "auburn.edu",
-    });
+  it("leaves any other domain as typed rather than guessing", () => {
+    expect(resolveTypedUsername("someone@gmail.com")).toBe("someone@gmail.com");
+    // tigermail is no longer accepted (owner decision, PR #48).
+    expect(resolveTypedUsername("abc1234@tigermail.auburn.edu")).toBe(
+      "abc1234@tigermail.auburn.edu",
+    );
   });
 
   it("splits at the first @, so a stray second @ can't smuggle a domain", () => {
-    expect(splitTypedEmail("a@b@auburn.edu", "auburn.edu")).toEqual({
-      local: "a@b@auburn.edu",
-      domain: "auburn.edu",
-    });
+    expect(resolveTypedUsername("a@b@auburn.edu")).toBe("a@b@auburn.edu");
   });
 
-  it("assembles into an address the gate accepts, for every offered domain", () => {
-    for (const domain of AUBURN_DOMAINS) {
-      const { local } = splitTypedEmail("abc1234", domain);
-      expect(isAuburnStudentEmail(`${local}@${domain}`)).toBe(true);
-    }
+  it("assembles into an address the gate accepts", () => {
+    const local = resolveTypedUsername("abc1234@auburn.edu");
+    expect(isAuburnStudentEmail(`${local}@${AUBURN_DOMAIN}`)).toBe(true);
   });
 });
 

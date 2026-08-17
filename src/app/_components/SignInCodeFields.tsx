@@ -5,11 +5,10 @@ import { startTransition, useActionState, useEffect, useState } from "react";
 // `node:crypto` (anonymity.ts) and can't be bundled into a client component.
 // This is the SAME domain check the send action and the exchange enforce.
 import {
-  AUBURN_DOMAINS,
-  type AuburnDomain,
+  AUBURN_DOMAIN,
   isAuburnStudentEmail,
   isUsernameOnly,
-  splitTypedEmail,
+  resolveTypedUsername,
 } from "@/domain/email";
 import {
   requestSignInCode,
@@ -29,11 +28,11 @@ import {
 // it back (v1-spec §7).
 //
 // The domain is not typed (omscentral pattern, owner review 2026-08-17): the
-// user enters only their username, and the Auburn domain sits beside the field
-// as a fixed suffix — a small selector, since both @auburn.edu and
-// @tigermail.auburn.edu are accepted. The full address is assembled here and
-// posted through a hidden `email` field. "Send code" is not shown at all until
-// something is typed; once it is, any username makes a valid Auburn address.
+// user enters only their username, and `@auburn.edu` sits beside the field as
+// a fixed, static suffix (the one accepted domain — see AUBURN_DOMAIN). The
+// full address is assembled here and posted through a hidden `email` field.
+// "Send code" is not shown at all until something is typed; once it is, any
+// username makes a valid Auburn address.
 
 /** Minimum wait before "Resend code" re-enables. The real cap is the server's
  * send rate limit; this just stops an impatient double-tap. */
@@ -46,7 +45,7 @@ export function signInErrorMessage(code: string): string {
   switch (code) {
     case "domain":
     case "AccessDenied":
-      return "That address isn't an Auburn student address. Use your @auburn.edu or @tigermail.auburn.edu email.";
+      return "That address isn't an Auburn student address. Use your @auburn.edu email.";
     case "rate":
       return "Too many sign-in requests. Please wait an hour and try again.";
     case "Verification":
@@ -87,13 +86,12 @@ export default function SignInCodeFields({
   autoFocusEmail = false,
 }: SignInCodeFieldsProps) {
   const [local, setLocal] = useState("");
-  const [domain, setDomain] = useState<AuburnDomain>(AUBURN_DOMAINS[0]);
   const [code, setCode] = useState("");
   // The assembled address — what is posted and what the send action gets.
   // Empty until the field holds a bare username: a half-typed "abc@tiger…"
   // must never be joined to the suffix (see isUsernameOnly).
   const usernameOnly = isUsernameOnly(local);
-  const email = usernameOnly ? `${local.trim()}@${domain}` : "";
+  const email = usernameOnly ? `${local.trim()}@${AUBURN_DOMAIN}` : "";
   const [now, setNow] = useState(() => Date.now());
 
   const [sendState, sendAction, sendPending] = useActionState<SendState, FormData>(
@@ -160,13 +158,9 @@ export default function SignInCodeFields({
               className="num-input email-local"
               aria-describedby="signin-email-domain"
               value={local}
-              // A pasted or autofilled FULL address is split: username here,
-              // and the suffix selector follows if the domain is one of ours.
-              onChange={(e) => {
-                const next = splitTypedEmail(e.target.value, domain);
-                setLocal(next.local);
-                if (next.domain !== domain) setDomain(next.domain);
-              }}
+              // A pasted or autofilled FULL @auburn.edu address is reduced to
+              // its username; anything else is kept exactly as typed.
+              onChange={(e) => setLocal(resolveTypedUsername(e.target.value))}
               // Enter in the address field means "send me the code," not "submit
               // the form around me" (which would post an empty code / draft).
               onKeyDown={(e) => {
@@ -176,19 +170,9 @@ export default function SignInCodeFields({
                 }
               }}
             />
-            <select
-              id="signin-email-domain"
-              className="email-domain"
-              aria-label="Auburn email domain"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value as AuburnDomain)}
-            >
-              {AUBURN_DOMAINS.map((d) => (
-                <option key={d} value={d}>
-                  @{d}
-                </option>
-              ))}
-            </select>
+            <span id="signin-email-domain" className="email-domain">
+              @{AUBURN_DOMAIN}
+            </span>
           </div>
           {/* The enclosing form posts the assembled address, never the parts. */}
           <input type="hidden" name="email" value={email} />
