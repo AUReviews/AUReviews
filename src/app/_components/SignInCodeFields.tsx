@@ -4,7 +4,13 @@ import { startTransition, useActionState, useEffect, useState } from "react";
 // Deep `@/domain/email` import on purpose: the `@/domain` barrel pulls in
 // `node:crypto` (anonymity.ts) and can't be bundled into a client component.
 // This is the SAME domain check the send action and the exchange enforce.
-import { isAuburnStudentEmail } from "@/domain/email";
+import {
+  AUBURN_DOMAINS,
+  type AuburnDomain,
+  isAuburnStudentEmail,
+  isUsernameOnly,
+  splitTypedEmail,
+} from "@/domain/email";
 import {
   requestSignInCode,
   type SignInFormState,
@@ -21,6 +27,13 @@ import {
 //
 // The address on screen is the user's own live input — the server never echoes
 // it back (v1-spec §7).
+//
+// The domain is not typed (omscentral pattern, owner review 2026-08-17): the
+// user enters only their username, and the Auburn domain sits beside the field
+// as a fixed suffix — a small selector, since both @auburn.edu and
+// @tigermail.auburn.edu are accepted. The full address is assembled here and
+// posted through a hidden `email` field. "Send code" is not shown at all until
+// something is typed; once it is, any username makes a valid Auburn address.
 
 /** Minimum wait before "Resend code" re-enables. The real cap is the server's
  * send rate limit; this just stops an impatient double-tap. */
@@ -73,8 +86,14 @@ export default function SignInCodeFields({
   onCodeChange,
   autoFocusEmail = false,
 }: SignInCodeFieldsProps) {
-  const [email, setEmail] = useState("");
+  const [local, setLocal] = useState("");
+  const [domain, setDomain] = useState<AuburnDomain>(AUBURN_DOMAINS[0]);
   const [code, setCode] = useState("");
+  // The assembled address — what is posted and what the send action gets.
+  // Empty until the field holds a bare username: a half-typed "abc@tiger…"
+  // must never be joined to the suffix (see isUsernameOnly).
+  const usernameOnly = isUsernameOnly(local);
+  const email = usernameOnly ? `${local.trim()}@${domain}` : "";
   const [now, setNow] = useState(() => Date.now());
 
   const [sendState, sendAction, sendPending] = useActionState<SendState, FormData>(
@@ -97,6 +116,11 @@ export default function SignInCodeFields({
     return () => clearInterval(timer);
   }, [cooling]);
 
+  // The button exists only once something is typed; a bare username + our
+  // fixed suffix is always a valid Auburn address, so it is live unless the
+  // field holds an "@" (mid-paste / mid-type), a send is in flight, or the
+  // resend cooldown is running.
+  const showSend = local.trim() !== "";
   const canSend = isAuburnStudentEmail(email) && !sendPending && !cooling;
 
   const send = () => {
@@ -124,34 +148,66 @@ export default function SignInCodeFields({
           Auburn email
         </label>
         <div className="code-row">
-          <input
-            id="signin-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            autoFocus={autoFocusEmail}
-            placeholder="abc1234@auburn.edu"
-            className="num-input"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            // Enter in the address field means "send me the code," not "submit
-            // the form around me" (which would post an empty code / draft).
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                send();
-              }
-            }}
-          />
-          <button
-            type="button"
-            className="btn-send"
-            disabled={!canSend}
-            onClick={send}
-          >
-            {sendLabel}
-          </button>
+          <div className="email-group">
+            <input
+              id="signin-email"
+              type="text"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              autoFocus={autoFocusEmail}
+              placeholder="abc1234"
+              className="num-input email-local"
+              aria-describedby="signin-email-domain"
+              value={local}
+              // A pasted or autofilled FULL address is split: username here,
+              // and the suffix selector follows if the domain is one of ours.
+              onChange={(e) => {
+                const next = splitTypedEmail(e.target.value, domain);
+                setLocal(next.local);
+                if (next.domain !== domain) setDomain(next.domain);
+              }}
+              // Enter in the address field means "send me the code," not "submit
+              // the form around me" (which would post an empty code / draft).
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+            />
+            <select
+              id="signin-email-domain"
+              className="email-domain"
+              aria-label="Auburn email domain"
+              value={domain}
+              onChange={(e) => setDomain(e.target.value as AuburnDomain)}
+            >
+              {AUBURN_DOMAINS.map((d) => (
+                <option key={d} value={d}>
+                  @{d}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* The enclosing form posts the assembled address, never the parts. */}
+          <input type="hidden" name="email" value={email} />
+          {showSend && (
+            <button
+              type="button"
+              className="btn-send"
+              disabled={!canSend}
+              onClick={send}
+            >
+              {sendLabel}
+            </button>
+          )}
         </div>
+        {showSend && !usernameOnly && (
+          <p className="code-hint">
+            Just your username — the Auburn domain is filled in on the right.
+          </p>
+        )}
         {sendState.status === "error" && (
           <p role="alert" className="code-alert error">
             {signInErrorMessage(sendState.reason)}
