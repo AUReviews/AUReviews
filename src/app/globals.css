@@ -1012,13 +1012,14 @@ a.chip-link:hover {
   min-width: 0;
   display: flex;
   align-items: stretch;
+  /* Two separate boxes with a small gap, NOT one joined control: the input
+     keeps all four rounded corners and its full border, so its focus ring
+     wraps it completely instead of ending flat at a seam (omscentral). */
+  gap: 6px;
 }
 .email-group .email-local {
   flex: 1;
   min-width: 0;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-right: none;
 }
 /* The static "@auburn.edu" addon — the one accepted domain, so no control. */
 .email-domain {
@@ -1026,7 +1027,7 @@ a.chip-link:hover {
   display: inline-flex;
   align-items: center;
   border: 1px solid var(--border-input);
-  border-radius: 0 8px 8px 0;
+  border-radius: 8px;
   padding: 0 13px;
   font-size: 13px;
   font-weight: 600;

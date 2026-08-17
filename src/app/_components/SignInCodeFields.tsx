@@ -142,15 +142,15 @@ export default function SignInCodeFields({
   return (
     <div className="code-fields">
       <div>
-        <label htmlFor="signin-email" className="field-label">
+        <label htmlFor="signin-username" className="field-label">
           Auburn email
         </label>
         <div className="code-row">
           <div className="email-group">
             <input
-              id="signin-email"
+              id="signin-username"
               type="text"
-              autoComplete="email"
+              autoComplete="off"
               autoCapitalize="none"
               spellCheck={false}
               autoFocus={autoFocusEmail}
