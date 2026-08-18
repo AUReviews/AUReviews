@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import { getSession, signOut, useSession } from "next-auth/react";
+import { useEffect, useRef } from "react";
 
 // Per-user sign-in entry point, resolved on the CLIENT (v1-spec §8): keeping the
 // session read out of the server render means the shared layout never calls
@@ -9,6 +11,22 @@ import { signOut, useSession } from "next-auth/react";
 // carries nothing identifying (v1-spec §7) — we branch only on signed-in state.
 export default function AuthNav() {
   const { status } = useSession();
+
+  // A sign-in now completes inside a server action and lands on the next page
+  // by SOFT navigation (issue #47: the review form's Post, /signin's Sign in),
+  // so this layout-persistent provider never remounts and would keep showing
+  // "Sign in" until a reload or focus change. Re-read the session on each
+  // route change instead; `getSession()` broadcasts the result to the same-tab
+  // provider. Only an actual CHANGE of path triggers it — the initial mount
+  // (and dev StrictMode's effect replay) is skipped, since the provider
+  // fetches on mount anyway.
+  const pathname = usePathname();
+  const lastPathname = useRef(pathname);
+  useEffect(() => {
+    if (lastPathname.current === pathname) return;
+    lastPathname.current = pathname;
+    void getSession();
+  }, [pathname]);
 
   if (status === "authenticated") {
     return (

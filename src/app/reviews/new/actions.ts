@@ -16,6 +16,7 @@ import {
   sanitizeSingleSelect,
   validateReviewCore,
 } from "@/domain";
+import { exchangeCodeForSession, type ExchangeFailure } from "@/auth/exchange";
 import { getCurrentIdentityHash } from "@/auth/session";
 import {
   type CourseInstructor,
@@ -70,33 +71,40 @@ export async function listInstructorOptions(
  * The result the submit action hands back to the form island (issue #24). A
  * clean submit never returns — it `revalidatePath`s the course page and
  * redirects there — so a returned state is always a rejection the form
- * re-renders: `formError` for whole-form problems (not signed in, unknown
- * course), or per-field `errors` from the §4/§11 gate.
+ * re-renders: `formError` for whole-form problems (unknown course), per-field
+ * `errors` from the §4/§11 gate, or `authError` when the inline sign-in code
+ * didn't exchange (issue #47) — shown by the code field, draft untouched.
  */
 export interface ReviewFormState {
   formError?: string;
   errors?: ReviewFieldError[];
+  authError?: ExchangeFailure;
 }
 
 /**
- * Submit a review (v1-spec §4/§11; issue #24). This is the AUTHORITATIVE gate:
- * the form runs the same `validateReviewCore` live to keep Submit disabled, but
- * everything is re-checked here so a crafted POST can't bypass the door. It also
- * re-derives the selectable term window server-side, so a stale client can't
- * post an out-of-window term. On success it inserts the review, revalidates the
- * affected course page (§4's "revalidate the affected course"), and redirects
- * back to it.
+ * Submit a review (v1-spec §4/§11; issues #24/#47). This is the AUTHORITATIVE
+ * gate: the form runs the same `validateReviewCore` live to keep Submit
+ * disabled, but everything is re-checked here so a crafted POST can't bypass
+ * the door. It also re-derives the selectable term window server-side, so a
+ * stale client can't post an out-of-window term. On success it inserts the
+ * review, revalidates the affected course page (§4's "revalidate the affected
+ * course"), and redirects back to it.
+ *
+ * Auth is part of the same action (issue #47): a signed-in author is resolved
+ * from the session; a signed-out one posts their Auburn email + sign-in code
+ * along with the review, and the code is exchanged for a session HERE — after
+ * the review has passed every check and right before the insert, so a
+ * rejected draft never spends the code, and being signed in is a side effect
+ * of posting. No navigation happens before the redirect to the course page.
  */
 export async function submitReview(
   _prev: ReviewFormState,
   formData: FormData,
 ): Promise<ReviewFormState> {
-  // 1. Auth: only a signed-in Auburn student may author (§7). The session
-  //    resolves to the author token server-side; it never reaches the client.
-  const identityHash = await getCurrentIdentityHash();
-  if (!identityHash) {
-    return { formError: "Sign in with your Auburn email to post a review." };
-  }
+  // 1. Auth, part one: a signed-in Auburn student resolves to the author token
+  //    server-side (§7); it never reaches the client. A signed-out one is
+  //    verified in step 6, once the review itself is known to be clean.
+  let identityHash = await getCurrentIdentityHash();
 
   // 2. Resolve the course from the posted slug to its durable id (captured at
   //    write time, ADR 0001). A bad slug/unknown course is a whole-form error.
@@ -149,6 +157,25 @@ export async function submitReview(
     ? str(formData.get("languagesOther"))?.slice(0, 60) ?? null
     : null;
 
+  // 6. Auth, part two: a signed-out author proves mailbox control now, with the
+  //    email + code posted alongside the review. The exchange (ADR 0003) is
+  //    the same module `/signin` uses: it owns the domain gate, the Auth.js
+  //    token hash, single use, and the attempt cap, and on success sets the
+  //    session cookie on this very response. A failure returns the generic
+  //    reason as state — the form and the draft stay exactly as typed. The
+  //    address itself is never persisted: it is folded into `identity_hash`
+  //    inside the exchange and discarded.
+  if (!identityHash) {
+    const result = await exchangeCodeForSession({
+      email: String(formData.get("email") ?? ""),
+      code: String(formData.get("code") ?? ""),
+    });
+    if (!result.ok) {
+      return { authError: result.reason };
+    }
+    identityHash = result.identityHash;
+  }
+
   await insertReview({
     courseId: course.id,
     instructorId,
@@ -171,7 +198,7 @@ export async function submitReview(
     prep: sanitizeSingleSelect(str(formData.get("prep")), PREP_OPTIONS),
   });
 
-  // 6. Revalidate what the new review changed (§4/§5/§8): the affected course
+  // 7. Revalidate what the new review changed (§4/§5/§8): the affected course
   //    page (headline, list), and the "reviews" tag so the browse index's
   //    rating columns recompute — every other page stays CDN-served. The tag
   //    must go through `updateTag`, the Server-Action read-your-own-writes

@@ -18,7 +18,9 @@ import ReviewForm, { type ReviewFormPrefill } from "./ReviewForm";
 // rolling term window — so it is force-dynamic, unlike the CDN-static catalog
 // pages. The heavy lifting (the live door, the required-core gate) lives in
 // the client island; this server component only resolves any prefill and hands
-// down the current selectable terms and auth state.
+// down the current selectable terms and auth state. A signed-out visitor is
+// NOT sent away to sign in first (issue #47): the form carries the email +
+// sign-in-code fields inline and the Post action does the exchange itself.
 export const dynamic = "force-dynamic";
 
 /**
@@ -79,12 +81,7 @@ export default async function NewReviewPage({
 
   return (
     <div className="add">
-      <ReviewForm
-        prefill={prefill}
-        terms={terms}
-        signedIn={signedIn}
-        signInHref="/signin"
-      />
+      <ReviewForm prefill={prefill} terms={terms} signedIn={signedIn} />
     </div>
   );
 }

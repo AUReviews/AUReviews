@@ -10,12 +10,12 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { identities, sessions } from "@/db/schema";
 import type { IdentityHash } from "@/domain";
+import { sessionCookieName } from "./exchange";
 
-// Auth.js database-strategy cookie names: unprefixed in dev, __Secure- over https.
-const SESSION_COOKIE_NAMES = [
-  "authjs.session-token",
-  "__Secure-authjs.session-token",
-] as const;
+// Auth.js database-strategy cookie names: unprefixed in dev, __Secure- over
+// https. Read by BOTH names rather than re-deriving the protocol here — the
+// one definition lives in ./exchange.ts, where the drift test pins it.
+const SESSION_COOKIE_NAMES = [sessionCookieName(false), sessionCookieName(true)];
 
 /**
  * The current signed-in user's `identity_hash`, or `null` if there is no valid,

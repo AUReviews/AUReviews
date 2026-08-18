@@ -166,7 +166,7 @@ Settled in [Verifying @auburn.edu addresses](https://github.com/AUReviews/AURevi
 **Provider: Auth.js (NextAuth), self-hosted**, email/magic-link flow. Restricted to Auburn addresses in a one-line `signIn` callback:
 
 ```ts
-callbacks: { signIn({ profile }) { return profile.email.endsWith("@auburn.edu") || profile.email.endsWith("@tigermail.auburn.edu") } }
+callbacks: { signIn({ profile }) { return profile.email.endsWith("@auburn.edu") } }
 ```
 
 Free forever, full schema control, lowest lock-in. Clerk was rejected (domain allowlist is paid-in-production); Supabase Auth was runner-up but its free tier fully pauses after 7 days idle — real outage risk for a site with sporadic between-registration-week traffic.
@@ -175,7 +175,7 @@ Free forever, full schema control, lowest lock-in. Clerk was rejected (domain al
 
 **Anonymity architecture — HMAC-peppered identity hash:**
 
-1. User submits address; server rejects anything not ending `@auburn.edu` / `@tigermail.auburn.edu` before doing anything else.
+1. User submits address; server rejects anything not ending `@auburn.edu` before doing anything else (only the canonical domain — `@tigermail.auburn.edu` is the same mailbox and is not accepted, so the sign-in field can carry a single fixed suffix; PR #48).
 2. A single-use, expiring magic-link token is issued and emailed (Auth.js handles token storage).
 3. On click, compute `identity_hash = HMAC_SHA256(PEPPER, normalize(email))`. **`PEPPER` lives in a secret manager / environment variable, never in the database.** The plaintext email is **not persisted** past this step.
 4. `identities(identity_hash, verified_at)` is upserted. Session cookie carries an opaque session id mapped server-side to `identity_hash` — never the address, never the raw hash, to the client.

@@ -785,11 +785,18 @@ a.chip-link:hover {
 .textarea-input::placeholder {
   color: var(--text-placeholder);
 }
+/* Focus ring ON the border, not floating outside it: the 2px ring is inset by
+   1px so it replaces the 1px border edge-for-edge (omscentral pattern, owner
+   review PR #48). Being inside the control's own box also means an attached
+   addon (the @auburn.edu suffix) can never paint over it. */
 .select-input:focus,
 .num-input:focus,
 .textarea-input:focus {
-  outline: 2px solid var(--link);
-  outline-offset: 1px;
+  /* Tailwind-forms style (omscentral): the border itself turns accent and a
+     1px ring hugs it outside — 2px centred on the border edge, no gap. */
+  outline: none;
+  border-color: var(--link);
+  box-shadow: 0 0 0 1px var(--link);
 }
 
 /* The 1–5 segmented scale. */
@@ -922,8 +929,9 @@ a.chip-link:hover {
   filter: brightness(0.94);
 }
 .check-chip:has(input:focus-visible) {
-  outline: 2px solid var(--link);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--link);
+  box-shadow: 0 0 0 1px var(--link);
 }
 /* The Languages "Other" write-in, shown only while Other is picked. */
 .check-other {
@@ -946,7 +954,8 @@ a.chip-link:hover {
   font-size: 12px;
 }
 
-/* Sign-in gate (shown when the author isn't verified yet). */
+/* The inline Authentication section (issue #47): shown to a signed-out
+   author, above Post — the shared email + sign-in-code block lives inside. */
 .auth {
   background: var(--bg-page);
   border: 1px solid var(--border-default);
@@ -963,6 +972,176 @@ a.chip-link:hover {
 .auth .note {
   font-size: 12.5px;
   color: var(--text-body);
+}
+/* The signed-in counterpart: one quiet line where the section would be. */
+.auth-status {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-body);
+}
+.link-button {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--link);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* The shared email + sign-in-code fields (SignInCodeFields, issue #47) — the
+   one code path both /signin and the review form render. */
+.code-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.code-fields label {
+  display: block;
+}
+.code-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: stretch;
+}
+/* Username field with the Auburn domain attached as a fixed suffix (omscentral
+   pattern): the user types only the part before the @. The group claims a
+   comfortable width first; where the container is too narrow for it AND the
+   button (the /signin card), the button wraps underneath instead of
+   squeezing the username field. */
+.email-group {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+}
+/* Joined exactly the omscentral way: the input is left-rounded and KEEPS its
+   right border (the seam is the input's), the addon is right-rounded with no
+   left border of its own, and the input is positioned so its focus ring
+   paints over the seam instead of vanishing behind the addon. */
+.email-group .email-local {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+/* The static "@auburn.edu" addon — the one accepted domain, so no control. */
+.email-domain {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-input);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  padding: 0 13px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-chip);
+  user-select: none;
+}
+.btn-send {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-send:hover:not(:disabled) {
+  background: var(--bg-chip);
+}
+.btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.code-input {
+  max-width: 200px;
+  letter-spacing: 0.15em;
+  font-variant-numeric: tabular-nums;
+}
+.code-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.code-alert {
+  margin: 8px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.code-alert.error {
+  font-weight: 600;
+  color: var(--danger);
+  background: color-mix(in oklch, var(--danger) 12%, transparent);
+  border: 1px solid color-mix(in oklch, var(--danger) 35%, transparent);
+}
+.code-alert.ok {
+  color: var(--text-body);
+  background: var(--bg-chip);
+  border: 1px solid var(--border-default);
+}
+@media (max-width: 480px) {
+  .code-row {
+    flex-direction: column;
+  }
+}
+
+/* The standalone /signin page — the same card language as the review form. */
+.signin {
+  display: flex;
+  justify-content: center;
+  padding: 44px 24px 64px;
+}
+.signin-card {
+  max-width: 460px;
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  height: fit-content;
+}
+.signin-card h1 {
+  font-size: 23px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-heading);
+}
+.signin-card .lede {
+  font-size: 13.5px;
+  color: var(--text-body);
+  margin: 0;
+  line-height: 1.5;
+}
+.signin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.btn-block {
+  width: 100%;
+  padding: 11px 18px;
+  font-size: 14px;
+}
+.signin-foot {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 
 .assent {
