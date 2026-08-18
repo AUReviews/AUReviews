@@ -792,8 +792,11 @@ a.chip-link:hover {
 .select-input:focus,
 .num-input:focus,
 .textarea-input:focus {
-  outline: 2px solid var(--link);
-  outline-offset: -1px;
+  /* Tailwind-forms style (omscentral): the border itself turns accent and a
+     1px ring hugs it outside — 2px centred on the border edge, no gap. */
+  outline: none;
+  border-color: var(--link);
+  box-shadow: 0 0 0 1px var(--link);
 }
 
 /* The 1–5 segmented scale. */
@@ -926,8 +929,9 @@ a.chip-link:hover {
   filter: brightness(0.94);
 }
 .check-chip:has(input:focus-visible) {
-  outline: 2px solid var(--link);
-  outline-offset: -1px;
+  outline: none;
+  border-color: var(--link);
+  box-shadow: 0 0 0 1px var(--link);
 }
 /* The Languages "Other" write-in, shown only while Other is picked. */
 .check-other {
@@ -1012,14 +1016,17 @@ a.chip-link:hover {
   min-width: 0;
   display: flex;
   align-items: stretch;
-  /* Two separate boxes with a small gap, NOT one joined control: the input
-     keeps all four rounded corners and its full border, so its focus ring
-     wraps it completely instead of ending flat at a seam (omscentral). */
-  gap: 6px;
 }
+/* Joined exactly the omscentral way: the input is left-rounded and KEEPS its
+   right border (the seam is the input's), the addon is right-rounded with no
+   left border of its own, and the input is positioned so its focus ring
+   paints over the seam instead of vanishing behind the addon. */
 .email-group .email-local {
+  position: relative;
   flex: 1;
   min-width: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 /* The static "@auburn.edu" addon — the one accepted domain, so no control. */
 .email-domain {
@@ -1027,7 +1034,8 @@ a.chip-link:hover {
   display: inline-flex;
   align-items: center;
   border: 1px solid var(--border-input);
-  border-radius: 8px;
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
   padding: 0 13px;
   font-size: 13px;
   font-weight: 600;
