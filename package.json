@@ -16,6 +16,7 @@
     "db:seed": "tsx src/db/seed.ts",
     "ingest": "tsx src/ingest/run.ts",
     "ingest:offerings": "tsx src/ingest/run-offerings.ts",
+    "refresh": "tsx src/ingest/run-refresh.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

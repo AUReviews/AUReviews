@@ -140,6 +140,36 @@ stored (never the email — the code email contains no URL, so Microsoft 365 Saf
 Links has nothing to pre-fetch); and the client session exposes neither the hash
 nor the address.
 
+## 9. Catalog refresh Action ([#30](https://github.com/AUReviews/AUReviews/issues/30))
+
+`.github/workflows/catalog-refresh.yml` runs `npm run refresh` weekly (Sunday
+09:00 UTC) and on demand (**Actions → Catalog refresh → Run workflow**). It runs
+the in-repo ingest — bulletin catalog, then Banner offerings — over the
+**pooled** Neon endpoint and then POSTs `{ "tag": "catalog" }` to
+`/api/revalidate` so the home, browse, and course pages recompute. It lives in
+an Action because a full Banner pass takes minutes, past Vercel Hobby's ~60s
+function ceiling and once-daily cron limit.
+
+**One-time setup** (repo → Settings → Secrets and variables → Actions):
+
+- Secret **`DATABASE_URL`** — the pooled connection string (same value as
+  Vercel's `DATABASE_URL`, host contains `-pooler`).
+- Secret **`REVALIDATE_SECRET`** — must equal the value set in Vercel (step 3).
+- Variable **`AUREVIEWS_BASE_URL`** — the production origin, e.g.
+  `https://aureviews.vercel.app`. A wrong value makes the run fail at the
+  revalidation step (the imports have already committed, so re-running is safe).
+- Variable **`AUBURN_CATALOG_YEAR`** — optional; overrides the default catalog
+  year baked into `src/ingest/run-refresh.ts`.
+
+The run is idempotent (ADR 0002). Ambiguous crosswalk or instructor matches are
+written as **pending rows** (`crosswalk_pending`, `instructor_pending`), never
+auto-applied, and the job emits a `::warning::` annotation — visible in the run
+summary — whenever it wrote any. Banner codes with no crosswalk mapping show as
+a `::notice::`.
+
+Locally, `npm run refresh` does the same thing using `.env.local`; set
+`SKIP_REVALIDATE=1` to run the imports without pinging a deployment.
+
 ## What this proves (acceptance, #17)
 
 - [x] App deployed to Vercel, reachable at a URL. *(steps 1, 6)*

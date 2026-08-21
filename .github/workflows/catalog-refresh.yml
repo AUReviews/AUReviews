@@ -1,0 +1,58 @@
+# Catalog refresh (issue #30, v1-spec §8/§12).
+#
+# Runs the in-repo ingest (bulletin catalog → Banner offerings) as a Node
+# script, writes to Neon over the POOLED endpoint, then pings the deployed
+# app's /api/revalidate so pages behind the `catalog` tag refresh. Lives here
+# rather than in a Vercel cron because a full Banner run takes minutes —
+# past Hobby's ~60s function ceiling and once-daily cron limit.
+#
+# Idempotent (ADR 0002): re-running is safe. Ambiguous crosswalk/instructor
+# matches are written as pending rows, never auto-applied, and the script
+# emits `::warning::` annotations when it did so — check the run summary.
+#
+# Secrets (repo → Settings → Secrets and variables → Actions):
+#   DATABASE_URL        pooled Neon connection string (host contains -pooler)
+#   REVALIDATE_SECRET   must match the app's REVALIDATE_SECRET
+# Variables:
+#   AUREVIEWS_BASE_URL  deployment origin, e.g. https://aureviews.vercel.app
+#   AUBURN_CATALOG_YEAR optional override of the default catalog year
+name: Catalog refresh
+
+on:
+  schedule:
+    # Weekly, Sunday 09:00 UTC (≈ 4am Central) — quiet hours for Auburn's
+    # servers and for readers.
+    - cron: "0 9 * * 0"
+  workflow_dispatch:
+
+# Never run two refreshes at once — the imports are idempotent, but two
+# interleaved plans could race on the same rows.
+concurrency:
+  group: catalog-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run catalog + offerings ingest, then revalidate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          AUREVIEWS_BASE_URL: ${{ vars.AUREVIEWS_BASE_URL }}
+          AUBURN_CATALOG_YEAR: ${{ vars.AUBURN_CATALOG_YEAR }}
+        run: npm run refresh
