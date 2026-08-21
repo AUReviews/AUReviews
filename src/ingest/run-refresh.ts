@@ -22,11 +22,12 @@ import {
   fetchBannerTermScheduleHtml,
   fetchBulletinHtml,
 } from "./fetch";
-import { runIngest } from "./import";
+import { resolveCatalogYear, runIngest } from "./import";
 import { runOfferingsIngest } from "./import-offerings";
 import {
   formatRefreshAnnotations,
   pingRevalidate,
+  type RefreshSummary,
   runCatalogRefresh,
 } from "./refresh";
 
@@ -38,52 +39,14 @@ try {
   // No .env.local — rely on the ambient environment.
 }
 
-// Current Auburn catalog year (§9) — configured, not scraped; see run.ts.
-const DEFAULT_CATALOG_YEAR = "2026-2027";
-
 function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set.`);
   return value;
 }
 
-async function main(): Promise<void> {
-  const catalogYear = process.env.AUBURN_CATALOG_YEAR || DEFAULT_CATALOG_YEAR;
-  const skipRevalidate = process.env.SKIP_REVALIDATE === "1";
-
-  // Fail fast on missing revalidation config before spending minutes scraping.
-  const target = skipRevalidate
-    ? null
-    : {
-        baseUrl: requireEnv("AUREVIEWS_BASE_URL"),
-        secret: requireEnv("REVALIDATE_SECRET"),
-      };
-
-  const summary = await runCatalogRefresh({
-    runCatalog: () =>
-      runIngest({
-        fetchHtml: () => fetchBulletinHtml(),
-        loadSnapshot: loadCatalogSnapshot,
-        applyPlan: applyCatalogPlan,
-        catalogYear,
-      }),
-    runOfferings: () =>
-      runOfferingsIngest({
-        fetchTermListHtml: fetchBannerTermListHtml,
-        fetchTermScheduleHtml: fetchBannerTermScheduleHtml,
-        loadSnapshot: loadOfferingsSnapshot,
-        applyPlan: applyOfferingsPlan,
-      }),
-    revalidate: async () => {
-      if (!target) {
-        console.log("SKIP_REVALIDATE=1 — not pinging /api/revalidate.");
-        return;
-      }
-      await pingRevalidate(target);
-      console.log(`Revalidated "catalog" at ${target.baseUrl}.`);
-    },
-  });
-
+/** Log both import summaries plus the GitHub annotations for pending rows. */
+function report(catalogYear: string, summary: RefreshSummary): void {
   const { catalog, offerings } = summary;
   console.log(
     `Catalog ingest (catalog year ${catalogYear}): parsed ${catalog.parsed}, ` +
@@ -102,6 +65,45 @@ async function main(): Promise<void> {
 
   // GitHub workflow commands — harmless plain lines outside Actions.
   for (const line of formatRefreshAnnotations(summary)) console.log(line);
+}
+
+async function main(): Promise<void> {
+  const catalogYear = resolveCatalogYear();
+  const skipRevalidate = process.env.SKIP_REVALIDATE === "1";
+
+  // Fail fast on missing revalidation config before spending minutes scraping.
+  const target = skipRevalidate
+    ? null
+    : {
+        baseUrl: requireEnv("AUREVIEWS_BASE_URL"),
+        secret: requireEnv("REVALIDATE_SECRET"),
+      };
+
+  await runCatalogRefresh({
+    runCatalog: () =>
+      runIngest({
+        fetchHtml: () => fetchBulletinHtml(),
+        loadSnapshot: loadCatalogSnapshot,
+        applyPlan: applyCatalogPlan,
+        catalogYear,
+      }),
+    runOfferings: () =>
+      runOfferingsIngest({
+        fetchTermListHtml: fetchBannerTermListHtml,
+        fetchTermScheduleHtml: fetchBannerTermScheduleHtml,
+        loadSnapshot: loadOfferingsSnapshot,
+        applyPlan: applyOfferingsPlan,
+      }),
+    report: (summary) => report(catalogYear, summary),
+    revalidate: async () => {
+      if (!target) {
+        console.log("SKIP_REVALIDATE=1 — not pinging /api/revalidate.");
+        return;
+      }
+      await pingRevalidate(target);
+      console.log(`Revalidated "catalog" at ${target.baseUrl}.`);
+    },
+  });
 }
 
 main()

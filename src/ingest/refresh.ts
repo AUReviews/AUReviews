@@ -10,6 +10,7 @@
  * rows (ADR 0002); this module never applies anything itself, it only
  * sequences and reports.
  */
+import { CATALOG_CACHE_TAG } from "@/lib/revalidate";
 import type { IngestSummary } from "./import";
 import type { OfferingsIngestSummary } from "./import-offerings";
 
@@ -21,6 +22,12 @@ export interface RefreshDeps {
   runOfferings: () => Promise<OfferingsIngestSummary>;
   /** Refresh cached pages. Only called after both imports succeed. */
   revalidate: () => Promise<void>;
+  /**
+   * Log/annotate what the imports did. Called after both imports commit and
+   * BEFORE revalidation, so a failed ping can't swallow a pending-row warning
+   * for rows that are already in the database.
+   */
+  report?: (summary: RefreshSummary) => void;
 }
 
 /** What one refresh did, for the run log and the GitHub annotations. */
@@ -39,8 +46,10 @@ export async function runCatalogRefresh(
 ): Promise<RefreshSummary> {
   const catalog = await deps.runCatalog();
   const offerings = await deps.runOfferings();
+  const summary = { catalog, offerings };
+  deps.report?.(summary);
   await deps.revalidate();
-  return { catalog, offerings };
+  return summary;
 }
 
 /**
@@ -88,9 +97,6 @@ export interface RevalidateTarget {
   /** Must equal the app's `REVALIDATE_SECRET`. */
   secret: string;
 }
-
-/** The cache tag the catalog/browse/home pages sit behind (see src/app). */
-export const CATALOG_CACHE_TAG = "catalog";
 
 /**
  * POST `{ tag: "catalog" }` to the app's `/api/revalidate` with the bearer

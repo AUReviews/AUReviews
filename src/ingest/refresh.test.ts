@@ -61,6 +61,26 @@ describe("runCatalogRefresh", () => {
     expect(result.offerings).toEqual(offeringsSummary());
   });
 
+  it("reports the summary before revalidating so a failed ping never hides pending-row warnings", async () => {
+    const d = deps({
+      revalidate: async () => {
+        throw new Error("revalidate 503");
+      },
+    });
+    const reported: string[] = [];
+    await expect(
+      runCatalogRefresh({
+        ...d,
+        report: (summary) => {
+          reported.push(`pending=${summary.catalog.pending}`);
+          d.calls.push("report");
+        },
+      }),
+    ).rejects.toThrow("revalidate 503");
+    expect(d.calls).toEqual(["catalog", "offerings", "report"]);
+    expect(reported).toEqual(["pending=0"]);
+  });
+
   it("does not revalidate when the catalog import throws", async () => {
     const d = deps({
       runCatalog: async () => {
