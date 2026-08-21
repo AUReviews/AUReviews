@@ -2,7 +2,7 @@
  * Operator notifications (v1-spec §12 "email-routed inboxes"; issue #27).
  *
  * The operator has no console to poll in v1 (§12): every "Report this review"
- * and "Report a concern" submission writes a row AND pushes an email through
+ * submission writes a row AND pushes an email through
  * the same Resend integration the sign-in code uses (§7/§8). The row is the
  * record; the email is the notification. A delivery failure must therefore
  * never fail the reader's submission — `sendOperatorEmail` logs and returns.
@@ -18,8 +18,6 @@
 import { Resend } from "resend";
 import { fromAddress } from "@/auth/mailer";
 import {
-  CONCERN_KINDS,
-  type ConcernKind,
   REPORT_REASONS,
   type ReportReason,
 } from "@/domain";
@@ -29,8 +27,6 @@ export interface OperatorEmail {
   text: string;
   html: string;
 }
-
-const NO_CONTACT = "No contact address was given.";
 
 /** The "Report this review" notification: review id + link first (§12). */
 export function buildReviewReportEmail(input: {
@@ -68,43 +64,6 @@ export function buildReviewReportEmail(input: {
   <strong>Reason:</strong> ${esc(reasonLabel)}</p>
   <p><strong>Details:</strong><br>${esc(details).replace(/\n/g, "<br>")}</p>
   <p style="font-size:.8rem;color:#666">${esc(reporter)} Judge it against the published guidelines; takedowns run via <code>runbook/takedown.sql</code>.</p>
-</div>`,
-  };
-}
-
-/** The "Report a concern" notification (§11/§12): kind, message, reply-to. */
-export function buildConcernEmail(input: {
-  concernId: string;
-  kind: ConcernKind;
-  message: string;
-  contactEmail: string | null;
-  pageUrl: string | null;
-}): OperatorEmail {
-  const kindLabel =
-    CONCERN_KINDS.find((k) => k.value === input.kind)?.label ?? input.kind;
-  const contact = input.contactEmail
-    ? `Reply to: ${input.contactEmail}`
-    : NO_CONTACT;
-  const page = input.pageUrl ? `Page: ${input.pageUrl}` : "Page: (not given)";
-  return {
-    subject: `[AUReviews] Concern — ${kindLabel}`,
-    text: [
-      "Someone sent a concern through the site-wide form (no sign-in required).",
-      "",
-      `Concern id: ${input.concernId}`,
-      `Kind: ${kindLabel}`,
-      page,
-      contact,
-      "",
-      "Message:",
-      input.message,
-    ].join("\n"),
-    html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;color:#111">
-  <h2 style="margin:0 0 .5rem">Concern — ${esc(kindLabel)}</h2>
-  <p><strong>Concern id:</strong> <code>${esc(input.concernId)}</code><br>
-  <strong>${esc(page)}</strong><br>
-  ${esc(contact)}</p>
-  <p style="white-space:pre-wrap;border-left:3px solid #ccc;padding-left:.75rem">${esc(input.message)}</p>
 </div>`,
   };
 }

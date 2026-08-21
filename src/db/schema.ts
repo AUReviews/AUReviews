@@ -411,24 +411,3 @@ export const reviewReports = pgTable(
   },
   (t) => [index("review_reports_review_idx").on(t.reviewId)],
 );
-
-/**
- * "Report a concern" rows (v1-spec §11/§12/§13; issue #27). The UNGATED,
- * site-wide inbox — bug reports, informal removal requests, anything not tied
- * to one review — distinct from `review_reports`. No sign-in and no
- * `@auburn.edu` requirement, so nothing here links to an identity; the
- * optional `contactEmail` is a reply-to the visitor chose to leave, stored in
- * plaintext precisely because it is not an identity claim (the §7 hashing
- * protects *student* addresses; this is whatever a visitor typed). `kind` is
- * one of the `CONCERN_KINDS` values (text, no enum).
- */
-export const concerns = pgTable("concerns", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  kind: text("kind").notNull(),
-  message: text("message").notNull(),
-  contactEmail: text("contact_email"),
-  pageUrl: text("page_url"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});

@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  buildConcernEmail,
   buildReviewReportEmail,
   operatorEmailAddress,
   sendOperatorEmail,
@@ -32,24 +31,6 @@ describe("buildReviewReportEmail", () => {
 
   it("says whether the reporter was signed in", () => {
     expect(email.text).toMatch(/signed-in/i);
-  });
-});
-
-describe("buildConcernEmail", () => {
-  const email = buildConcernEmail({
-    concernId: "abc",
-    kind: "bug",
-    message: "Search <script>alert(1)</script>",
-    contactEmail: null,
-    pageUrl: "https://aureviews.com/courses",
-  });
-
-  it("labels the kind and carries the message, page, and a no-contact note", () => {
-    expect(email.subject).toContain("Bug or broken page");
-    expect(email.text).toContain("https://aureviews.com/courses");
-    expect(email.text).toMatch(/no contact/i);
-    expect(email.html).toContain("&lt;script&gt;");
-    expect(email.html).not.toContain("<script>");
   });
 });
 

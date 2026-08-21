@@ -1,0 +1,27 @@
+name: Bug report
+description: Something on AUReviews is broken or behaving wrong.
+title: "Bug: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. To flag a specific *review*, use the **Report** link under that review on its course page instead — this form is for the site itself.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The address of the page where it happened, if there is one.
+      placeholder: https://aureviews.com/courses/comp-1210
+  - type: input
+    id: browser
+    attributes:
+      label: Browser / device
+      placeholder: e.g. Chrome on Windows, Safari on iPhone

@@ -7,8 +7,8 @@ import { reportReview } from "./report-actions";
 // The per-review "Report" affordance (v1-spec §11.B; issue #27): a quiet link
 // at the end of the helpful row that unfolds a small inline form — one reason
 // from the guideline categories, optional details — and posts to the
-// `reportReview` action. Distinct from the site-wide "Report a concern" page,
-// which is for anything NOT about one specific review.
+// `reportReview` action. Bugs and feature requests are NOT this — they go to
+// GitHub issues via the footer links.
 export default function ReportReview({ reviewId }: { reviewId: string }) {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
@@ -44,6 +44,8 @@ export default function ReportReview({ reviewId }: { reviewId: string }) {
       const result = await reportReview(reviewId, reason, details);
       if (result.ok) {
         setDone(true);
+      } else if (result.error === "throttled") {
+        setError("Too many reports from your connection right now — try again later.");
       } else if (result.error === "invalid") {
         setError(result.message);
       } else {

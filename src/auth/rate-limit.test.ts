@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SEND_LIMITS, evaluateSendRateLimit } from "./rate-limit";
+import { REPORT_LIMITS, SEND_LIMITS, evaluateSendRateLimit } from "./rate-limit";
 
 describe("evaluateSendRateLimit", () => {
   it("allows a send when both counts are under the limits", () => {
@@ -64,5 +64,20 @@ describe("evaluateSendRateLimit", () => {
     expect(SEND_LIMITS.perAddressPerHour).toBe(3);
     expect(SEND_LIMITS.perIpPerHour).toBe(10);
     expect(SEND_LIMITS.globalPerDay).toBeLessThan(100);
+  });
+});
+
+describe("report throttle policy", () => {
+  it("caps reports per IP per hour with no per-address cap, sharing the global ceiling", () => {
+    const limits = { ...SEND_LIMITS, perIpPerHour: REPORT_LIMITS.perIpPerHour };
+    expect(
+      evaluateSendRateLimit({ addressCountLastHour: 0, ipCountLastHour: REPORT_LIMITS.perIpPerHour - 1, limits }),
+    ).toEqual({ allowed: true });
+    expect(
+      evaluateSendRateLimit({ addressCountLastHour: 0, ipCountLastHour: REPORT_LIMITS.perIpPerHour, limits }),
+    ).toEqual({ allowed: false, reason: "ip" });
+    expect(
+      evaluateSendRateLimit({ addressCountLastHour: 0, ipCountLastHour: 0, globalCountLastDay: SEND_LIMITS.globalPerDay, limits }),
+    ).toEqual({ allowed: false, reason: "global" });
   });
 });

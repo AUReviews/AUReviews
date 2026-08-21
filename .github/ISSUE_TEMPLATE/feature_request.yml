@@ -1,0 +1,17 @@
+name: Feature request
+description: Suggest something AUReviews should do.
+title: "Feature: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would you like to be able to do?
+      description: Describe the problem or the idea — what you're trying to get done and where the site gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: How might it work?
+      description: Optional — any thoughts on what it should look like.

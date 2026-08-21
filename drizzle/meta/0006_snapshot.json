@@ -1,60 +1,9 @@
 {
-  "id": "84a21a4c-f844-4d06-9311-a10b303350f9",
+  "id": "97302b32-9094-40cb-a8d5-3bb8ba56c2de",
   "prevId": "23991097-966e-482e-b7fb-8a9df0e81b05",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.concerns": {
-      "name": "concerns",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "message": {
-          "name": "message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "contact_email": {
-          "name": "contact_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "page_url": {
-          "name": "page_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.course_crosswalk": {
       "name": "course_crosswalk",
       "schema": "",

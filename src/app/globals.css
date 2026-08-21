@@ -1350,7 +1350,7 @@ a.chip-link:hover {
   }
 }
 
-/* ---- Report this review / Report a concern (issue #27, §11/§12) --------- */
+/* ---- Report this review + footer links (issue #27, §11/§12) ------------- */
 .site-footer p {
   margin: 0;
 }
@@ -1405,20 +1405,8 @@ a.chip-link:hover {
   justify-content: flex-end;
   gap: 8px;
 }
-.hp {
-  position: absolute;
-  left: -10000px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-.form-ok {
-  margin: 0;
-  padding: 11px 13px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--link);
-  background: color-mix(in oklch, var(--link) 12%, transparent);
-  border: 1px solid color-mix(in oklch, var(--link) 35%, transparent);
+.site-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
 }

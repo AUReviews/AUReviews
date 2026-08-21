@@ -1,6 +1,8 @@
 "use server";
 
 import { headers } from "next/headers";
+import { clientIpFromHeaders } from "@/auth/client-ip";
+import { checkAndRecordReport } from "@/auth/rate-limit";
 import { getCurrentIdentityHash } from "@/auth/session";
 import { isUuid, validateReviewReport } from "@/domain";
 import { getReviewCourse, insertReviewReport } from "@/db/queries";
@@ -10,23 +12,27 @@ import { siteOrigin } from "@/lib/site-origin";
 
 /**
  * The report action's result (issue #27). `unknown` means the review doesn't
- * exist or is no longer published — there is nothing live to report; `invalid`
- * carries the field-level message the island shows inline.
+ * exist or is no longer published — there is nothing live to report;
+ * `invalid` carries the field-level message the island shows inline;
+ * `throttled` means this IP (or the site as a whole) has sent too many
+ * reports recently.
  */
 export type ReportResult =
   | { ok: true }
-  | { ok: false; error: "unknown" }
+  | { ok: false; error: "unknown" | "throttled" }
   | { ok: false; error: "invalid"; field: "reason" | "details"; message: string };
 
 /**
  * "Report this review" (v1-spec §11.B/§12; issue #27): the per-review,
  * post-publish flag. Writes a `review_reports` row and emails the operator the
  * review's id and link — the row is the record, the email the push, so the
- * operator never polls. Open to any reader (the spec gates only *authoring*
- * on `@auburn.edu`); a signed-in reporter's identity hash is recorded for
+ * operator never polls; the admin dashboard that will read this table is v2.
+ * Open to any reader (owner decision: the spec gates only *authoring* on
+ * `@auburn.edu`); a signed-in reporter's identity hash is recorded for
  * correlation, a signed-out one leaves it null. Arguments are re-validated
  * here: this is a public endpoint and the typed signature doesn't survive a
- * crafted POST.
+ * crafted POST. A per-IP throttle runs BEFORE any write so a script can't
+ * flood the inbox or burn the shared Resend quota.
  */
 export async function reportReview(
   reviewId: string,
@@ -46,6 +52,10 @@ export async function reportReview(
   const review = await getReviewCourse(reviewId);
   if (!review) return { ok: false, error: "unknown" };
 
+  const h = await headers();
+  const throttle = await checkAndRecordReport({ ip: clientIpFromHeaders(h) });
+  if (!throttle.allowed) return { ok: false, error: "throttled" };
+
   const reporterIdentityHash = await getCurrentIdentityHash();
   await insertReviewReport({
     reviewId,
@@ -54,7 +64,6 @@ export async function reportReview(
     reporterIdentityHash,
   });
 
-  const h = await headers();
   const origin = siteOrigin({
     host: h.get("x-forwarded-host") ?? h.get("host"),
     proto: h.get("x-forwarded-proto"),
