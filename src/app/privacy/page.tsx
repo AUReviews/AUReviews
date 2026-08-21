@@ -6,6 +6,8 @@ import LegalPage from "../_components/LegalPage";
 // Privacy Policy (v1-spec §7/§10/§11; issue #29). Describes what the §7
 // data-minimization architecture actually retains — this page IS the
 // anonymity promise, so keep it in step with src/auth and src/db/schema.ts.
+// Retention claims describe the §11 design; the purge jobs for removed reviews
+// and email_send_log are separate tickets — keep this copy honest as they land.
 // Items marked `🔴 attorney` in comments are confirmed by the pre-launch consult.
 export const metadata: Metadata = {
   title: "Privacy Policy — AUReviews",
@@ -24,8 +26,8 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <strong>Your Auburn email, briefly.</strong> When you sign in we send a one-time code to
-          your <code>@auburn.edu</code> address. We do not store the address. We store a one-way
-          keyed hash of it; the key lives outside the database. The hash lets us recognize you
+          your Auburn address (<code>@auburn.edu</code> or <code>@tigermail.auburn.edu</code>).
+          We do not store the address. We store a one-way keyed hash of it; the key lives outside the database. The hash lets us recognize you
           when you come back and attribute your reviews to you, but it cannot be turned back into
           your email.
         </li>
@@ -38,7 +40,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Sign-in request logs</strong> (a hashed address and an IP address) used only to
-          rate-limit sign-in emails, kept for a short rolling window and then deleted.
+          rate-limit sign-in emails. Only a short trailing window is ever consulted.
         </li>
         <li>
           <strong>Aggregate analytics</strong> (page views, performance) from our hosting
@@ -70,8 +72,7 @@ export default function PrivacyPage() {
           identity) remains so repeat abuse can be detected.
         </li>
         <li>
-          <strong>Sign-in codes</strong> expire within minutes. <strong>Rate-limit logs</strong>{" "}
-          are kept for hours, not days.
+          <strong>Sign-in codes</strong> expire within minutes.
         </li>
         <li>
           <strong>Sessions</strong> end when you sign out or they expire.

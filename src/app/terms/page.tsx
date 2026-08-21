@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LEGAL_CONTACT_EMAIL, NON_AFFILIATION_DISCLAIMER } from "@/lib/legal";
+import {
+  LEGAL_CONTACT_EMAIL,
+  NON_AFFILIATION_DISCLAIMER,
+  PROHIBITED_CONTENT,
+} from "@/lib/legal";
 import LegalPage from "../_components/LegalPage";
 
 // Terms of Service (v1-spec §10; issue #29). Placeholder-final copy: items
@@ -22,7 +26,8 @@ export default function TermsPage() {
       <h2>1. Who can post</h2>
       <p>
         To post a review, vote, or otherwise contribute, you must be at least 18 years old and
-        verify a current <code>@auburn.edu</code> email address. Anyone can read the Site.
+        verify a current Auburn email address (<code>@auburn.edu</code> or{" "}
+        <code>@tigermail.auburn.edu</code>). Anyone can read the Site.
       </p>
 
       <h2>2. Not affiliated with Auburn University</h2>
@@ -54,11 +59,9 @@ export default function TermsPage() {
 
       <h2>4. Prohibited content and conduct</h2>
       <p>
-        The <Link href="/guidelines">Review Guidelines</Link> list what may not be posted:
-        accusations of misconduct, protected-characteristic or appearance remarks, identifying or
-        contact information, content about TAs or other students, profanity, off-topic or
-        wrong-course content, spam, impersonation, and self-review. You also may not upload course
-        materials (exams, slides, assignments) — reviews only — or attempt to interfere with the
+        The <Link href="/guidelines">Review Guidelines</Link> list what may not be posted:{" "}
+        {PROHIBITED_CONTENT.map((p) => p.title.toLowerCase()).join("; ")}. You also may not
+        upload course materials (exams, slides, assignments) — reviews only — or attempt to interfere with the
         Site&rsquo;s operation or other users&rsquo; anonymity.
       </p>
 
