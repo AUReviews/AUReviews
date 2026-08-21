@@ -14,6 +14,7 @@ import {
 } from "@/lib/course-reviews";
 import type { VoteDirection } from "@/domain";
 import { castReviewVote } from "./vote-actions";
+import ReportReview from "./ReportReview";
 
 // The Reviews tab island (issue #25, §5). All rows arrive as props from the
 // server render, so the full review list is in the static/ISR HTML; this
@@ -201,7 +202,7 @@ function ReviewCard({
   }
 
   return (
-    <article className="review">
+    <article className="review" id={`review-${review.id}`}>
       <div className="review-head">
         <span className="stat">
           Overall {review.overall} · Difficulty {review.difficulty} ·{" "}
@@ -244,6 +245,7 @@ function ReviewCard({
             <Link href="/signin">Sign in</Link> with your Auburn email to vote.
           </span>
         )}
+        <ReportReview reviewId={review.id} />
       </div>
     </article>
   );

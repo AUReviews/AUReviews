@@ -115,3 +115,15 @@ export {
   isAuburnStudentEmail,
   normalizeEmail,
 } from "./anonymity";
+export {
+  type ConcernKind,
+  type ConcernResult,
+  type ReportReason,
+  type ReviewReportResult,
+  CONCERN_KINDS,
+  CONCERN_MESSAGE_MAX_LENGTH,
+  REPORT_DETAILS_MAX_LENGTH,
+  REPORT_REASONS,
+  validateConcern,
+  validateReviewReport,
+} from "./moderation";

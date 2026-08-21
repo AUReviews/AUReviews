@@ -12,11 +12,13 @@ import { type CourseSearchRow, escapeLikePattern } from "@/lib/course-search";
 import type { PrereqCatalogRow } from "@/lib/prereqs";
 import { getDb } from "./client";
 import {
+  concerns,
   courses,
   instructors,
   offeringInstructors,
   offerings,
   placeholder,
+  reviewReports,
   reviewVotes,
   reviews,
 } from "./schema";
@@ -595,4 +597,41 @@ export async function getCourseCount(): Promise<number> {
     .select({ count: sql<number>`count(*)::int` })
     .from(courses);
   return rows[0]?.count ?? 0;
+}
+
+/**
+ * Record a "Report this review" submission (§11.B/§12; issue #27) and return
+ * the new row's id. The caller has already confirmed the review is live via
+ * `getReviewCourse`; this is the durable record the operator email points at.
+ */
+export async function insertReviewReport(report: {
+  reviewId: string;
+  reason: string;
+  details: string | null;
+  reporterIdentityHash: string | null;
+}): Promise<string> {
+  const db = getDb();
+  const [row] = await db
+    .insert(reviewReports)
+    .values(report)
+    .returning({ id: reviewReports.id });
+  return row.id;
+}
+
+/**
+ * Record a "Report a concern" submission (§11/§12; issue #27) in the ungated
+ * `concerns` inbox and return its id for the operator email.
+ */
+export async function insertConcern(concern: {
+  kind: string;
+  message: string;
+  contactEmail: string | null;
+  pageUrl: string | null;
+}): Promise<string> {
+  const db = getDb();
+  const [row] = await db
+    .insert(concerns)
+    .values(concern)
+    .returning({ id: concerns.id });
+  return row.id;
 }

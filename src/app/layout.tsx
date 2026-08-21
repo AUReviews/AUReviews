@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
@@ -31,8 +32,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <main className="main">{children}</main>
           </SessionProvider>
           <footer className="site-footer">
-            AUReviews is an independent, student-run website. It is not affiliated
-            with, endorsed by, or connected to Auburn University.
+            <p>
+              AUReviews is an independent, student-run website. It is not
+              affiliated with, endorsed by, or connected to Auburn University.
+            </p>
+            <p>
+              {/* Ungated, site-wide (v1-spec §11/§13; issue #27). */}
+              <Link href="/concern">Report a concern</Link>
+            </p>
           </footer>
         </div>
         <Analytics />
