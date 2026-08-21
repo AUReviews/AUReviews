@@ -33,6 +33,7 @@ import {
   type CourseOption,
   normalizeCourseSearchQuery,
 } from "@/lib/course-search";
+import { DOOR_BLOCK_SUMMARY, PROHIBITED_CONTENT, legalPageHref } from "@/lib/legal";
 import {
   type ReviewFormState,
   listInstructorOptions,
@@ -469,11 +470,12 @@ export default function ReviewForm({ prefill, terms, signedIn, edit }: ReviewFor
         </div>
       )}
 
-      {/* The §13 ToS/Privacy/18+ assent line. Terms and Privacy are named in
-          plain text, not linked, until the legal pages ship (a separate §13
-          ticket); a live link to a 404 is worse than none. */}
+      {/* The §13 ToS/Privacy/18+ assent line (issue #29). */}
       <p className="assent">
-        By posting you agree to our Terms and Privacy Policy, and confirm you are 18 or older.
+        By posting you agree to our{" "}
+        <Link href={legalPageHref("terms")}>Terms of Service</Link> and{" "}
+        <Link href={legalPageHref("privacy")}>Privacy Policy</Link>, and confirm you are 18 or
+        older.
       </p>
       <div className="add-actions">
         <Link href={cancelHref} className="btn-ghost">
@@ -777,8 +779,10 @@ function SelectField({
   );
 }
 
-// The inline Review Guidelines panel (§11/§13), shown at authoring time so the
-// prohibited categories are visible before posting, not just enforced after.
+// The inline Review Guidelines panel (§11/§13; issue #29), shown at authoring
+// time so the prohibited categories are visible before posting, not just
+// enforced after. Same `PROHIBITED_CONTENT` list as the full /guidelines page,
+// rendered as one-liners here with a link out to the long form.
 function GuidelinesPanel({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   return (
     <div className="details">
@@ -787,17 +791,18 @@ function GuidelinesPanel({ open, onToggle }: { open: boolean; onToggle: () => vo
       </button>
       {open && (
         <div className="guidelines">
-          <p>Reviews cover the course and its instructor of record. Please don’t post:</p>
+          <p>
+            Reviews cover the course and its instructor of record, in your own words, about your
+            own experience. Please don’t post:
+          </p>
           <ul>
-            <li>Named accusations of misconduct or illegal activity.</li>
-            <li>Comments on a protected characteristic or someone’s appearance.</li>
-            <li>Identifying or contact information, links, emails, or phone numbers.</li>
-            <li>Content about TAs or other students, or profanity.</li>
-            <li>Off-topic, wrong-course, spam, impersonation, or self-review content.</li>
+            {PROHIBITED_CONTENT.map((item) => (
+              <li key={item.title}>{item.title}.</li>
+            ))}
           </ul>
           <p className="muted">
-            Links, contact details, slurs, and reviews under {BODY_MIN_LENGTH} characters are
-            blocked automatically; everything else is handled if it’s reported.
+            {DOOR_BLOCK_SUMMARY}{" "}
+            <Link href={legalPageHref("guidelines")}>Read the full guidelines.</Link>
           </p>
         </div>
       )}

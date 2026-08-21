@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Header from "./_components/Header";
+import SiteFooter from "./_components/SiteFooter";
 import "./globals.css";
 
 const GITHUB_REPO = "https://github.com/AUReviews/AUReviews";
