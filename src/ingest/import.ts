@@ -17,6 +17,23 @@ import { parseCatalogHtml } from "./catalog";
 export const COMP_CATALOG_URL =
   "https://bulletin.auburn.edu/coursesofinstruction/comp/";
 
+/**
+ * Current Auburn catalog year (§9). The bulletin surfaces this on program
+ * pages, not the COMP course list, so it is configured rather than scraped.
+ */
+export const DEFAULT_CATALOG_YEAR = "2026-2027";
+
+/**
+ * The catalog year to import under: `AUBURN_CATALOG_YEAR` when set to a
+ * non-empty value, else the default. Empty counts as unset because GitHub
+ * Actions passes an undefined `vars.*` as `""`.
+ */
+export function resolveCatalogYear(
+  env: Record<string, string | undefined> = process.env,
+): string {
+  return env.AUBURN_CATALOG_YEAR || DEFAULT_CATALOG_YEAR;
+}
+
 /** Injected side-effecting edges — real ones in run.ts, fakes in tests. */
 export interface IngestDeps {
   /** Fetch the COMP catalog page HTML. */

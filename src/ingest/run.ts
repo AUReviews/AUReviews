@@ -13,7 +13,7 @@
  */
 import { applyCatalogPlan, loadCatalogSnapshot } from "@/db/catalog";
 import { fetchBulletinHtml } from "./fetch";
-import { runIngest } from "./import";
+import { resolveCatalogYear, runIngest } from "./import";
 
 // Load .env.local for local runs (Node 24 built-in). On CI/Vercel the file is
 // absent and the vars are injected directly, so a missing file is fine.
@@ -23,13 +23,9 @@ try {
   // No .env.local — rely on the ambient environment.
 }
 
-// Current Auburn catalog year (§9). The bulletin surfaces this on program pages,
-// not the COMP course list, so it is configured rather than scraped; override
-// per-year via the environment without a code change.
-const DEFAULT_CATALOG_YEAR = "2026-2027";
-
 async function main(): Promise<void> {
-  const catalogYear = process.env.AUBURN_CATALOG_YEAR ?? DEFAULT_CATALOG_YEAR;
+  // Override per-year via AUBURN_CATALOG_YEAR without a code change (§9).
+  const catalogYear = resolveCatalogYear();
 
   const summary = await runIngest({
     fetchHtml: () => fetchBulletinHtml(),

@@ -5,9 +5,17 @@
  * internal `/api/revalidate` endpoint to refresh the affected ISR pages while
  * reads stay CDN-served. This module does the auth + input validation so it is
  * unit-testable without the Next runtime; the route turns the returned plan into
- * actual `revalidateTag` / `revalidatePath` calls. Nothing calls it yet — the
- * seam simply exists, as the ticket requires.
+ * actual `revalidateTag` / `revalidatePath` calls. The catalog refresh Action
+ * (`src/ingest/refresh.ts`, #30) is its first caller; review submits/votes
+ * revalidate in-process via server actions instead.
  */
+
+/**
+ * The cache tag every catalog-side read sits behind (`src/app/page.tsx`,
+ * `courses/page.tsx`, `courses/[code]/page.tsx`). An import revalidates this
+ * one tag to refresh them all.
+ */
+export const CATALOG_CACHE_TAG = "catalog";
 export interface RevalidateRequestBody {
   tag?: unknown;
   path?: unknown;
