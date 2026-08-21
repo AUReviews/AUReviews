@@ -87,3 +87,9 @@ export async function sendSignInCodeEmail(params: {
     throw new Error(`Resend failed to send sign-in code: ${error.message}`);
   }
 }
+
+/** From-address on the dedicated sending subdomain (v1-spec §7). Shared by
+ * the sign-in code and the operator notifications (src/lib/operator-mail.ts). */
+export function fromAddress(): string {
+  return process.env.EMAIL_FROM ?? "AUReviews <no-reply@mail.aureviews.com>";
+}

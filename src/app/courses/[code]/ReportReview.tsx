@@ -32,7 +32,6 @@ export default function ReportReview({ reviewId }: { reviewId: string }) {
         type="button"
         className="report-link"
         onClick={() => setOpen(true)}
-        aria-expanded={false}
       >
         Report
       </button>

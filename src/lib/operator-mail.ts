@@ -7,11 +7,16 @@
  * record; the email is the notification. A delivery failure must therefore
  * never fail the reader's submission — `sendOperatorEmail` logs and returns.
  *
+ * Unlike the sign-in code email, these carry a URL: the operator inbox is not
+ * an Auburn/Microsoft 365 mailbox, so the Safe Links concern in
+ * src/auth/mailer.ts does not apply, and the link is the whole point (§12).
+ *
  * Reader-supplied text is HTML-escaped before it reaches the html body: these
  * emails are read in a mail client, and a report is exactly where a hostile
  * payload would be planted.
  */
 import { Resend } from "resend";
+import { fromAddress } from "@/auth/mailer";
 import {
   CONCERN_KINDS,
   type ConcernKind,
@@ -110,10 +115,6 @@ export function operatorEmailAddress(
 ): string | null {
   const value = env.OPERATOR_EMAIL?.trim();
   return value ? value : null;
-}
-
-function fromAddress(): string {
-  return process.env.EMAIL_FROM ?? "AUReviews <no-reply@mail.aureviews.com>";
 }
 
 /**
