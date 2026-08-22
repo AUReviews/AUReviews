@@ -61,6 +61,7 @@ vi.mock("next/headers", () => ({
 // ---- Mailer: capture the code instead of sending -----------------------------
 const sentCodes: string[] = [];
 vi.mock("./mailer", () => ({
+  fromAddress: () => "AUReviews <test@example.test>",
   sendSignInCodeEmail: async ({ code }: { code: string }) => {
     sentCodes.push(code);
   },

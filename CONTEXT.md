@@ -54,3 +54,10 @@ The single bridge mapping an incoming Auburn `(subject, number, catalog-year)` t
 
 **Status** (of a Course):
 `active` when present in the latest Auburn catalog import; `retired` when it has dropped out. Retired courses keep their page and reviews, are de-emphasized in the browse index, and carry a "no longer in the active Auburn catalog" note. Retirement is reversible.
+
+**Review report**:
+A reader's flag on one specific, published Review, picked from the neutral guideline categories (wrong course, identifying info, misconduct accusation, protected-characteristic remark, not-about-the-course, profanity, spam, other) with optional free text. Writes a `review_reports` row and emails the operator the review's id and link — the pull-based post-publish moderation surface (v1-spec §11.B/§12). Open to any reader; a signed-in reporter's identity hash is recorded for correlation. The operator judges it against the published guidelines with no special deference; nothing is removed automatically.
+_Avoid_: flag, complaint (as data terms); "report" is canonical
+
+**Operator inbox**:
+The v1 substitute for an admin console (v1-spec §12; the dashboard is v2): every review report pushes an email (Resend, to `OPERATOR_EMAIL`) so the operator never polls; the `review_reports` rows are the durable record a later dashboard will read. An undelivered email never fails the reader's submission. Bugs and feature requests are not site features at all — the footer links to GitHub issue templates.

@@ -33,16 +33,12 @@ import Resend from "next-auth/providers/resend";
 import { isAuburnStudentEmail, normalizeEmail } from "@/domain";
 import { createHashingAdapter } from "./adapter";
 import { generateSignInCode } from "./code";
-import { sendSignInCodeEmail } from "./mailer";
+import { fromAddress, sendSignInCodeEmail } from "./mailer";
 
 /** A typed code is used the moment it is read — 10 minutes is ample, and a
  * shorter life further shrinks the guessing window (issue #43 triage). */
 const TOKEN_MAX_AGE_SECONDS = 10 * 60;
 
-/** From-address on the dedicated sending subdomain (v1-spec §7). */
-function fromAddress(): string {
-  return process.env.EMAIL_FROM ?? "AUReviews <no-reply@mail.aureviews.com>";
-}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: createHashingAdapter(),

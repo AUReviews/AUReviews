@@ -383,3 +383,31 @@ export const emailSendLog = pgTable(
     index("email_send_log_ip_idx").on(t.ip, t.createdAt),
   ],
 );
+
+/**
+ * "Report this review" rows (v1-spec §11.B/§12; issue #27). The per-review,
+ * post-publish moderation surface: a reader flags one review against the
+ * published guidelines, a row lands here, and the operator is emailed the
+ * review's id/link (src/lib/operator-mail.ts). Pull-based — nothing reads this
+ * table proactively; it is the durable record behind the notification.
+ * `reason` is one of the neutral `REPORT_REASONS` values (text, no enum).
+ * `reporterIdentityHash` is the reporter's HMAC token when signed in, null
+ * otherwise — reporting is open to readers too (§11 has no sign-in gate on
+ * reports), and the hash is correlation-only, never an identity.
+ */
+export const reviewReports = pgTable(
+  "review_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reviewId: uuid("review_id")
+      .notNull()
+      .references(() => reviews.id, { onDelete: "cascade" }),
+    reason: text("reason").notNull(),
+    details: text("details"),
+    reporterIdentityHash: text("reporter_identity_hash"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("review_reports_review_idx").on(t.reviewId)],
+);

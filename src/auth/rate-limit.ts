@@ -121,3 +121,52 @@ export async function checkAndRecordSend(input: {
 
   return decision;
 }
+
+/**
+ * Per-IP ceiling on "Report this review" submissions (issue #27). A report is
+ * an email send too (it pushes to the operator inbox, §12), so it is logged
+ * in the same `email_send_log` under a fixed sentinel "address" and counted
+ * against the same global/day ceiling that protects the Resend quota —
+ * otherwise a script could burn the day's quota and lock every real student
+ * out of sign-in codes. There is no per-address cap here: the sentinel is
+ * shared by every reporter, so only the IP and global limits apply.
+ */
+export const REPORT_SENTINEL_ADDRESS = "review-report";
+
+export const REPORT_LIMITS = {
+  perIpPerHour: 5,
+} as const;
+
+export async function checkAndRecordReport(input: {
+  ip: string;
+  now?: Date;
+}): Promise<RateLimitDecision> {
+  const db = getDb();
+  const now = input.now ?? new Date();
+  const hourAgo = new Date(now.getTime() - ONE_HOUR_MS);
+  const dayAgo = new Date(now.getTime() - ONE_DAY_MS);
+
+  const [ipCountLastHour, [globalRow]] = await Promise.all([
+    countSince(emailSendLog.ip, input.ip, hourAgo),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(emailSendLog)
+      .where(gte(emailSendLog.createdAt, dayAgo)),
+  ]);
+
+  const decision = evaluateSendRateLimit({
+    addressCountLastHour: 0,
+    ipCountLastHour,
+    globalCountLastDay: globalRow?.count ?? 0,
+    limits: { ...SEND_LIMITS, perIpPerHour: REPORT_LIMITS.perIpPerHour },
+  });
+
+  if (decision.allowed) {
+    await db.insert(emailSendLog).values({
+      addressHash: REPORT_SENTINEL_ADDRESS,
+      ip: input.ip,
+      createdAt: now,
+    });
+  }
+  return decision;
+}

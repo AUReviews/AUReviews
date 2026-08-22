@@ -125,6 +125,9 @@ tables (`drizzle/0002_*.sql`).
   without a mailbox.
 - **`EMAIL_FROM`** — from-address on the dedicated sending subdomain, e.g.
   `AUReviews <no-reply@mail.aureviews.com>`.
+- **`OPERATOR_EMAIL`** — where "Report this review"
+  notifications go (v1-spec §12, issue #27). The row is written regardless;
+  when unset the email is replaced by a `console.warn` in the function logs.
 
 **DNS (launch-checklist item, not code — v1-spec §7):** deliverability into
 Auburn's Microsoft 365 tenant requires **SPF + DKIM + DMARC** published on the

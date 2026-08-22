@@ -17,6 +17,7 @@ import {
   offeringInstructors,
   offerings,
   placeholder,
+  reviewReports,
   reviewVotes,
   reviews,
 } from "./schema";
@@ -595,4 +596,23 @@ export async function getCourseCount(): Promise<number> {
     .select({ count: sql<number>`count(*)::int` })
     .from(courses);
   return rows[0]?.count ?? 0;
+}
+
+/**
+ * Record a "Report this review" submission (§11.B/§12; issue #27) and return
+ * the new row's id. The caller has already confirmed the review is live via
+ * `getReviewCourse`; this is the durable record the operator email points at.
+ */
+export async function insertReviewReport(report: {
+  reviewId: string;
+  reason: string;
+  details: string | null;
+  reporterIdentityHash: string | null;
+}): Promise<string> {
+  const db = getDb();
+  const [row] = await db
+    .insert(reviewReports)
+    .values(report)
+    .returning({ id: reviewReports.id });
+  return row.id;
 }
