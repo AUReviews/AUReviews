@@ -23,7 +23,8 @@ export type ReviewLifecycle = "live" | "removed" | "deleted";
  */
 export const RETENTION_DAYS = { deleted: 30, removed: 90 } as const;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+/** One day in ms — the unit the retention windows and their countdown share. */
+export const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Fold the stored status into what the author sees. An unrecognized status
  * is shown as removed rather than live: a review in an unknown state must

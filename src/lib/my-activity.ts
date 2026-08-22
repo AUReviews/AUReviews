@@ -6,6 +6,7 @@
  * unit-testable.
  */
 import {
+  DAY_MS,
   type InstructorUnknown,
   type ReviewLifecycle,
   purgeDeadline,
@@ -78,8 +79,6 @@ export function groupMyReviews(reviews: MyReview[]): MyReviewGroups {
   groups.deleted.sort(newestFirst);
   return groups;
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** The §11 retention line under a removed or deleted review, or `null` for a
  * live one. Counts whole days remaining until the purge deadline. */

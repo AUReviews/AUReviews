@@ -4,7 +4,11 @@ import { getCurrentIdentityHash } from "@/auth/session";
 import { canContestRemoval, removalReasonLabel } from "@/domain";
 import { listMyReviews, listMyVotes } from "@/db/queries";
 import { courseHref, formatCourseCode } from "@/lib/course-detail";
-import { formatReviewDate, formatReviewTerm } from "@/lib/course-reviews";
+import {
+  formatReviewDate,
+  formatReviewTerm,
+  instructorLabel,
+} from "@/lib/course-reviews";
 import {
   type MyReview,
   type MyVote,
@@ -145,13 +149,6 @@ function CourseLine({ review }: { review: MyReview }) {
   );
 }
 
-function instructorLine(review: MyReview): string {
-  if (review.instructorName) return review.instructorName;
-  return review.instructorUnknown === "dont-remember"
-    ? "Professor not remembered"
-    : "Professor not listed";
-}
-
 /** A live (published or queued) review: the same numbers + body a course page
  * shows, its helpful score, and Edit/Delete. */
 function LiveReviewCard({ review }: { review: MyReview }) {
@@ -170,7 +167,7 @@ function LiveReviewCard({ review }: { review: MyReview }) {
         </span>
       </div>
       <div className="review-meta">
-        <span>{instructorLine(review)}</span>
+        <span>{instructorLabel(review)}</span>
         <span className="review-term">{formatReviewTerm(review.termCode)}</span>
       </div>
       <p>{review.body}</p>
@@ -210,7 +207,7 @@ function RemovedReviewCard({ review, now }: { review: MyReview; now: Date }) {
         </span>
       </div>
       <div className="review-meta">
-        <span>{instructorLine(review)}</span>
+        <span>{instructorLabel(review)}</span>
         <span className="review-term">{formatReviewTerm(review.termCode)}</span>
       </div>
       <p className="my-reason">

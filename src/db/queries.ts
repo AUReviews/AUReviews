@@ -380,6 +380,10 @@ export async function getCourseAggregates(
   };
 }
 
+// The stored escape-hatch sentinel, or null for anything else (§4).
+const parseInstructorUnknown = (v: string | null): InstructorUnknown | null =>
+  v === "not-listed" || v === "dont-remember" ? v : null;
+
 // jsonb columns come back untyped; the writer only ever stores string arrays
 // (sanitized multi-selects), so anything else collapses to empty.
 function asStringArray(value: unknown): string[] {
@@ -433,10 +437,7 @@ export async function listCourseReviews(
     id: r.id,
     instructorId: r.instructorId,
     instructorName: r.instructorName,
-    instructorUnknown:
-      r.instructorUnknown === "not-listed" || r.instructorUnknown === "dont-remember"
-        ? r.instructorUnknown
-        : null,
+    instructorUnknown: parseInstructorUnknown(r.instructorUnknown),
     termCode: r.termCode,
     overall: r.overall,
     difficulty: r.difficulty,
@@ -623,9 +624,6 @@ export async function insertReviewReport(report: {
 // Every read and write below is keyed on the caller's `identity_hash`, resolved
 // server-side from the session (§7) — the hash is the ONLY link between a
 // person and their rows, so the WHERE clause is the authorization check.
-
-const parseInstructorUnknown = (v: string | null): InstructorUnknown | null =>
-  v === "not-listed" || v === "dont-remember" ? v : null;
 
 /** The statuses an author may still act on (edit, delete): live on the site,
  * or queued behind the §12 panic switch. Mirrors `canEditReview`. */

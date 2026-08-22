@@ -28,9 +28,9 @@ export async function deleteMyReview(reviewId: string): Promise<ActivityResult> 
   if (!identityHash) return { ok: false, error: "signin" };
   if (!isUuid(reviewId)) return { ok: false, error: "unknown" };
 
-  const course = await getReviewCourseAnyStatus(reviewId);
   const deleted = await softDeleteOwnReview(reviewId, identityHash);
   if (!deleted) return { ok: false, error: "unknown" };
+  const course = await getReviewCourseAnyStatus(reviewId);
 
   // The review just left the site: its course page and the browse index's
   // rating columns must recompute (same pair `submitReview` invalidates).

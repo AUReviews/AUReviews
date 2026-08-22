@@ -124,6 +124,7 @@ export {
 } from "./moderation";
 export {
   type ReviewLifecycle,
+  DAY_MS,
   RETENTION_DAYS,
   canContestRemoval,
   canEditReview,
