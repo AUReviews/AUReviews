@@ -289,6 +289,16 @@ export const reviews = pgTable(
     status: text("status").notNull().default("published"),
     edited: boolean("edited").notNull().default(false),
     contested: boolean("contested").notNull().default(false),
+    // Takedown bookkeeping (§11/§12; issue #26): set by runbook/takedown.sql
+    // alongside `status='removed'`. `removedReason` is a REPORT_REASONS value
+    // or the operator's own words — the one thing the author is shown.
+    removedReason: text("removed_reason"),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    // Author self-delete stamp (§11 soft-delete), set with `status='deleted'`.
+    // Content survives ~30 days past it (90 for a takedown, from
+    // `removedAt`), then runbook/purge-tombstones.sql strips everything but
+    // id/course/identity_hash/created_at/deleted_at (RETENTION_DAYS).
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

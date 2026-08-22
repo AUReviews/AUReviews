@@ -45,7 +45,9 @@ export interface CourseReview {
 
 /** The instructor line on a review card. The two §4 escape hatches render as
  * explicit statements, never as a blank ("Professor" per the site's UI copy). */
-export function instructorLabel(review: CourseReview): string {
+export function instructorLabel(
+  review: Pick<CourseReview, "instructorName" | "instructorUnknown">,
+): string {
   if (review.instructorName) return review.instructorName;
   return review.instructorUnknown === "dont-remember"
     ? "Professor not remembered"
