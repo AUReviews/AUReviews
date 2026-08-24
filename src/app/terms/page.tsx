@@ -10,7 +10,7 @@ import LegalPage from "../_components/LegalPage";
 // Terms of Service (v1-spec §10; issue #29). Placeholder-final copy: items
 // marked `🔴 attorney` in comments are confirmed by the pre-launch consult.
 export const metadata: Metadata = {
-  title: "Terms of Service — AUReviews",
+  title: "Terms of Service | AUReviews",
   description: "The terms for using AUReviews and posting course reviews.",
 };
 
@@ -61,7 +61,7 @@ export default function TermsPage() {
       <p>
         The <Link href="/guidelines">Review Guidelines</Link> list what may not be posted:{" "}
         {PROHIBITED_CONTENT.map((p) => p.title.toLowerCase()).join("; ")}. You also may not
-        upload course materials (exams, slides, assignments) — reviews only — or attempt to interfere with the
+        upload course materials (exams, slides, assignments; reviews only), or attempt to interfere with the
         Site&rsquo;s operation or other users&rsquo; anonymity.
       </p>
 

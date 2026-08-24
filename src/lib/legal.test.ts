@@ -59,7 +59,7 @@ describe("PROHIBITED_CONTENT (v1-spec §11)", () => {
 
 describe("retention and attorney flags", () => {
   it("uses the §11 default windows", () => {
-    expect(RETENTION_DAYS).toEqual({ selfDelete: 30, adminTakedown: 90 });
+    expect(RETENTION_DAYS).toEqual({ deleted: 30, removed: 90 });
   });
 
   it("lists the wording the attorney consult must confirm", () => {

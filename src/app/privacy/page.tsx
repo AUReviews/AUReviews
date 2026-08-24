@@ -4,13 +4,14 @@ import { LEGAL_CONTACT_EMAIL, RETENTION_DAYS } from "@/lib/legal";
 import LegalPage from "../_components/LegalPage";
 
 // Privacy Policy (v1-spec §7/§10/§11; issue #29). Describes what the §7
-// data-minimization architecture actually retains — this page IS the
+// data-minimization architecture actually retains; this page IS the
 // anonymity promise, so keep it in step with src/auth and src/db/schema.ts.
-// Retention claims describe the §11 design; the purge jobs for removed reviews
-// and email_send_log are separate tickets — keep this copy honest as they land.
+// Review retention is the §11 soft-delete window (RETENTION_DAYS, issue #26)
+// applied by the operator via runbook/purge-tombstones.sql, not a scheduled job;
+// the copy says "about" for that reason. email_send_log has no purge yet.
 // Items marked `🔴 attorney` in comments are confirmed by the pre-launch consult.
 export const metadata: Metadata = {
-  title: "Privacy Policy — AUReviews",
+  title: "Privacy Policy | AUReviews",
   description: "What AUReviews collects, what it keeps, and for how long.",
 };
 
@@ -19,7 +20,7 @@ export default function PrivacyPage() {
     <LegalPage title="Privacy Policy" effective="August 21, 2026">
       <p>
         AUReviews is built so that a review can&rsquo;t be traced back to the student who wrote
-        it — not by readers, and not by us. This page explains what that means in practice.
+        it, not by readers and not by us. This page explains what that means in practice.
       </p>
 
       <h2>What we collect</h2>
@@ -32,7 +33,7 @@ export default function PrivacyPage() {
           your email.
         </li>
         <li>
-          <strong>Your reviews and votes</strong>, linked to that hash — never to your name or
+          <strong>Your reviews and votes</strong>, linked to that hash, never to your name or
           email.
         </li>
         <li>
@@ -65,8 +66,8 @@ export default function PrivacyPage() {
           them.
         </li>
         <li>
-          <strong>Deleted reviews</strong> are kept for about {RETENTION_DAYS.selfDelete} days
-          after you delete them, and about {RETENTION_DAYS.adminTakedown} days after we remove
+          <strong>Deleted reviews</strong> are kept for about {RETENTION_DAYS.deleted} days
+          after you delete them, and about {RETENTION_DAYS.removed} days after we remove
           one, so that appeals and abuse investigations can be resolved. After that the text and
           ratings are permanently purged; only a minimal record (course, date, and the hashed
           identity) remains so repeat abuse can be detected.
@@ -85,7 +86,7 @@ export default function PrivacyPage() {
         Because we don&rsquo;t store your email or name, there is very little we could hand over
         even if compelled. If we receive a subpoena, court order, or other legal demand seeking
         information about a reviewer, our practice is to notify the affected account through the
-        Site before responding, where the law allows, so you have a chance to object — and to
+        Site before responding, where the law allows, so you have a chance to object, and to
         produce only what we are legally required to produce.
       </p>
 

@@ -3,7 +3,7 @@
  * (v1-spec §10/§11/§13; issue #29).
  *
  * One source so the non-affiliation disclaimer, the prohibited-content list, and
- * the legal routes can't drift apart between surfaces. Pure and browser-safe —
+ * the legal routes can't drift apart between surfaces. Pure and browser-safe:
  * the review form's client island imports it.
  *
  * NOTHING HERE IS LEGAL ADVICE. The copy is placeholder-final: the §10 attorney
@@ -12,6 +12,7 @@
  * the spot in the copy it governs.
  */
 import { BODY_MIN_LENGTH } from "@/domain/review";
+import { RETENTION_DAYS } from "@/domain/activity";
 
 /** The §10 footer disclaimer, verbatim. Rendered on every page. */
 export const NON_AFFILIATION_DISCLAIMER =
@@ -39,9 +40,12 @@ export function legalPageHref(key: LegalPageKey): string {
  * before launch. */
 export const LEGAL_CONTACT_EMAIL = "legal@aureviews.com";
 
-/** Soft-delete windows before content purges to a tombstone (§11).
- * 🔴 attorney-confirm these don't conflict with litigation-hold duties. */
-export const RETENTION_DAYS = { selfDelete: 30, adminTakedown: 90 } as const;
+/** Soft-delete windows before content purges to a tombstone (§11). The
+ * numbers live in the domain (`@/domain/activity`, issue #26) next to the
+ * countdown the My Activity page shows; re-exported so the legal copy quotes
+ * the same figures. 🔴 attorney-confirm they don't conflict with
+ * litigation-hold duties. */
+export { RETENTION_DAYS };
 
 /** What the door blocks automatically at submit time (§11.A), for the
  * guideline copy. Everything else is reactive (report → takedown). */
@@ -68,7 +72,7 @@ export const PROHIBITED_CONTENT: readonly { title: string; detail: string }[] = 
   {
     title: "Identifying or contact information",
     detail:
-      "No email addresses, phone numbers, home addresses, social-media handles, or links — yours or anyone else's.",
+      "No email addresses, phone numbers, home addresses, social-media handles, or links, yours or anyone else's.",
   },
   {
     title: "TAs and other students",
@@ -95,7 +99,7 @@ export const PROHIBITED_CONTENT: readonly { title: string; detail: string }[] = 
  * launch checklist has one place to look; the pages mark each spot inline. */
 export const ATTORNEY_CONFIRM_ITEMS: readonly string[] = [
   "Governing law and any arbitration clause in the Terms of Service.",
-  `Retention windows (${RETENTION_DAYS.selfDelete}-day self-delete, ${RETENTION_DAYS.adminTakedown}-day takedown) against litigation-hold duties.`,
+  `Retention windows (${RETENTION_DAYS.deleted}-day self-delete, ${RETENTION_DAYS.removed}-day takedown) against litigation-hold duties.`,
   "Name clearance for “AUReviews” against Auburn University's marks.",
   "The subpoena-notification practice described in the Privacy Policy.",
 ];

@@ -13,7 +13,7 @@ import LegalPage from "../_components/LegalPage";
 // in-form panel shows the same `PROHIBITED_CONTENT` list in short form and
 // links here. Static.
 export const metadata: Metadata = {
-  title: "Review Guidelines — AUReviews",
+  title: "Review Guidelines | AUReviews",
   description: "What AUReviews reviews may and may not contain, and how removal works.",
 };
 
@@ -77,7 +77,7 @@ export default function GuidelinesPage() {
       <p>
         If your review is removed you&rsquo;ll see the reason on your activity page, and you can
         contest the removal there. Removed content is kept for a limited time (about{" "}
-        {RETENTION_DAYS.selfDelete} days after a self-delete, about {RETENTION_DAYS.adminTakedown}{" "}
+        {RETENTION_DAYS.deleted} days after a self-delete, about {RETENTION_DAYS.removed}{" "}
         days after a removal) so appeals can be resolved, then permanently purged. See the{" "}
         <Link href="/privacy">Privacy Policy</Link> for details.
       </p>
