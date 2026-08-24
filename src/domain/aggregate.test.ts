@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { gateAverage, gateAverages, wilsonLowerBound } from "./aggregate";
 
-describe("gateAverage — the low-data rule (§5, launch-relaxed to N ≥ 1)", () => {
+describe("gateAverage: the low-data rule (§5, launch-relaxed to N ≥ 1)", () => {
   it("returns the average once a course clears the threshold", () => {
     // The launch threshold is 1: a course's only review already reports its
     // numbers (maintainer decision; §5's N ≥ 2 restorable via the constant).
@@ -22,7 +22,7 @@ describe("gateAverage — the low-data rule (§5, launch-relaxed to N ≥ 1)", (
   });
 });
 
-describe("gateAverages — the gate across the metric triple", () => {
+describe("gateAverages: the gate across the metric triple", () => {
   const triple = { overall: 4, difficulty: 3, workload: 12 };
 
   it("passes all three through at the threshold", () => {
@@ -38,7 +38,7 @@ describe("gateAverages — the gate across the metric triple", () => {
   });
 });
 
-describe("wilsonLowerBound — helpful-vote ranking (§4/§5)", () => {
+describe("wilsonLowerBound: helpful-vote ranking (§4/§5)", () => {
   it("is 0 with no votes", () => {
     expect(wilsonLowerBound(0, 0)).toBe(0);
   });

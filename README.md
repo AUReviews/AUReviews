@@ -2,7 +2,7 @@
 
 Course reviews for Auburn undergrads, starting with Computer Science and Software Engineering.
 
-Honest workload numbers — every review reports hours per week and difficulty, so you can build a
+Honest workload numbers: every review reports hours per week and difficulty, so you can build a
 semester you'll actually survive.
 
 ## Status
@@ -23,14 +23,14 @@ npm install
 npm run typecheck   # tsc --noEmit
 npm test            # vitest
 npm run lint        # eslint (includes the ingest→domain boundary rule)
-npm run dev         # local dev server (needs a database — see below)
+npm run dev         # local dev server (needs a database; see below)
 ```
 
 Repo shape (v1-spec §8):
 
 | Path | Role |
 |---|---|
-| `src/domain/` | Pure core — durable identities (ADR 0001). Imports nothing framework/DB. |
+| `src/domain/` | Pure core: durable identities (ADR 0001). Imports nothing framework/DB. |
 | `src/ingest/` | Catalog import seam. Imports `domain`, **never** the reverse (ADR 0002). |
 | `src/db/` | Drizzle schema + Neon client (pooled endpoint at runtime). |
 | `src/app/` | Next.js App Router: the DB-backed page + `/api/revalidate`. |

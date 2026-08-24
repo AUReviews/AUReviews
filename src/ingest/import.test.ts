@@ -9,7 +9,7 @@ import { type IngestDeps, runIngest } from "./import";
 
 /**
  * An in-memory stand-in for the catalog-side tables that applies a plan with the
- * same semantics as src/db/catalog.ts — create+map, apply(last-import-wins,
+ * same semantics as src/db/catalog.ts: create+map, apply(last-import-wins,
  * un-retire), pending(dedupe by key), retire(status flip). It lets us drive the
  * whole pipeline (parse → plan → apply) across successive imports and assert the
  * import-contract invariants end to end, no Postgres required.
@@ -156,7 +156,7 @@ describe("runIngest", () => {
     expect(store.courses.get(comp1000Id)!.status).toBe("retired"); // not deleted
     expect(store.courses.size).toBe(2);
 
-    // It reappears — same durable id, flipped back to active.
+    // It reappears: same durable id, flipped back to active.
     await runIngest(
       deps(store, page([
         ["1000", "PERSONAL COMPUTER APPLICATIONS"],
@@ -172,7 +172,7 @@ describe("runIngest", () => {
     await runIngest(deps(store, page([["2210", "FUNDAMENTALS OF COMPUTING II"]])));
     const comp2210Id = [...store.courses.values()][0].id;
 
-    // COMP 2210 disappears and the same title shows up under COMP 2220 — a
+    // COMP 2210 disappears and the same title shows up under COMP 2220, a
     // candidate renumber only a human should confirm.
     const summary = await runIngest(
       deps(store, page([["2220", "FUNDAMENTALS OF COMPUTING II"]])),

@@ -5,7 +5,7 @@
  * submission writes a row AND pushes an email through
  * the same Resend integration the sign-in code uses (§7/§8). The row is the
  * record; the email is the notification. A delivery failure must therefore
- * never fail the reader's submission — `sendOperatorEmail` logs and returns.
+ * never fail the reader's submission; `sendOperatorEmail` logs and returns.
  *
  * Unlike the sign-in code email, these carry a URL: the operator inbox is not
  * an Auburn/Microsoft 365 mailbox, so the Safe Links concern in
@@ -44,7 +44,7 @@ export function buildReviewReportEmail(input: {
     : "Reported by a signed-out visitor.";
   const details = input.details ?? "(no details given)";
   return {
-    subject: `[AUReviews] Review reported — ${input.courseCode}: ${reasonLabel}`,
+    subject: `[AUReviews] Review reported: ${input.courseCode}, ${reasonLabel}`,
     text: [
       `A reader reported a review on ${input.courseCode}.`,
       "",
@@ -58,7 +58,7 @@ export function buildReviewReportEmail(input: {
       "Judge it against the published guidelines; takedowns run via runbook/takedown.sql (v1-spec §12).",
     ].join("\n"),
     html: `<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;color:#111">
-  <h2 style="margin:0 0 .5rem">Review reported — ${esc(input.courseCode)}</h2>
+  <h2 style="margin:0 0 .5rem">Review reported: ${esc(input.courseCode)}</h2>
   <p><strong>Review id:</strong> <code>${esc(input.reviewId)}</code><br>
   <strong>Link:</strong> <a href="${esc(input.reviewUrl)}">${esc(input.reviewUrl)}</a><br>
   <strong>Reason:</strong> ${esc(reasonLabel)}</p>
@@ -89,13 +89,13 @@ export async function sendOperatorEmail(email: OperatorEmail): Promise<void> {
 
   if (!to) {
     console.warn(
-      `[moderation] OPERATOR_EMAIL not set — notification not delivered: ${email.subject}`,
+      `[moderation] OPERATOR_EMAIL not set; notification not delivered: ${email.subject}`,
     );
     return;
   }
   if (!apiKey) {
     console.info(
-      `[moderation] RESEND_API_KEY not set — would email ${to}: ${email.subject}\n${email.text}`,
+      `[moderation] RESEND_API_KEY not set; would email ${to}: ${email.subject}\n${email.text}`,
     );
     return;
   }
@@ -110,10 +110,10 @@ export async function sendOperatorEmail(email: OperatorEmail): Promise<void> {
       html: email.html,
     });
     if (error) {
-      console.error(`[moderation] Resend failed: ${error.message} — ${email.subject}`);
+      console.error(`[moderation] Resend failed: ${error.message} (${email.subject})`);
     }
   } catch (err) {
-    console.error(`[moderation] Resend threw — ${email.subject}`, err);
+    console.error(`[moderation] Resend threw (${email.subject})`, err);
   }
 }
 

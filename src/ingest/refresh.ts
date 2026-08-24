@@ -1,8 +1,8 @@
 /**
- * Scheduled catalog refresh (issue #30, v1-spec §8/§12) — the pure core.
+ * Scheduled catalog refresh (issue #30, v1-spec §8/§12): the pure core.
  *
- * One "refresh" is the two existing imports run back to back — catalog (#18)
- * first so the crosswalk exists, then offerings (#23) which maps onto it — and,
+ * One "refresh" is the two existing imports run back to back (catalog (#18)
+ * first so the crosswalk exists, then offerings (#23) which maps onto it) and,
  * only if both succeed, a ping to the app's `/api/revalidate` so the pages
  * cached behind the `catalog` tag recompute. Every edge is injected: the
  * GitHub Action entrypoint (`run-refresh.ts`) wires the real ones, tests drive
@@ -14,7 +14,7 @@ import { CATALOG_CACHE_TAG } from "@/lib/revalidate";
 import type { IngestSummary } from "./import";
 import type { OfferingsIngestSummary } from "./import-offerings";
 
-/** Injected edges — real ones in run-refresh.ts, fakes in tests. */
+/** Injected edges: real ones in run-refresh.ts, fakes in tests. */
 export interface RefreshDeps {
   /** Run the COMP bulletin import and report what it did. */
   runCatalog: () => Promise<IngestSummary>;
@@ -38,7 +38,7 @@ export interface RefreshSummary {
 
 /**
  * Run both imports in dependency order, then revalidate. A failure in either
- * import propagates and skips the revalidation — stale-but-consistent pages
+ * import propagates and skips the revalidation; stale-but-consistent pages
  * beat pages recomputed over a half-applied import.
  */
 export async function runCatalogRefresh(
@@ -57,7 +57,7 @@ export async function runCatalogRefresh(
  * must surface, never hide). `::warning::` when the run wrote pending
  * crosswalk or instructor-merge rows an admin must decide on; `::notice::`
  * for Banner codes the crosswalk couldn't map. Empty when there is nothing to
- * flag. One line each — workflow commands are line-delimited.
+ * flag. One line each; workflow commands are line-delimited.
  */
 export function formatRefreshAnnotations(summary: RefreshSummary): string[] {
   const lines: string[] = [];
@@ -65,7 +65,7 @@ export function formatRefreshAnnotations(summary: RefreshSummary): string[] {
   if (summary.catalog.pending > 0) {
     lines.push(
       `::warning title=Pending crosswalk rows::${summary.catalog.pending} ` +
-        `pending crosswalk row(s) written (crosswalk_pending) — ambiguous ` +
+        `pending crosswalk row(s) written (crosswalk_pending): ambiguous ` +
         `catalog matches await an admin decision; none were auto-applied.`,
     );
   }
@@ -73,7 +73,7 @@ export function formatRefreshAnnotations(summary: RefreshSummary): string[] {
   if (summary.offerings.pending > 0) {
     lines.push(
       `::warning title=Pending instructor merges::${summary.offerings.pending} ` +
-        `pending instructor merge(s) written (instructor_pending) — ambiguous ` +
+        `pending instructor merge(s) written (instructor_pending): ambiguous ` +
         `instructor matches await an admin decision; none were auto-merged.`,
     );
   }

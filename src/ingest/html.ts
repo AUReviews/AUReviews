@@ -15,7 +15,7 @@ export function decodeEntities(input: string): string {
   return input
     .replace(/&amp;/g, "&")
     .replace(/&nbsp;/g, " ")
-    .replace(/&mdash;/g, "—")
+    .replace(/&mdash;/g, "\u2014")
     .replace(/&ndash;/g, "–")
     .replace(/&rsquo;/g, "’")
     .replace(/&lsquo;/g, "‘")

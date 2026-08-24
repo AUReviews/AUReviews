@@ -29,12 +29,12 @@ import {
 const publishedReviews = () => eq(reviews.status, "published");
 
 /** Tally of joined `review_votes` rows in one direction (issue #25). With a
- * LEFT JOIN and no votes, the filter counts nothing — an honest zero. */
+ * LEFT JOIN and no votes, the filter counts nothing: an honest zero. */
 const voteTally = (direction: VoteDirection) =>
   sql<number>`count(*) filter (where ${reviewVotes.direction} = ${direction})::int`;
 
 /**
- * Read the newest placeholder row — the skeleton's DB proof-of-life. Returns
+ * Read the newest placeholder row, the skeleton's DB proof-of-life. Returns
  * `null` when the table is empty (migrated but not yet seeded), which the page
  * renders as a "run the seed" state rather than an error.
  */
@@ -55,16 +55,16 @@ export async function getLatestPlaceholder(): Promise<PlaceholderRow | null> {
  * Load the whole COMP catalog for the browse/index table (issue #20). Rows are
  * returned UNSORTED; catalog order (and every other column order) is imposed by
  * the pure `sortBrowseCourses` comparator, which is the single source of truth
- * for ordering — the server renders the default sort and the client re-sorts the
+ * for ordering; the server renders the default sort and the client re-sorts the
  * same rows with the same comparator, so no ordering rule is duplicated in SQL.
  *
- * The rating columns aggregate each course's published reviews in SQL — plain
- * arithmetic means (§5), computed at revalidation time — then pass §5's low-data
- * gate: below its threshold the averages are `null`ed so the row renders "—" (and sinks
+ * The rating columns aggregate each course's published reviews in SQL (plain
+ * arithmetic means (§5), computed at revalidation time), then pass §5's low-data
+ * gate: below its threshold the averages are `null`ed so the row renders the no-data dash (and sinks
  * under a rating sort) while `reviewCount` stays the true N. The submission
- * window (§4) gates what can be *submitted*, never what is counted — every
+ * window (§4) gates what can be *submitted*, never what is counted; every
  * published review is in the aggregate, with no recency decay (§5). Retired
- * courses are included, not filtered — the table de-emphasizes them (issue #20)
+ * courses are included, not filtered; the table de-emphasizes them (issue #20)
  * rather than hiding them.
  */
 export async function listCourses(): Promise<BrowseCourse[]> {
@@ -101,7 +101,7 @@ export async function listCourses(): Promise<BrowseCourse[]> {
 
 /**
  * Load one course's full catalog record for its detail page (issue #21), keyed
- * on the CURRENT catalog code `(subject, number)` the URL carries — subject is
+ * on the CURRENT catalog code `(subject, number)` the URL carries; subject is
  * matched case-insensitively so a `comp-3270` slug resolves the stored `COMP`
  * row. Returns `null` when no course matches, which the route renders as a 404.
  *
@@ -109,7 +109,7 @@ export async function listCourses(): Promise<BrowseCourse[]> {
  * this catalog read sits behind the long-lived "catalog" cache tag, while the
  * live aggregates must refresh on every review write. The course page overlays
  * {@link getCourseAggregates} (fresh each revalidation) on this record, and the
- * submit action only needs the durable id — so neither consumer reads these
+ * submit action only needs the durable id, so neither consumer reads these
  * placeholder columns.
  */
 export async function getCourseByCode(
@@ -161,13 +161,13 @@ export async function getCourseByCode(
 /**
  * Load every course's code, title, status, and verbatim prereq prose for the
  * Prerequisites/Unlocks graph (issue #22). The course page derives BOTH
- * directions from this one snapshot via `buildCoursePrereqView` — a course's own
- * prerequisites AND its inverse "Unlocks" (the courses that require it) — so the
+ * directions from this one snapshot via `buildCoursePrereqView` (a course's own
+ * prerequisites AND its inverse "Unlocks", the courses that require it), so the
  * two can never disagree (§6). The whole COMP catalog is small, and the read is
  * cached behind the course page's `catalog` ISR tag, so loading all rows to
  * compute one course's graph is cheap. `prereqText` is the same verbatim prose
  * the parser structures; a null is a course with no listed prerequisites.
- * Retired courses are included, not filtered — they keep their pages, so they
+ * Retired courses are included, not filtered; they keep their pages, so they
  * stay valid Unlocks targets (matching {@link listCourses}).
  */
 export async function listPrereqRows(): Promise<PrereqCatalogRow[]> {
@@ -191,7 +191,7 @@ export async function listPrereqRows(): Promise<PrereqCatalogRow[]> {
 
 /**
  * Load one course's Offering term codes for the "Typically offered" badge
- * (issue #23). Raw `YYYYT0` codes — the semester rollup is display-time logic
+ * (issue #23). Raw `YYYYT0` codes; the semester rollup is display-time logic
  * (`formatTypicallyOffered`), never stored (§6). An empty array is a course
  * with no ingested Banner history, which renders as no badge. Cached behind
  * the course page's `catalog` ISR tag like the rest of its reads.
@@ -213,7 +213,7 @@ export async function listOfferingTermCodes(courseId: string): Promise<string[]>
  * space, so `comp3270` works) and the title, case-insensitively; the caller
  * has already normalized the query and this escapes it, so typed `%`/`_`
  * match literally. Retired courses are included, matching {@link listCourses}
- * — they keep their pages and can still be reviewed within the term window.
+ * (they keep their pages and can still be reviewed within the term window).
  */
 export async function searchCoursesByText(
   query: string,
@@ -250,11 +250,11 @@ export interface CourseInstructor {
 /**
  * The instructors who have taught a course, for the review form's *scoped*
  * instructor dropdown (§4/§7; issue #24). Derived from the Banner
- * instructor-of-record links on the course's Offerings — the same data the
- * by-instructor breakdown (§5) is built from — so the dropdown offers exactly
+ * instructor-of-record links on the course's Offerings (the same data the
+ * by-instructor breakdown (§5) is built from), so the dropdown offers exactly
  * the people who actually taught it, never the whole faculty. Distinct by
  * durable Instructor id and ordered by display name for a stable list. The two
- * "unknown" escapes (§4) are added by the form, not here — they aren't
+ * "unknown" escapes (§4) are added by the form, not here; they aren't
  * instructors. An empty array is a course with no ingested offering history,
  * where the form falls back to the escapes alone.
  */
@@ -303,7 +303,7 @@ export interface NewReview {
 /**
  * Insert a review (issue #24) and return its new id. `status` defaults to
  * `published` (§4/§11 publish-on-submit) via the schema. There is deliberately
- * NO pre-insert dedupe on `(identity_hash, course_id)` — multiple correlated
+ * NO pre-insert dedupe on `(identity_hash, course_id)`; multiple correlated
  * reviews per person per course are allowed (§4), so a second submission simply
  * inserts a second row. The row's durable `courseId`/`instructorId` are captured
  * here at write time and never moved by a later import (ADR 0001/0002).
@@ -347,10 +347,10 @@ export interface CourseAggregates {
  * The course-wide headline aggregates (§5; issue #25): plain arithmetic means
  * over the course's published reviews, computed in SQL at revalidation time and
  * run through the low-data gate before they leave this layer. Deliberately NOT behind the
- * "catalog" tag — the course page reads this fresh on every (re)render, so a
+ * "catalog" tag; the course page reads this fresh on every (re)render, so a
  * review submit's `revalidatePath` refreshes the headline without an import.
  * The headline is fixed course-wide and never mutates on an instructor filter
- * (§5) — there is no instructor parameter here by design.
+ * (§5); there is no instructor parameter here by design.
  */
 export async function getCourseAggregates(
   courseId: string,
@@ -395,7 +395,7 @@ function asStringArray(value: unknown): string[] {
 /**
  * A course's published reviews for its Reviews tab (§5; issue #25), each with
  * its resolved instructor display name (null when the review recorded an §4
- * unknown) and its live helpful tallies from `review_votes`. Unordered — the
+ * unknown) and its live helpful tallies from `review_votes`. Unordered; the
  * sort options (helpful/newest/term) are `sortCourseReviews`'s job, client and
  * server sharing the one comparator. Like {@link getCourseAggregates}, read
  * fresh on every page (re)render, never behind the "catalog" tag, so submits
@@ -458,11 +458,11 @@ export async function listCourseReviews(
 
 /**
  * Raw per-instructor aggregates over a course's published reviews (§5; issue
- * #25) — the review side of the by-instructor breakdown. UNGATED here: the
+ * #25): the review side of the by-instructor breakdown. UNGATED here: the
  * pure `buildInstructorRows` merges these with the taught-instructor list
  * ({@link listCourseInstructors}) and applies the low-data gate per row, so the
  * low-data rule lives in one testable place. Reviews recording an §4 unknown
- * have no instructor and are course-wide only — they appear in the headline
+ * have no instructor and are course-wide only; they appear in the headline
  * and the list, never in a breakdown row.
  */
 export async function listInstructorStats(
@@ -517,7 +517,7 @@ export async function getReviewCourse(
  * Set (or clear) one identity's helpful vote on a review (§4/§5/§10; issue
  * #25). Votes are per-voter rows, retractable and flippable: the composite
  * primary key makes a re-vote an upsert (flip), and `null` deletes the row
- * (retraction). Idempotent — the client states the desired end state rather
+ * (retraction). Idempotent: the client states the desired end state rather
  * than toggling, so a double-fire can't invert the intent.
  */
 export async function setReviewVote(
@@ -562,7 +562,7 @@ export async function getReviewVoteCounts(
 /**
  * The signed-in viewer's live votes across one course's reviews (issue #25),
  * so the vote buttons can render their current state. Course pages are shared
- * CDN-static HTML — per-viewer state must never bake into them (§8) — so this
+ * CDN-static HTML (per-viewer state must never bake into them, §8), so this
  * is read through the dynamic `/api/votes` route after mount, keyed by the
  * server-resolved identity (§7: the hash itself never reaches the client).
  */
@@ -622,7 +622,7 @@ export async function insertReviewReport(report: {
 
 // ---- My Activity (v1-spec §11/§13; issue #26) --------------------------------
 // Every read and write below is keyed on the caller's `identity_hash`, resolved
-// server-side from the session (§7) — the hash is the ONLY link between a
+// server-side from the session (§7); the hash is the ONLY link between a
 // person and their rows, so the WHERE clause is the authorization check.
 
 /** The statuses an author may still act on (edit, delete): live on the site,
@@ -631,8 +631,8 @@ const editableReviews = () =>
   or(eq(reviews.status, "published"), eq(reviews.status, "pending"));
 
 /**
- * The signed-in author's own reviews in EVERY lifecycle state — published,
- * pending, removed, and (inside the retention window) deleted — each with its
+ * The signed-in author's own reviews in EVERY lifecycle state (published,
+ * pending, removed, and, inside the retention window, deleted), each with its
  * course code/title, instructor, removal bookkeeping, and live helpful
  * tallies. This is the only read that surfaces `removed` rows to anyone but
  * the operator: §11's "author-notified, publicly silent." Unordered; grouping
@@ -765,7 +765,7 @@ export async function getOwnEditableReview(
 }
 
 /** Everything an author may change on edit: the review minus its identity
- * (`courseId`, `identityHash`) and its term — the course and term are what the
+ * (`courseId`, `identityHash`) and its term; the course and term are what the
  * review IS, not content on it; changing them is a new review. */
 export type ReviewEdit = Omit<NewReview, "courseId" | "identityHash" | "termCode">;
 
@@ -796,7 +796,7 @@ export async function updateOwnReview(
 }
 
 /**
- * Author self-delete (§11): a SOFT delete — `status='deleted'` plus a
+ * Author self-delete (§11): a SOFT delete, `status='deleted'` plus a
  * `deletedAt` stamp, content kept for the retention window and then purged by
  * runbook/purge-tombstones.sql. The row drops out of every aggregate and page
  * immediately via `publishedReviews()`. Only a live review can be deleted;
@@ -846,7 +846,7 @@ export async function contestOwnRemoval(
   return rows.length > 0;
 }
 
-/** The course a review belongs to, regardless of status — for revalidating
+/** The course a review belongs to, regardless of status, for revalidating
  * that course page after an edit or delete. Null for an unknown id. */
 export async function getReviewCourseAnyStatus(
   reviewId: string,

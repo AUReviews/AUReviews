@@ -1,7 +1,7 @@
 /**
  * Scheduled catalog refresh entrypoint (issue #30).
  *
- * What the `catalog-refresh` GitHub Action runs — weekly and on
+ * What the `catalog-refresh` GitHub Action runs, weekly and on
  * `workflow_dispatch`. The scrape takes minutes, so it lives in an Action, not
  * a Vercel function/cron (Hobby caps those at ~60s / once daily; §8). It runs
  * the two in-repo imports in order (catalog → offerings) over the POOLED
@@ -36,7 +36,7 @@ import {
 try {
   process.loadEnvFile(".env.local");
 } catch {
-  // No .env.local — rely on the ambient environment.
+  // No .env.local; rely on the ambient environment.
 }
 
 function requireEnv(name: string): string {
@@ -63,7 +63,7 @@ function report(catalogYear: string, summary: RefreshSummary): void {
       `pending ${offerings.pending}.`,
   );
 
-  // GitHub workflow commands — harmless plain lines outside Actions.
+  // GitHub workflow commands; harmless plain lines outside Actions.
   for (const line of formatRefreshAnnotations(summary)) console.log(line);
 }
 
@@ -97,7 +97,7 @@ async function main(): Promise<void> {
     report: (summary) => report(catalogYear, summary),
     revalidate: async () => {
       if (!target) {
-        console.log("SKIP_REVALIDATE=1 — not pinging /api/revalidate.");
+        console.log("SKIP_REVALIDATE=1; not pinging /api/revalidate.");
         return;
       }
       await pingRevalidate(target);

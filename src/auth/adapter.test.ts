@@ -69,7 +69,7 @@ const { computeIdentityHash } = await import("@/domain");
 
 const PEPPER = "test-pepper-for-adapter";
 
-describe("hashing adapter — createUser", () => {
+describe("hashing adapter: createUser", () => {
   beforeEach(() => {
     inserted.length = 0;
     process.env.PEPPER = PEPPER;
@@ -109,7 +109,7 @@ describe("hashing adapter — createUser", () => {
   });
 });
 
-describe("hashing adapter — reads", () => {
+describe("hashing adapter: reads", () => {
   beforeEach(() => {
     process.env.PEPPER = PEPPER;
     selectResult = [{ id: "user-1", verifiedAt: new Date() }];
@@ -131,7 +131,7 @@ describe("hashing adapter — reads", () => {
     expect(await adapter.getUserByEmail!("nobody@auburn.edu")).toBeNull();
   });
 
-  it("getUser stays blanked — no address is available or exposed by id lookup", async () => {
+  it("getUser stays blanked: no address is available or exposed by id lookup", async () => {
     const adapter = createHashingAdapter();
     const user = await adapter.getUser!("user-1");
     expect(user?.id).toBe("user-1");
@@ -139,7 +139,7 @@ describe("hashing adapter — reads", () => {
   });
 });
 
-describe("hashing adapter — verification codes", () => {
+describe("hashing adapter: verification codes", () => {
   const email = "abc1234@auburn.edu";
   const hashedIdentifier = computeIdentityHash(PEPPER, email);
 
@@ -161,7 +161,7 @@ describe("hashing adapter — verification codes", () => {
     const result = await adapter.createVerificationToken!(input);
 
     expect(result).toEqual(input);
-    // Prior token for the address is dropped first — one live code per address.
+    // Prior token for the address is dropped first: one live code per address.
     expect(deleteCalls).toBe(1);
     expect(inserted).toHaveLength(1);
     const values = inserted[0] as { identifier: string };
@@ -194,7 +194,7 @@ describe("hashing adapter — verification codes", () => {
     });
 
     // Auth.js compares the returned identifier against the email param and then
-    // builds the user from it — it must be the raw address, not our hash.
+    // builds the user from it; it must be the raw address, not our hash.
     expect(result).toEqual({ identifier: email, token: "secret-hashed-code", expires });
     expect(updateCalls).toBe(0);
   });
@@ -208,7 +208,7 @@ describe("hashing adapter — verification codes", () => {
 
     expect(result).toBeNull();
     expect(updateCalls).toBe(1);
-    // Only the failed single-use claim — no invalidation delete.
+    // Only the failed single-use claim, no invalidation delete.
     expect(deleteCalls).toBe(1);
   });
 

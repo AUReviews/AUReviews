@@ -9,7 +9,7 @@ describe("buildSignInCodeEmail", () => {
     expect(email.html).toContain("123 456");
   });
 
-  it("contains no URL at all — Safe Links must have nothing to rewrite or pre-fetch", () => {
+  it("contains no URL at all: Safe Links must have nothing to rewrite or pre-fetch", () => {
     expect(email.subject).not.toMatch(/https?:/i);
     expect(email.text).not.toMatch(/https?:/i);
     expect(email.html).not.toMatch(/https?:/i);
@@ -43,7 +43,7 @@ describe("sendSignInCodeEmail without a Resend key", () => {
     expect(info).toHaveBeenCalledWith(expect.stringContaining("123456"));
   });
 
-  it("refuses in production — a live code must never hit logs", async () => {
+  it("refuses in production: a live code must never hit logs", async () => {
     vi.stubEnv("RESEND_API_KEY", "");
     vi.stubEnv("NODE_ENV", "production");
 

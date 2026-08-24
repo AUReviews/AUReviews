@@ -8,7 +8,7 @@ import { addReviewNavHref } from "@/lib/course-detail";
 // client child so the shared Header stays a Server Component (no cookies(),
 // CDN-static per §8): only this island reads the pathname. On a course detail
 // page the link carries that course as `?course=<slug>` prefill; everywhere
-// else it is the bare authoring route — the pure `addReviewNavHref` owns that
+// else it is the bare authoring route; the pure `addReviewNavHref` owns that
 // rule.
 export default function AddReviewButton() {
   const pathname = usePathname();

@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AUReviews — Auburn CSSE Course Reviews</title>
+<title>AUReviews: Auburn CSSE Course Reviews</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ===========================================================================
-   AUReviews — HiFi prototype
+   AUReviews HiFi prototype
    Faithful standalone implementation of "Auburn Course Feedback - HiFi.dc.html"
    (imported from Claude Design). The original inline-style template + DCLogic
    state class are translated here into CSS classes + vanilla JS, with no
@@ -312,7 +312,7 @@ input{font-family:inherit}
       <div class="stack">
         <div class="course-card" data-nav="course">
           <div class="cc-head"><strong class="cc-title">COMP 3270 · Intro to Algorithms</strong><span class="cc-meta">3 cr · Spring 26 · rat 4.0/5 · diff 4.6/5 · 14 hrs/wk</span></div>
-          <p>Tough but fair — the problem sets take real time. Start early and go to office hours before exams.</p>
+          <p>Tough but fair; the problem sets take real time. Start early and go to office hours before exams.</p>
         </div>
         <div class="course-card" data-nav="course">
           <div class="cc-head"><strong class="cc-title">COMP 5350 · Database Systems I</strong><span class="cc-meta">3 cr · Spring 26 · rat 4.5/5 · diff 2.9/5 · 9 hrs/wk</span></div>
@@ -367,7 +367,7 @@ input{font-family:inherit}
           <div>
             <strong class="subhead">Latest reviews</strong>
             <div class="stack">
-              <div class="review compact"><div class="review-head"><span class="stat">rat 4.0 · diff 5.0 · 16 hrs/wk</span><span class="when">2 weeks ago</span></div><p>Tough but fair. The problem sets take real time — start them the day they're posted.</p></div>
+              <div class="review compact"><div class="review-head"><span class="stat">rat 4.0 · diff 5.0 · 16 hrs/wk</span><span class="when">2 weeks ago</span></div><p>Tough but fair. The problem sets take real time; start them the day they're posted.</p></div>
               <div class="review compact"><div class="review-head"><span class="stat">rat 3.0 · diff 4.0 · 12 hrs/wk</span><span class="when">1 month ago</span></div><p>Office hours are a lifesaver for the DP section.</p></div>
             </div>
           </div>
@@ -426,7 +426,7 @@ input{font-family:inherit}
 
 <script>
 /* ===========================================================================
-   State + behavior — a direct translation of the source DCLogic class.
+   State + behavior: a direct translation of the source DCLogic class.
    =========================================================================== */
 (function () {
   "use strict";
@@ -445,7 +445,7 @@ input{font-family:inherit}
 
   // Source: baseReviews on the Component class.
   var baseReviews = [
-    { id: 'r1', rating: '5.0', diff: '4.0', hrs: 10, when: '1 month ago', text: 'Loved this class — the DP problem sets click once you do a few by hand first.', up: 21, down: 0 },
+    { id: 'r1', rating: '5.0', diff: '4.0', hrs: 10, when: '1 month ago', text: 'Loved this class; the DP problem sets click once you do a few by hand first.', up: 21, down: 0 },
     { id: 'r2', rating: '5.0', diff: '4.0', hrs: 13, when: 'Dec 2025', text: 'Best CS course I’ve taken. Office hours are genuinely useful here.', up: 31, down: 3 },
     { id: 'r3', rating: '4.0', diff: '5.0', hrs: 15, when: 'Oct 2025', text: 'Heavy workload but very fair grading and a generous curve.', up: 17, down: 1 },
     { id: 'r4', rating: '3.0', diff: '5.0', hrs: 18, when: 'Nov 2025', text: 'Proof-heavy. If you’re rusty on discrete math, brush up first.', up: 6, down: 4 },
@@ -552,7 +552,7 @@ input{font-family:inherit}
     var voteEl = e.target.closest('[data-vote]');
     if (voteEl) { vote(voteEl.getAttribute('data-id'), voteEl.getAttribute('data-vote')); return; }
 
-    // Add-review rating/difficulty pills — local selection, decorative.
+    // Add-review rating/difficulty pills: local selection, decorative.
     var pill = e.target.closest('.scale span');
     if (pill) {
       var scale = pill.parentNode;

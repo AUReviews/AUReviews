@@ -1,5 +1,5 @@
 /**
- * Domain layer barrel — the pure core of AUReviews.
+ * Domain layer barrel: the pure core of AUReviews.
  *
  * Everything re-exported here is framework- and persistence-agnostic. The
  * `ingest/` module and the `db`/`app` layers import FROM here; this layer never

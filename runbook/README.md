@@ -11,5 +11,5 @@ Run against Neon via the web SQL console or `psql`, substituting the
 | `purge-tombstones.sql` | Strip deleted/removed reviews past their retention window to a tombstone (§11). |
 
 Retention windows live in `src/domain/activity.ts` (`RETENTION_DAYS`): ~30 days
-after a self-delete, ~90 after a takedown — attorney-confirm before treating
+after a self-delete, ~90 after a takedown; attorney-confirm before treating
 as final (§10).

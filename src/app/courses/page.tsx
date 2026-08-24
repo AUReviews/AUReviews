@@ -4,8 +4,8 @@ import { listCourses } from "@/db/queries";
 import { type BrowseCourse, DEFAULT_SORT, sortBrowseCourses } from "@/lib/browse";
 import CourseTable from "./CourseTable";
 
-// Browse/index page (issue #20, v1-spec §5/§13) — v1's entire discovery surface.
-// The catalog table stands alone with zero reviews: rating columns read "—" and
+// Browse/index page (issue #20, v1-spec §5/§13): v1's entire discovery surface.
+// The catalog table stands alone with zero reviews: rating columns show the no-data dash and
 // the true N, and the page reads identically whether empty or full.
 //
 // ISR: CDN-static with a time-based fallback, refreshable on demand via
@@ -13,14 +13,14 @@ import CourseTable from "./CourseTable";
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "All courses — AUReviews",
+  title: "All courses | AUReviews",
   description:
     "Browse Auburn's COMP catalog. Sort by overall rating, difficulty, workload, or review count.",
 };
 
 // The browse read sits behind two cache tags: "catalog" so an import (#18) can
 // refresh it on demand, and "reviews" (issue #25) so a review submit refreshes
-// the rating columns — its aggregates are recomputed at exactly those
+// the rating columns; its aggregates are recomputed at exactly those
 // revalidation moments (§5), never per request.
 const loadCourses = unstable_cache(
   async (): Promise<BrowseCourse[]> => listCourses(),

@@ -14,13 +14,13 @@ import ReviewForm from "../../new/ReviewForm";
 // slip past the door. Reached only from My Activity.
 //
 // Authorization is the session → `identity_hash` → row-ownership chain: the
-// review is loaded scoped to the caller's hash, so someone else's review — or
-// one that's been removed/deleted — is simply not found. A signed-out visitor
+// review is loaded scoped to the caller's hash, so someone else's review, or
+// one that's been removed/deleted, is simply not found. A signed-out visitor
 // is sent to sign in; there's no inline-auth path here since the review to
 // edit can't even be identified without a session.
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Edit your review — AUReviews" };
+export const metadata: Metadata = { title: "Edit your review | AUReviews" };
 
 export default async function EditReviewPage({
   params,

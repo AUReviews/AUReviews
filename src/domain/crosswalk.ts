@@ -1,9 +1,9 @@
 /**
- * Crosswalk resolution — the precious, review-side decision logic (§3, ADR 0002).
+ * Crosswalk resolution: the precious, review-side decision logic (§3, ADR 0002).
  *
  * Given the current catalog scrape and a snapshot of what we already know, decide
  * for each incoming row whether to **apply** it to an existing durable Course,
- * **create** a brand-new one, or surface it as a **pending** admin decision — and
+ * **create** a brand-new one, or surface it as a **pending** admin decision, and
  * which existing Courses have dropped out and must be **retired** (never deleted).
  *
  * This module is pure: no framework, no persistence, no clock, no randomness
@@ -12,7 +12,7 @@
  * that applies a plan stays a thin, mechanical shell.
  *
  * Identity is the durable `CourseId` alone (ADR 0001). Title matching here only
- * *flags candidates* for a human — a split/merge/cross-list is never inferred
+ * *flags candidates* for a human; a split/merge/cross-list is never inferred
  * (ADR 0002); asserting "this new number IS the old course" is an admin decision.
  */
 import {
@@ -32,8 +32,8 @@ export interface IncomingCourse {
   description: string | null;
   /**
    * Verbatim credit-hours token as published (e.g. "4", or "1-3" for a
-   * variable-credit course), or null when absent. Kept as text — like the
-   * prereq prose — so ranges aren't lost; a structured numeric model is a later
+   * variable-credit course), or null when absent. Kept as text, like the
+   * prereq prose, so ranges aren't lost; a structured numeric model is a later
    * ticket (§9).
    */
   creditHours: string | null;
@@ -70,8 +70,8 @@ export interface CatalogSnapshot {
 /**
  * Why an incoming key needs an admin decision. Only `possible-renumber` is
  * inferred from an import (a title reappearing under a new number as the old one
- * drops out). Splits, merges, and cross-lists are never inferred — they are
- * admin-identified — so no reason value is auto-produced for them.
+ * drops out). Splits, merges, and cross-lists are never inferred (they are
+ * admin-identified), so no reason value is auto-produced for them.
  */
 export type PendingReason = "possible-renumber";
 
@@ -122,7 +122,7 @@ export interface PlanIngestOptions {
  *   merges, and cross-lists are admin-identified, never inferred. Already-pending
  *   keys are not re-queued.
  * - Any active Course no incoming row applied to → **retire** (status flip only).
- * - Reviews and Instructors are never referenced here — the plan only ever
+ * - Reviews and Instructors are never referenced here; the plan only ever
  *   touches catalog-side Course/crosswalk state.
  */
 export function planIngest(
@@ -140,7 +140,7 @@ export function planIngest(
 
   // Every existing Course by its *current* key. If a key is absent from the
   // crosswalk yet a Course already carries it as its live `(subject number)`, that
-  // Course simply is this key — apply and repair the missing crosswalk edge rather
+  // Course simply is this key: apply and repair the missing crosswalk edge rather
   // than minting a second Course. This self-heals the non-atomic create in the db
   // layer (course inserted, crosswalk insert failed) so a re-run converges instead
   // of duplicating. Import always reads a repeated `(subject, number)` as the same
@@ -156,7 +156,7 @@ export function planIngest(
   // old number DROPS OUT as a new one appears; if two numbers with the same title
   // coexist in the catalog, they are simply distinct courses. Auburn reuses
   // generic titles heavily ("SPECIAL TOPICS", "RESEARCH", "THESIS", "DIRECTED
-  // STUDIES") across course levels, so title collision alone must NOT flag —
+  // STUDIES") across course levels, so title collision alone must NOT flag;
   // otherwise a first import buries dozens of real courses in the pending queue.
   const incomingKeys = new Set(rows.map((r) => normalizeCatalogKey(r)));
 
@@ -196,7 +196,7 @@ export function planIngest(
     // existing course that just dropped out. Candidate = an active course with the
     // same title under a different number that is NOT itself in this import (i.e.
     // it is disappearing as this number appears). Coexisting same-title courses
-    // don't qualify — a true cross-list/split/merge is an admin decision, never
+    // don't qualify; a true cross-list/split/merge is an admin decision, never
     // inferred (ADR 0002).
     const titleKey = normalizeTitle(row.title);
     const renumberCandidates = activeCourses.filter(

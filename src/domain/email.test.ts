@@ -6,7 +6,7 @@ import {
   resolveTypedUsername,
 } from "./email";
 
-describe("resolveTypedUsername — username field with the fixed @auburn.edu suffix", () => {
+describe("resolveTypedUsername: username field with the fixed @auburn.edu suffix", () => {
   it("passes a bare username through", () => {
     expect(resolveTypedUsername("abc1234")).toBe("abc1234");
   });
@@ -16,7 +16,7 @@ describe("resolveTypedUsername — username field with the fixed @auburn.edu suf
     expect(resolveTypedUsername("ABC1234@Auburn.EDU ")).toBe("ABC1234");
   });
 
-  it("leaves an @ typed mid-way exactly as typed — no keystroke is swallowed", () => {
+  it("leaves an @ typed mid-way exactly as typed; no keystroke is swallowed", () => {
     // Typing "abc1234@auburn.edu" one key at a time passes through these; each
     // must round-trip until the domain is complete.
     expect(resolveTypedUsername("abc1234@")).toBe("abc1234@");

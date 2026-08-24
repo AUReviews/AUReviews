@@ -12,7 +12,7 @@ import { siteOrigin } from "@/lib/site-origin";
 
 /**
  * The report action's result (issue #27). `unknown` means the review doesn't
- * exist or is no longer published — there is nothing live to report;
+ * exist or is no longer published, there is nothing live to report;
  * `invalid` carries the field-level message the island shows inline;
  * `throttled` means this IP (or the site as a whole) has sent too many
  * reports recently.
@@ -25,7 +25,7 @@ export type ReportResult =
 /**
  * "Report this review" (v1-spec §11.B/§12; issue #27): the per-review,
  * post-publish flag. Writes a `review_reports` row and emails the operator the
- * review's id and link — the row is the record, the email the push, so the
+ * review's id and link. The row is the record, the email the push, so the
  * operator never polls; the admin dashboard that will read this table is v2.
  * Open to any reader (owner decision: the spec gates only *authoring* on
  * `@auburn.edu`); a signed-in reporter's identity hash is recorded for

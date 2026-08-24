@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { contestMyRemoval, deleteMyReview } from "./actions";
 
-// The per-review controls on My Activity (issue #26) — two small client
+// The per-review controls on My Activity (issue #26): two small client
 // islands on an otherwise server-rendered page. Both call a server action and
 // then refresh the route so the server re-reads the author's rows; the page
 // itself stays the source of truth for what state each review is in.
@@ -26,7 +26,7 @@ export function LiveReviewActions({ reviewId }: { reviewId: string }) {
       if (result.ok) {
         router.refresh();
       } else if (result.error === "signin") {
-        setError("Your session expired — sign in again to delete this review.");
+        setError("Your session expired. Sign in again to delete this review.");
       } else {
         setError("This review can't be deleted right now.");
       }
@@ -90,7 +90,7 @@ export function ContestRemoval({ reviewId }: { reviewId: string }) {
       if (result.ok) {
         router.refresh();
       } else if (result.error === "signin") {
-        setError("Your session expired — sign in again to contest this removal.");
+        setError("Your session expired. Sign in again to contest this removal.");
       } else {
         setError("This removal can't be contested right now.");
       }

@@ -1,5 +1,5 @@
 /**
- * Course-picker search logic (v1-spec §4/§13; issue #40) — the pure half of the
+ * Course-picker search logic (v1-spec §4/§13; issue #40): the pure half of the
  * review form's server-backed typeahead. The form searches the catalog by code
  * or title instead of shipping the whole catalog to the client; this module
  * owns query normalization, LIKE escaping, and the option shape the client

@@ -3,7 +3,7 @@ import AddReviewButton from "./AddReviewButton";
 import AuthNav from "./AuthNav";
 
 // Shared header shell (issue #19/#20/#40, v1-spec §13). Deliberately a Server
-// Component that does NOT read the session — that keeps the shared layout free
+// Component that does NOT read the session, which keeps the shared layout free
 // of cookies() so the landing/browse/course pages stay CDN-static (§8). The
 // per-user pieces hydrate inside client islands: sign-in state in <AuthNav/>,
 // and the pathname-aware "+ Add Review" link in <AddReviewButton/>.

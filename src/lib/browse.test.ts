@@ -4,6 +4,7 @@ import {
   DEFAULT_SORT,
   formatAverage,
   formatReviewCount,
+  NO_DATA,
   sortBrowseCourses,
 } from "./browse";
 
@@ -35,7 +36,7 @@ const catalog: BrowseCourse[] = [
 ];
 
 describe("DEFAULT_SORT", () => {
-  it("is catalog order — COMP number ascending", () => {
+  it("is catalog order: COMP number ascending", () => {
     expect(DEFAULT_SORT).toEqual({ key: "code", direction: "asc" });
   });
 });
@@ -132,8 +133,8 @@ describe("sortBrowseCourses", () => {
 describe("formatAverage", () => {
   it("shows an em dash when the low-data gate withheld the average", () => {
     // The gate itself (threshold and all) lives in domain gateAverage; a null
-    // arriving here just formats as "—".
-    expect(formatAverage(null)).toBe("—");
+    // arriving here just formats as the no-data dash.
+    expect(formatAverage(null)).toBe(NO_DATA);
   });
 
   it("shows the two-decimal mean when one is reportable", () => {

@@ -1,15 +1,15 @@
 /**
  * Term codes and the offering time axis (v1-spec §3/§9; issue #23).
  *
- * A Term is a semester + calendar year — the grain Offerings are recorded at.
+ * A Term is a semester + calendar year: the grain Offerings are recorded at.
  * Banner 8 addresses terms with a six-digit `YYYYT0` code whose 4-digit prefix
  * is the *academic year's spring* calendar year and whose 5th digit is the
- * semester (`10`=Fall, `20`=Spring, `30`=Summer) — so Fall 2026 is `202710`
+ * semester (`10`=Fall, `20`=Spring, `30`=Summer), so Fall 2026 is `202710`
  * while Spring 2026 is `202620`. Validated against the live
  * `bwckschd.p_disp_dyn_sched` dropdown before hardcoding, per §9; the dropdown
  * bottoms out at `200810` (Fall 2007), the ingest floor.
  *
- * "Typically offered" is a display-time rollup over these codes — never a
+ * "Typically offered" is a display-time rollup over these codes, never a
  * stored flag (§6).
  */
 
@@ -23,7 +23,7 @@ export interface Term {
   year: number;
 }
 
-/** The earliest term Banner exposes — the ingest history floor (§9). */
+/** The earliest term Banner exposes: the ingest history floor (§9). */
 export const FALL_2007_TERM_CODE = "200810";
 
 const TERM_CODE_RE = /^(\d{4})(10|20|30)$/;
@@ -68,7 +68,7 @@ export function termToCode(semester: Semester, year: number): string {
 }
 
 // Ascending order within a calendar year, so a term ordinal (`year * 3 + rank`)
-// increases monotonically with real time — the basis for walking the recent
+// increases monotonically with real time, the basis for walking the recent
 // window back from "now" (§4).
 const SEMESTER_RANK: Record<Semester, number> = {
   Spring: 0,
@@ -79,7 +79,7 @@ const SEMESTER_RANK: Record<Semester, number> = {
 const RANK_TO_SEMESTER: Semester[] = ["Spring", "Summer", "Fall"];
 
 /**
- * The term in progress on a given date — the anchor the rolling submission
+ * The term in progress on a given date: the anchor the rolling submission
  * window counts back from (§4). Auburn's calendar maps roughly to Jan–Apr =
  * Spring, May–Jul = Summer, Aug–Dec = Fall; this is the coarse month split, not
  * exact session boundaries, which is all the term dropdown needs.
@@ -123,7 +123,7 @@ export function isIngestibleTermCode(code: string): boolean {
 /**
  * The "Typically offered" rollup (§6): the distinct semesters present in a
  * course's Offering history, in canonical Fall/Spring/Summer order. Purely
- * display-time — computed from Offering terms on every render, never stored —
+ * display-time (computed from Offering terms on every render, never stored)
  * so refinements (e.g. weighting recent years) need no migration. Unparseable
  * codes are skipped rather than poisoning the badge.
  */

@@ -6,7 +6,7 @@ import { toCourseOption } from "@/lib/course-search";
 import { currentSelectableTerms } from "@/lib/review-window";
 import ReviewForm, { type ReviewFormPrefill } from "./ReviewForm";
 
-// The review authoring page (v1-spec §4/§11/§13; issues #24/#40) — the ONE
+// The review authoring page (v1-spec §4/§11/§13; issues #24/#40): the ONE
 // place a review is written. The course is data on the review, not a location:
 // with `?course=<slug>` the course and its scoped instructor dropdown arrive
 // prefilled (the course-page CTAs and the header button on a course page link
@@ -14,8 +14,8 @@ import ReviewForm, { type ReviewFormPrefill } from "./ReviewForm";
 // Both paths converge on the same posted slug, the same insert, and the same
 // redirect back to the course page.
 //
-// Per-user and never cached — it reflects the signed-in state and the live
-// rolling term window — so it is force-dynamic, unlike the CDN-static catalog
+// Per-user and never cached (it reflects the signed-in state and the live
+// rolling term window), so it is force-dynamic, unlike the CDN-static catalog
 // pages. The heavy lifting (the live door, the required-core gate) lives in
 // the client island; this server component only resolves any prefill and hands
 // down the current selectable terms and auth state. A signed-out visitor is
@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Resolve a `?course=` slug into the form's prefill, or `null` when the param
- * is absent, malformed, or names no course we carry — the form then simply
+ * is absent, malformed, or names no course we carry; the form then simply
  * opens on the course search instead of erroring, since the page stands on its
  * own without a course in hand.
  */
@@ -56,9 +56,9 @@ export async function generateMetadata({
   const resolved = parsed
     ? await getCourseByCode(parsed.subject, parsed.number)
     : null;
-  if (!resolved) return { title: "Add a review — AUReviews" };
+  if (!resolved) return { title: "Add a review | AUReviews" };
   return {
-    title: `Review ${formatCourseCode(resolved.subject, resolved.number)} — AUReviews`,
+    title: `Review ${formatCourseCode(resolved.subject, resolved.number)} | AUReviews`,
   };
 }
 
