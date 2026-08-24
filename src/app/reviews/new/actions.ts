@@ -17,8 +17,10 @@ import {
   sanitizeSingleSelect,
   validateReviewCore,
 } from "@/domain";
+import { READ_ONLY_MESSAGE, initialReviewStatus } from "@/domain";
 import { exchangeCodeForSession, type ExchangeFailure } from "@/auth/exchange";
 import { getCurrentIdentityHash } from "@/auth/session";
+import { getOperatorFlags } from "@/lib/operator-flags";
 import {
   type CourseInstructor,
   type ReviewEdit,
@@ -105,6 +107,15 @@ export async function submitReview(
   _prev: ReviewFormState,
   formData: FormData,
 ): Promise<ReviewFormState> {
+  // 0. The §12 break-glass flags, read fresh on every submit (issue #28).
+  //    `readOnly` pauses new submissions outright — checked first, before any
+  //    DB work, so the pause holds even for a form rendered before the flip.
+  //    `moderationMode` decides the new row's status down at the insert.
+  const flags = await getOperatorFlags();
+  if (flags.readOnly) {
+    return { formError: READ_ONLY_MESSAGE };
+  }
+
   // 1. Auth, part one: a signed-in Auburn student resolves to the author token
   //    server-side (§7); it never reaches the client. A signed-out one is
   //    verified in step 4, once the review itself is known to be clean.
@@ -148,6 +159,10 @@ export async function submitReview(
     courseId: course.id,
     identityHash,
     termCode: content.termCode,
+    // Publish-on-submit (§4), unless the panic switch queued new submissions
+    // as `pending` (§12). The author's My Activity shows a queued review as
+    // live-and-theirs either way (domain/activity.ts).
+    status: initialReviewStatus(flags),
     ...content.edit,
   });
 
@@ -182,6 +197,14 @@ export async function updateReview(
   _prev: ReviewFormState,
   formData: FormData,
 ): Promise<ReviewFormState> {
+  // Read-only mode (§12) pauses edits too: an edit lands new content exactly
+  // like a submission does, and the valve exists for when nobody is left
+  // moderating. Existing reviews stay served untouched.
+  const flags = await getOperatorFlags();
+  if (flags.readOnly) {
+    return { formError: READ_ONLY_MESSAGE };
+  }
+
   const identityHash = await getCurrentIdentityHash();
   if (!identityHash) {
     return { formError: "Sign in to edit your review." };

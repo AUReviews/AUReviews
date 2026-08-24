@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { READ_ONLY_MESSAGE } from "@/domain";
 import { getCurrentIdentityHash } from "@/auth/session";
 import { getCourseByCode, listCourseInstructors } from "@/db/queries";
 import { formatCourseCode, parseCourseSlug } from "@/lib/course-detail";
 import { toCourseOption } from "@/lib/course-search";
+import { getOperatorFlags } from "@/lib/operator-flags";
 import { currentSelectableTerms } from "@/lib/review-window";
 import ReviewForm, { type ReviewFormPrefill } from "./ReviewForm";
 
@@ -67,6 +69,21 @@ export default async function NewReviewPage({
 }: {
   searchParams: Promise<{ course?: string }>;
 }) {
+  // Read-only mode (§12; issue #28): say so up front instead of letting the
+  // author write a full review the submit action would only bounce. The action
+  // stays the authoritative gate — this render check is a courtesy.
+  const flags = await getOperatorFlags();
+  if (flags.readOnly) {
+    return (
+      <div className="add">
+        <div className="add-card">
+          <h1>Add a review</h1>
+          <p className="lede">{READ_ONLY_MESSAGE}</p>
+        </div>
+      </div>
+    );
+  }
+
   const { course } = await searchParams;
   const prefill = await resolvePrefill(course);
 

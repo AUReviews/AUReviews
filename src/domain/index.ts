@@ -123,6 +123,13 @@ export {
   validateReviewReport,
 } from "./moderation";
 export {
+  type OperatorFlags,
+  DEFAULT_OPERATOR_FLAGS,
+  READ_ONLY_MESSAGE,
+  initialReviewStatus,
+  normalizeOperatorFlags,
+} from "./operations";
+export {
   type ReviewLifecycle,
   DAY_MS,
   RETENTION_DAYS,
