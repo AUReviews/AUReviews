@@ -43,12 +43,15 @@ export function normalizeOperatorFlags(raw: unknown): OperatorFlags {
   };
 }
 
+/** The statuses a brand-new review can be born with (§4/§12) — shared with
+ * the db layer's `NewReview` so the two can't drift. The other statuses
+ * (`removed`, `deleted`) only ever arrive later, via runbook or self-delete. */
+export type ReviewSubmitStatus = "published" | "pending";
+
 /** What a brand-new review's `status` is at insert time (§4/§12): published
  * on submit in open mode, `pending` behind the panic switch. Existing rows
  * are never touched by a mode flip — only new inserts read this. */
-export function initialReviewStatus(
-  flags: OperatorFlags,
-): "published" | "pending" {
+export function initialReviewStatus(flags: OperatorFlags): ReviewSubmitStatus {
   return flags.moderationMode === "queue" ? "pending" : "published";
 }
 

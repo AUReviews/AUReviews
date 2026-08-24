@@ -2,6 +2,7 @@ import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import {
   type InstructorUnknown,
   type PlaceholderRow,
+  type ReviewSubmitStatus,
   type VoteDirection,
   canEditReview,
   gateAverages,
@@ -300,7 +301,7 @@ export interface NewReview {
   prep: string | null;
   /** `published` in normal operation, `pending` behind the §12 panic switch —
    * decided by the submit action from the Edge Config flags (issue #28). */
-  status: "published" | "pending";
+  status: ReviewSubmitStatus;
 }
 
 /**

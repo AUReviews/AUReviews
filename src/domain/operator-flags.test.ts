@@ -3,7 +3,7 @@ import {
   DEFAULT_OPERATOR_FLAGS,
   initialReviewStatus,
   normalizeOperatorFlags,
-} from "./operations";
+} from "./operator-flags";
 
 describe("normalizeOperatorFlags", () => {
   it("defaults to open/writable when nothing is configured", () => {

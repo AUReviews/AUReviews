@@ -17,7 +17,11 @@
  * a security boundary — the authoritative content gate stays in the actions).
  */
 import { createClient } from "@vercel/edge-config";
-import { type OperatorFlags, normalizeOperatorFlags } from "@/domain";
+import {
+  DEFAULT_OPERATOR_FLAGS,
+  type OperatorFlags,
+  normalizeOperatorFlags,
+} from "@/domain";
 
 /**
  * Read both flags for one request. Called per-write (submit/edit) and on the
@@ -25,13 +29,13 @@ import { type OperatorFlags, normalizeOperatorFlags } from "@/domain";
  */
 export async function getOperatorFlags(): Promise<OperatorFlags> {
   const connection = process.env.EDGE_CONFIG;
-  if (!connection) return normalizeOperatorFlags(null);
+  if (!connection) return DEFAULT_OPERATOR_FLAGS;
   try {
     const client = createClient(connection);
     const raw = await client.getAll(["moderationMode", "readOnly"]);
     return normalizeOperatorFlags(raw);
   } catch (error) {
     console.error("operator-flags: Edge Config read failed", error);
-    return normalizeOperatorFlags(null);
+    return DEFAULT_OPERATOR_FLAGS;
   }
 }

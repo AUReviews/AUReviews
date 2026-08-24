@@ -124,11 +124,12 @@ export {
 } from "./moderation";
 export {
   type OperatorFlags,
+  type ReviewSubmitStatus,
   DEFAULT_OPERATOR_FLAGS,
   READ_ONLY_MESSAGE,
   initialReviewStatus,
   normalizeOperatorFlags,
-} from "./operations";
+} from "./operator-flags";
 export {
   type ReviewLifecycle,
   DAY_MS,

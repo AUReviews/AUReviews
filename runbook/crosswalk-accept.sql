@@ -19,11 +19,16 @@ WHERE status = 'pending'
 ORDER BY created_at;
 
 -- The whole decision is one transaction; every statement is guarded on the row
--- still being 'pending', so re-running the script is a no-op.
+-- still being 'pending' AND on the key mapping to :course_id, so re-running is
+-- a no-op — and if the key somehow got mapped to a DIFFERENT Course since the
+-- row was queued, the script changes nothing and leaves the row pending
+-- (steps 2/3 find no mapping to :course_id) instead of half-applying.
 BEGIN;
 
 -- 1. Map the key onto the Course. The Course's previous key(s) stay mapped
---    too — a Course accumulates keys across renumbers (schema.ts).
+--    too — a Course accumulates keys across renumbers (schema.ts). DO NOTHING
+--    keeps an existing mapping, whatever it points at; steps 2/3 then only
+--    proceed if the key really resolves to :course_id.
 INSERT INTO course_crosswalk (catalog_key, course_id)
 SELECT p.catalog_key, :'course_id'
 FROM crosswalk_pending p
@@ -54,13 +59,22 @@ SET former_identities = c.former_identities || jsonb_build_array(
 FROM crosswalk_pending p
 WHERE c.id = :'course_id'
   AND p.id = :'pending_id'
-  AND p.status = 'pending';
+  AND p.status = 'pending'
+  AND EXISTS (
+    SELECT 1 FROM course_crosswalk cc
+    WHERE cc.catalog_key = p.catalog_key AND cc.course_id = :'course_id'
+  );
 
 -- 3. Close the pending row (kept for audit; only status='pending' rows gate
 --    the import's re-queue check).
-UPDATE crosswalk_pending
+UPDATE crosswalk_pending p
 SET status = 'accepted'
-WHERE id = :'pending_id' AND status = 'pending';
+WHERE p.id = :'pending_id'
+  AND p.status = 'pending'
+  AND EXISTS (
+    SELECT 1 FROM course_crosswalk cc
+    WHERE cc.catalog_key = p.catalog_key AND cc.course_id = :'course_id'
+  );
 
 COMMIT;
 

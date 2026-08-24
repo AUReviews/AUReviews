@@ -11,13 +11,14 @@ import {
   PREP_OPTIONS,
   type ReviewFieldError,
   WORKLOAD_SHAPE_OPTIONS,
+  READ_ONLY_MESSAGE,
+  initialReviewStatus,
   isUuid,
   parseInstructorChoice,
   sanitizeMultiSelect,
   sanitizeSingleSelect,
   validateReviewCore,
 } from "@/domain";
-import { READ_ONLY_MESSAGE, initialReviewStatus } from "@/domain";
 import { exchangeCodeForSession, type ExchangeFailure } from "@/auth/exchange";
 import { getCurrentIdentityHash } from "@/auth/session";
 import { getOperatorFlags } from "@/lib/operator-flags";
