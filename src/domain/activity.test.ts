@@ -18,7 +18,7 @@ describe("reviewLifecycle", () => {
     expect(reviewLifecycle("deleted")).toBe("deleted");
   });
 
-  it("treats an unknown status as removed — never silently live", () => {
+  it("treats an unknown status as removed, never silently live", () => {
     expect(reviewLifecycle("weird")).toBe("removed");
   });
 });

@@ -44,7 +44,7 @@ import { currentSelectableTerms } from "@/lib/review-window";
  * The course picker's server-backed typeahead (issue #40): match the typed
  * fragment against catalog code + title and return at most a handful of
  * options, so the catalog itself never ships to the client. A too-short query
- * is no results, not an error — the picker just keeps prompting.
+ * is no results, not an error; the picker just keeps prompting.
  */
 export async function searchCourseOptions(
   rawQuery: string,
@@ -62,7 +62,7 @@ const UUID_RE =
  * Load the instructor dropdown for a just-picked course (issue #40): the same
  * course-scoped `listCourseInstructors` read the prefilled path uses, exposed
  * as an action so the picker can populate the dropdown on select. The two
- * "unknown" escapes stay client-side (§4) — they aren't instructors. A
+ * "unknown" escapes stay client-side (§4); they aren't instructors. A
  * malformed id returns the empty list rather than erroring: the id is only
  * ever one we handed out in a search option, so anything else is a crafted
  * call, and the submit action re-checks instructor-taught-course anyway.
@@ -76,11 +76,11 @@ export async function listInstructorOptions(
 
 /**
  * The result the submit action hands back to the form island (issue #24). A
- * clean submit never returns — it `revalidatePath`s the course page and
- * redirects there — so a returned state is always a rejection the form
+ * clean submit never returns (it `revalidatePath`s the course page and
+ * redirects there), so a returned state is always a rejection the form
  * re-renders: `formError` for whole-form problems (unknown course), per-field
  * `errors` from the §4/§11 gate, or `authError` when the inline sign-in code
- * didn't exchange (issue #47) — shown by the code field, draft untouched.
+ * didn't exchange (issue #47), shown by the code field, draft untouched.
  */
 export interface ReviewFormState {
   formError?: string;
@@ -99,7 +99,7 @@ export interface ReviewFormState {
  *
  * Auth is part of the same action (issue #47): a signed-in author is resolved
  * from the session; a signed-out one posts their Auburn email + sign-in code
- * along with the review, and the code is exchanged for a session HERE — after
+ * along with the review, and the code is exchanged for a session HERE, after
  * the review has passed every check and right before the insert, so a
  * rejected draft never spends the code, and being signed in is a side effect
  * of posting. No navigation happens before the redirect to the course page.
@@ -131,7 +131,7 @@ export async function submitReview(
     return { formError: "That course could not be found." };
   }
 
-  // 3. The door: re-derive the live window and run the full §4/§11 gate —
+  // 3. The door: re-derive the live window and run the full §4/§11 gate;
   //    the same pipeline an edit re-runs (issue #26).
   const selectableTermCodes = currentSelectableTerms().map((t) => t.code);
   const content = await parseReviewContent(formData, course.id, { selectableTermCodes });
@@ -142,7 +142,7 @@ export async function submitReview(
   //    the same module `/signin` uses: it owns the domain gate, the Auth.js
   //    token hash, single use, and the attempt cap, and on success sets the
   //    session cookie on this very response. A failure returns the generic
-  //    reason as state — the form and the draft stay exactly as typed. The
+  //    reason as state; the form and the draft stay exactly as typed. The
   //    address itself is never persisted: it is folded into `identity_hash`
   //    inside the exchange and discarded.
   if (!identityHash) {
@@ -169,7 +169,7 @@ export async function submitReview(
 
   // 5. Revalidate what the new review changed (§4/§5/§8): the affected course
   //    page (headline, list), and the "reviews" tag so the browse index's
-  //    rating columns recompute — every other page stays CDN-served. The tag
+  //    rating columns recompute; every other page stays CDN-served. The tag
   //    must go through `updateTag`, the Server-Action read-your-own-writes
   //    form that expires immediately: `revalidateTag(tag, "max")` is
   //    stale-while-revalidate, which left the browse table serving the old
@@ -184,8 +184,8 @@ export async function submitReview(
 
 /**
  * Edit an existing review (v1-spec §11; issue #26). Re-runs the FULL submit
- * pipeline — every door-block, the instructor-taught-course check, the
- * optional-details sanitizing — so a bait-and-switch edit can't ride earned
+ * pipeline (every door-block, the instructor-taught-course check, the
+ * optional-details sanitizing) so a bait-and-switch edit can't ride earned
  * trust past the filters. The course and term are fixed (they are what the
  * review *is*); the term is re-validated against itself rather than the
  * rolling window, since an old review's term may have aged out of what can be
@@ -220,7 +220,7 @@ export async function updateReview(
     return { formError: "That review could not be found or can no longer be edited." };
   }
 
-  // The term is pinned to the stored one — the form posts it back as a hidden
+  // The term is pinned to the stored one; the form posts it back as a hidden
   // field, and anything else is rejected by the gate.
   const content = await parseReviewContent(formData, existing.courseId, {
     selectableTermCodes: [existing.termCode],
@@ -285,7 +285,7 @@ async function parseReviewContent(
     instructorUnknown = choice.kind;
   }
 
-  // Sanitize the optional "Course details" — kept only if recognized, never
+  // Sanitize the optional "Course details": kept only if recognized, never
   // blocking (§4). Multi-selects come through as repeated form fields.
   const languages = sanitizeMultiSelect(strList(formData.getAll("languages")), LANGUAGE_OPTIONS);
   const languagesOther = languages.includes("Other")

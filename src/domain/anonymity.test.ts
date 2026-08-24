@@ -21,7 +21,7 @@ describe("isAuburnStudentEmail", () => {
     expect(isAuburnStudentEmail("abc1234@auburn.edu")).toBe(true);
   });
 
-  it("rejects @tigermail.auburn.edu — only the canonical domain is accepted (PR #48)", () => {
+  it("rejects @tigermail.auburn.edu: only the canonical domain is accepted (PR #48)", () => {
     // Same mailbox as @auburn.edu (an alias), so nobody is locked out; one
     // domain keeps the sign-in field a single fixed suffix.
     expect(isAuburnStudentEmail("abc1234@tigermail.auburn.edu")).toBe(false);
@@ -37,7 +37,7 @@ describe("isAuburnStudentEmail", () => {
   });
 
   it("rejects look-alike domains that merely contain the string", () => {
-    // Substring matches must not pass — only a true suffix on the domain.
+    // Substring matches must not pass; only a true suffix on the domain.
     expect(isAuburnStudentEmail("attacker@auburn.edu.evil.com")).toBe(false);
     expect(isAuburnStudentEmail("attacker@notauburn.edu")).toBe(false);
     expect(isAuburnStudentEmail("attacker@fauburn.edu")).toBe(false);

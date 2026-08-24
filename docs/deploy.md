@@ -1,6 +1,6 @@
 # Deploy: the walking skeleton (Vercel + Neon)
 
-This is the [#17](https://github.com/AUReviews/AUReviews/issues/17) walking skeleton —
+This is the [#17](https://github.com/AUReviews/AUReviews/issues/17) walking skeleton:
 a single Next.js app on **Vercel Hobby** reading from **Neon Postgres**
 (v1-spec [§8](v1-spec.md#8-stack-hosting-and-rendering)). The code is in the
 repo and builds locally; the steps below are the ones that need a browser and an
@@ -8,7 +8,7 @@ account, so a human runs them once. Times are rough.
 
 ## Prerequisites
 
-- A GitHub repo (`AUReviews/AUReviews`) — already exists.
+- A GitHub repo (`AUReviews/AUReviews`); already exists.
 - A Vercel account and a Neon account (both free tiers).
 - Local: `npm install` (Node 24+).
 
@@ -16,7 +16,7 @@ account, so a human runs them once. Times are rough.
 
 1. Vercel dashboard → **Add New… → Project** → import `AUReviews/AUReviews`.
 2. Framework preset auto-detects **Next.js**. Leave build/output settings default.
-3. Don't deploy yet — add the database first (next step), or deploy now and
+3. Don't deploy yet; add the database first (next step), or deploy now and
    redeploy after env vars are set. Either works.
 
 ## 2. Provision Neon via the Vercel–Neon integration (~3 min)
@@ -66,7 +66,7 @@ Alternatively, run the same `INSERT` in Neon's web SQL console.
 
 Push to `main` (or hit **Redeploy** in Vercel). When the deploy finishes, open
 the URL: the homepage renders the seeded line **read live from Neon**. Before
-seeding it shows a "table is empty — run the seed" message; before Neon is
+seeding it shows a "table is empty, run the seed" message; before Neon is
 reachable it shows a "not provisioned yet" message with the underlying error.
 
 ## 7. Verify on-demand revalidation (~1 min)
@@ -84,7 +84,7 @@ curl -X POST https://<your-deployment>/api/revalidate \
 ```
 
 **Windows PowerShell** (`curl` there is an alias for `Invoke-WebRequest` and
-won't take the flags above — use `Invoke-RestMethod`; this reads the secret
+won't take the flags above; use `Invoke-RestMethod`. This reads the secret
 straight from `.env.local`):
 
 ```powershell
@@ -99,7 +99,7 @@ Invoke-RestMethod -Method Post -Uri $url `
 
 A wrong/missing bearer token returns `401`; an empty body returns `400` (in
 PowerShell these surface as a thrown "response status code does not indicate
-success" error — that is the expected rejection). The secret in `.env.local`
+success" error; that is the expected rejection). The secret in `.env.local`
 must match the `REVALIDATE_SECRET` set in Vercel, or the call returns `401`.
 
 ## 8. Auth: @auburn.edu sign-in code ([#19](https://github.com/AUReviews/AUReviews/issues/19), [#43](https://github.com/AUReviews/AUReviews/issues/43))
@@ -109,27 +109,27 @@ Auth.js (NextAuth) self-hosted, owning its tables in the same Neon Postgres
 create the `identities`, `sessions`, `verification_tokens`, and `email_send_log`
 tables (`drizzle/0002_*.sql`).
 
-**Env vars to add in Vercel** (and to `.env.local` for local dev — see
+**Env vars to add in Vercel** (and to `.env.local` for local dev; see
 `.env.example`):
 
-- **`AUTH_SECRET`** — Auth.js cookie/session encryption key. Generate with
+- **`AUTH_SECRET`**: Auth.js cookie/session encryption key. Generate with
   `npx auth secret`.
-- **`PEPPER`** — the HMAC key for `identity_hash`. Generate with
+- **`PEPPER`**: the HMAC key for `identity_hash`. Generate with
   `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
-  It **must live only here, never in the database** (v1-spec §7) — it is the one
+  It **must live only here, never in the database** (v1-spec §7); it is the one
   secret that keeps `identity_hash` non-reversible. Rotating it orphans every
   existing identity (they can no longer be re-derived from a re-verified email),
   so treat it like a private key.
-- **`RESEND_API_KEY`** — Resend API key. When unset (local dev), sign-in codes
+- **`RESEND_API_KEY`**: Resend API key. When unset (local dev), sign-in codes
   are logged to the server console instead of emailed, so the flow is testable
   without a mailbox.
-- **`EMAIL_FROM`** — from-address on the dedicated sending subdomain, e.g.
+- **`EMAIL_FROM`**: from-address on the dedicated sending subdomain, e.g.
   `AUReviews <no-reply@mail.aureviews.com>`.
-- **`OPERATOR_EMAIL`** — where "Report this review"
+- **`OPERATOR_EMAIL`**: where "Report this review"
   notifications go (v1-spec §12, issue #27). The row is written regardless;
   when unset the email is replaced by a `console.warn` in the function logs.
 
-**DNS (launch-checklist item, not code — v1-spec §7):** deliverability into
+**DNS (launch-checklist item, not code; v1-spec §7):** deliverability into
 Auburn's Microsoft 365 tenant requires **SPF + DKIM + DMARC** published on the
 Resend sending subdomain. Verify the domain in Resend, publish the records it
 generates, and confirm a test email lands in an Auburn inbox (not Junk) **before**
@@ -139,7 +139,7 @@ opening the review-submission flow.
 sign-in before any email is sent; each sign-in code is single-use, expires in
 ~10 min, dies after 5 wrong guesses, and only one is live per address; send rate
 limits are ≤3/address/hr and ≤10/IP/hr; only `identity_hash` + `verified_at` are
-stored (never the email — the code email contains no URL, so Microsoft 365 Safe
+stored (never the email; the code email contains no URL, so Microsoft 365 Safe
 Links has nothing to pre-fetch); and the client session exposes neither the hash
 nor the address.
 
@@ -147,7 +147,7 @@ nor the address.
 
 `.github/workflows/catalog-refresh.yml` runs `npm run refresh` weekly (Sunday
 09:00 UTC) and on demand (**Actions → Catalog refresh → Run workflow**). It runs
-the in-repo ingest — bulletin catalog, then Banner offerings — over the
+the in-repo ingest (bulletin catalog, then Banner offerings) over the
 **pooled** Neon endpoint and then POSTs `{ "tag": "catalog" }` to
 `/api/revalidate` so the home, browse, and course pages recompute. It lives in
 an Action because a full Banner pass takes minutes, past Vercel Hobby's ~60s
@@ -155,19 +155,19 @@ function ceiling and once-daily cron limit.
 
 **One-time setup** (repo → Settings → Secrets and variables → Actions):
 
-- Secret **`DATABASE_URL`** — the pooled connection string (same value as
+- Secret **`DATABASE_URL`**: the pooled connection string (same value as
   Vercel's `DATABASE_URL`, host contains `-pooler`).
-- Secret **`REVALIDATE_SECRET`** — must equal the value set in Vercel (step 3).
-- Variable **`AUREVIEWS_BASE_URL`** — the production origin, e.g.
+- Secret **`REVALIDATE_SECRET`**: must equal the value set in Vercel (step 3).
+- Variable **`AUREVIEWS_BASE_URL`**: the production origin, e.g.
   `https://aureviews.vercel.app`. A wrong value makes the run fail at the
   revalidation step (the imports have already committed, so re-running is safe).
-- Variable **`AUBURN_CATALOG_YEAR`** — optional; overrides the default catalog
+- Variable **`AUBURN_CATALOG_YEAR`**: optional; overrides the default catalog
   year baked into `src/ingest/run-refresh.ts`.
 
 The run is idempotent (ADR 0002). Ambiguous crosswalk or instructor matches are
 written as **pending rows** (`crosswalk_pending`, `instructor_pending`), never
-auto-applied, and the job emits a `::warning::` annotation — visible in the run
-summary — whenever it wrote any. Banner codes with no crosswalk mapping show as
+auto-applied, and the job emits a `::warning::` annotation (visible in the run
+summary) whenever it wrote any. Banner codes with no crosswalk mapping show as
 a `::notice::`.
 
 Locally, `npm run refresh` does the same thing using `.env.local`; set
@@ -178,14 +178,14 @@ Locally, `npm run refresh` does the same thing using `.env.local`; set
 - [x] App deployed to Vercel, reachable at a URL. *(steps 1, 6)*
 - [x] Placeholder page renders data **read from Neon** (not hardcoded). *(steps 5–6; code: `src/app/page.tsx` → `src/db/queries.ts`)*
 - [x] Migrations run against the **direct** endpoint; app connects over the **pooled** endpoint. *(step 4; `drizzle.config.ts` uses `DATABASE_URL_UNPOOLED`, `src/db/client.ts` uses `DATABASE_URL`)*
-- [x] An `ingest/` module exists and depends on the domain layer only — no reverse import; enforced by eslint `import/no-restricted-paths` **and** `src/domain/boundary.test.ts`, documented in `AGENTS.md`. *(code: `src/ingest/`, `src/domain/`)*
+- [x] An `ingest/` module exists and depends on the domain layer only, with no reverse import; enforced by eslint `import/no-restricted-paths` **and** `src/domain/boundary.test.ts`, documented in `AGENTS.md`. *(code: `src/ingest/`, `src/domain/`)*
 - [x] A revalidation endpoint exists and revalidates a page/tag on demand. *(step 7; code: `src/app/api/revalidate/route.ts`, `src/lib/revalidate.ts`)*
 
 ## Notes for the next tickets
 
 - **#18 (catalog import)** extends `src/ingest/` and adds real catalog/review
   tables to `src/db/schema.ts`; the `placeholder` table can be dropped then.
-- **#19 (auth)** — done; see section 8 above. Auth.js tables live in the same
+- **#19 (auth)**: done; see section 8 above. Auth.js tables live in the same
   Neon Postgres (pooled endpoint at runtime, direct endpoint for its migrations).
 - **Catalog refresh** (v1-spec §8) runs as a GitHub Action against the pooled
-  endpoint, then POSTs `/api/revalidate` — the seam wired here.
+  endpoint, then POSTs `/api/revalidate`, the seam wired here.

@@ -53,7 +53,7 @@ function deps(overrides: Partial<RefreshDeps> = {}): RefreshDeps & {
 }
 
 describe("runCatalogRefresh", () => {
-  it("runs catalog, then offerings, then revalidates — in that order", async () => {
+  it("runs catalog, then offerings, then revalidates, in that order", async () => {
     const d = deps();
     const result = await runCatalogRefresh(d);
     expect(d.calls).toEqual(["catalog", "offerings", "revalidate"]);

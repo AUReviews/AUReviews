@@ -8,7 +8,7 @@ const IDLE: SignInFormState = { status: "idle" };
 
 // The standalone sign-in form (issues #43/#47, omscentral pattern): the shared
 // email + code block, then one "Sign in" submit that runs the same in-process
-// exchange the review form's Post uses. Nothing here navigates on failure —
+// exchange the review form's Post uses. Nothing here navigates on failure;
 // the exchange returns state, so a wrong code no longer remounts the form or
 // asks for the address again (the #46 trade-off is gone).
 export function SignInForm({

@@ -2,13 +2,13 @@
  * Banner 8 schedule parser (v1-spec §9; issue #23).
  *
  * Turns two public, no-login Banner pages at `ssbprod.auburn.edu` into flat
- * rows — verified against live fetches of the term dropdown and the COMP
+ * rows, verified against live fetches of the term dropdown and the COMP
  * listings for Spring 2025 and Fall 2007 (the markup is identical across the
  * full history):
  *
- * - `bwckschd.p_disp_dyn_sched` — the term dropdown; source of the `YYYYT0`
+ * - `bwckschd.p_disp_dyn_sched`: the term dropdown; source of the `YYYYT0`
  *   term codes (validated live before hardcoding, per §9).
- * - `bwckschd.p_get_crse_unsec` — one term's full COMP section listing. Each
+ * - `bwckschd.p_get_crse_unsec`: one term's full COMP section listing. Each
  *   section is a `ddtitle` header (`Title - CRN - COMP 1210 - 001`) followed
  *   by a "Scheduled Meeting Times" table whose 7th column carries the
  *   instructors: comma-separated names, optionally marked `(P)` for primary,
@@ -16,7 +16,7 @@
  *   Banner person key.
  *
  * Only what the Offering model needs is read (§3): course code + instructor
- * set. CRNs, seats, and meeting times are deliberately dropped — Section is
+ * set. CRNs, seats, and meeting times are deliberately dropped; Section is
  * not modeled. Pure and dependency-free, like the bulletin parser.
  */
 
@@ -39,7 +39,7 @@ const TERM_OPTION_RE = /<OPTION VALUE="(\d{6})">([^<]*)<\/OPTION>/gi;
 const SECTION_TITLE_RE =
   /<th[^>]*CLASS="ddtitle"[^>]*>[\s\S]*?<a[^>]*>([\s\S]*?)<\/a>/gi;
 
-// `COMP 1210` — subject + number. Banner numbers may carry letters anywhere
+// `COMP 1210`: subject + number. Banner numbers may carry letters anywhere
 // (`1AA0` is a live Fall 2007 example), so require only digit-led alphanumeric;
 // unknown codes are the crosswalk planner's problem to report, not ours to drop.
 const COURSE_CODE_RE = /^([A-Z]{2,4})\s+(\d[0-9A-Z]{2,4})$/;

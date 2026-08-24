@@ -4,8 +4,8 @@
 -- aggregate immediately; its content stays for forensics/appeals until
 -- purge-tombstones.sql runs.
 --
--- :review_id — the uuid from the report email.
--- :reason    — either a REPORT_REASONS value (off-topic, identifying-info,
+-- :review_id: the uuid from the report email.
+-- :reason:    either a REPORT_REASONS value (off-topic, identifying-info,
 --              misconduct-accusation, protected-characteristic,
 --              not-about-course, profanity, spam, other), shown by its
 --              published label, or your own words, shown verbatim.

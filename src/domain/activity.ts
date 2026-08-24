@@ -1,5 +1,5 @@
 /**
- * Author-side review lifecycle rules (v1-spec §11/§13; issue #26) — the pure
+ * Author-side review lifecycle rules (v1-spec §11/§13; issue #26): the pure
  * core behind the My Activity page, the edit/delete actions, and "Contest this
  * removal". Like `moderation.ts`, this reads no env, DB, or request: the
  * server actions call these as the authoritative gate and the page reuses
@@ -7,8 +7,8 @@
  *
  * A review's stored `status` is one of `published | pending | removed |
  * deleted` (schema.ts). The author sees three lifecycle states: `live` (on
- * the site, or queued behind the §12 panic switch — either way still theirs
- * to edit or delete), `removed` (an operator takedown, §11.B — the ONLY place
+ * the site, or queued behind the §12 panic switch; either way still theirs
+ * to edit or delete), `removed` (an operator takedown, §11.B, the ONLY place
  * the author learns of it), and `deleted` (their own self-delete, still
  * recoverable by the operator inside the retention window).
  */
@@ -23,7 +23,7 @@ export type ReviewLifecycle = "live" | "removed" | "deleted";
  */
 export const RETENTION_DAYS = { deleted: 30, removed: 90 } as const;
 
-/** One day in ms — the unit the retention windows and their countdown share. */
+/** One day in ms: the unit the retention windows and their countdown share. */
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Fold the stored status into what the author sees. An unrecognized status

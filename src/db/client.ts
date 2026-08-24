@@ -4,12 +4,12 @@ import * as schema from "./schema";
 
 /**
  * Runtime database client. The app and Auth.js connect to Neon over the
- * POOLED endpoint (v1-spec §8) — `DATABASE_URL`, whose host contains
+ * POOLED endpoint (v1-spec §8): `DATABASE_URL`, whose host contains
  * `-pooler`. Migrations use the DIRECT endpoint (`DATABASE_URL_UNPOOLED`) via drizzle-kit
  * and never go through this client.
  *
  * The client is created lazily so that merely importing this module during the
- * build (where env vars may be absent) never throws — only an actual query does.
+ * build (where env vars may be absent) never throws; only an actual query does.
  */
 function connectionString(): string {
   const url = process.env.DATABASE_URL;

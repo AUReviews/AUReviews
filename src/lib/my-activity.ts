@@ -1,5 +1,5 @@
 /**
- * My Activity presentation logic (v1-spec §11/§13; issue #26) — pure,
+ * My Activity presentation logic (v1-spec §11/§13; issue #26): pure,
  * framework- and DB-free, following the same split as `course-reviews.ts`:
  * the `db` layer supplies the signed-in author's rows, the page renders
  * them, and every grouping and copy decision lives here where it is
@@ -13,7 +13,7 @@ import {
   reviewLifecycle,
 } from "@/domain";
 
-/** One of the signed-in author's own reviews, in every lifecycle state —
+/** One of the signed-in author's own reviews, in every lifecycle state:
  * unlike `CourseReview`, removed and deleted rows are included, because this
  * page is the one place a takedown is surfaced (§11). */
 export interface MyReview {
@@ -64,7 +64,7 @@ export function isTombstone(review: Pick<MyReview, "status" | "body">): boolean 
 }
 
 /** Split the author's reviews into the three lifecycle sections the page
- * renders, newest first within each. Tombstones are dropped — the content
+ * renders, newest first within each. Tombstones are dropped; the content
  * is gone, and the author deleted it (or saw its removal) long ago. */
 export function groupMyReviews(reviews: MyReview[]): MyReviewGroups {
   const groups: MyReviewGroups = { live: [], removed: [], deleted: [] };

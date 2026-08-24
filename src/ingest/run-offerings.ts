@@ -1,10 +1,10 @@
 /**
  * Offerings ingest entrypoint (issue #23).
  *
- * Wires the real edges — live Banner fetches and the Neon-backed offerings
- * layer — into the pure orchestrator, then runs one full Fall-2007-to-present
+ * Wires the real edges (live Banner fetches and the Neon-backed offerings
+ * layer) into the pure orchestrator, then runs one full Fall-2007-to-present
  * COMP import and logs a summary. Safe to re-run: idempotent, and only ever
- * touches offering-side state — never a Review, and never deletes a durable
+ * touches offering-side state, never a Review, and never deletes a durable
  * Instructor (ADR 0002).
  *
  *   npm run ingest:offerings
@@ -26,7 +26,7 @@ import { runOfferingsIngest } from "./import-offerings";
 try {
   process.loadEnvFile(".env.local");
 } catch {
-  // No .env.local — rely on the ambient environment.
+  // No .env.local; rely on the ambient environment.
 }
 
 async function main(): Promise<void> {
@@ -49,7 +49,7 @@ async function main(): Promise<void> {
   if (summary.pending > 0) {
     console.log(
       `${summary.pending} ambiguous instructor match(es) await an admin ` +
-        `decision (instructor_pending) — none were auto-merged.`,
+        `decision (instructor_pending); none were auto-merged.`,
     );
   }
 

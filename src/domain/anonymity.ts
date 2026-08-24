@@ -9,13 +9,13 @@
  *
  * Why a keyed hash and not a salted one: an Auburn address is low-entropy and
  * enumerable (~10^8 candidates), so a salt stored beside the hash would be
- * brute-forceable. HMAC with a pepper held OUTSIDE the database is not — that is
+ * brute-forceable. HMAC with a pepper held OUTSIDE the database is not; that is
  * the whole anonymity guarantee (research §4, option C).
  */
 import { createHmac } from "node:crypto";
 import { normalizeEmail } from "./email";
 
-// The address gate and its normalization live in ./email — the browser-safe
+// The address gate and its normalization live in ./email, the browser-safe
 // half (no crypto) that client components import directly (issue #47). They
 // are re-exported here so the `@/domain` barrel's surface is unchanged.
 export { isAuburnStudentEmail, normalizeEmail } from "./email";

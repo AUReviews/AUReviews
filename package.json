@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-emdash.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,7 +17,8 @@
     "ingest": "tsx src/ingest/run.ts",
     "ingest:offerings": "tsx src/ingest/run-offerings.ts",
     "refresh": "tsx src/ingest/run-refresh.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "lint:emdash": "node scripts/check-emdash.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

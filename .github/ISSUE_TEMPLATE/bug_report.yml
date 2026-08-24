@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting. To flag a specific *review*, use the **Report** link under that review on its course page instead — this form is for the site itself.
+        Thanks for reporting. To flag a specific *review*, use the **Report** link under that review on its course page instead; this form is for the site itself.
   - type: textarea
     id: what
     attributes:

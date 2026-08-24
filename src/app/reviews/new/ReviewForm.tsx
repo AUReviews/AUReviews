@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import SignInCodeFields from "@/app/_components/SignInCodeFields";
+import { NO_DATA } from "@/lib/browse";
 // Imported from the deep `@/domain/review` path, NOT the `@/domain` barrel, on
 // purpose: the barrel re-exports `anonymity.ts`, which pulls in `node:crypto`
 // and can't be bundled into this client component. `review.ts` is pure and
@@ -40,12 +41,12 @@ import {
   updateReview,
 } from "./actions";
 
-// The review submission form (v1-spec §4/§11/§13; issues #24/#40) — the one
+// The review submission form (v1-spec §4/§11/§13; issues #24/#40): the one
 // client island. It renders the course picker, the required core, the
 // collapsible optional "Course details" zone, the inline Review Guidelines
 // panel, and the assent line. Its defining behavior is the LIVE door: every
 // keystroke re-runs the SAME `validateReviewCore` the server action re-runs
-// authoritatively, so Submit is disabled — never merely error-on-click — until
+// authoritatively, so Submit is disabled (never merely error-on-click) until
 // the submission is clean (§11.A: "before Submit is clickable, never after").
 // The optional zone is uncontrolled and never feeds the gate, so nothing in it
 // can block submission (§4).
@@ -56,8 +57,8 @@ import {
 // page. "change" simply drops back to the search.
 //
 // Verification lives INSIDE the form (issue #47, omscentral pattern): a
-// signed-out author sees an Authentication section — the shared email +
-// sign-in-code block — above Post, and Post itself carries email + code to the
+// signed-out author sees an Authentication section (the shared email +
+// sign-in-code block) above Post, and Post itself carries email + code to the
 // submit action, which exchanges them for a session and inserts the review in
 // one go. Nothing navigates until the redirect to the course page, so the
 // draft can't be lost to a sign-in round trip. A signed-in author gets no such
@@ -145,7 +146,7 @@ export default function ReviewForm({ prefill, terms, signedIn, edit }: ReviewFor
   );
   const [instructorsLoading, setInstructorsLoading] = useState(false);
 
-  // Required-core state — the only inputs the live gate reads.
+  // Required-core state: the only inputs the live gate reads.
   const [overall, setOverall] = useState<number | null>(initial?.overall ?? null);
   const [difficulty, setDifficulty] = useState<number | null>(initial?.difficulty ?? null);
   const [workload, setWorkload] = useState(initial ? String(initial.workloadHours) : "");
@@ -161,13 +162,13 @@ export default function ReviewForm({ prefill, terms, signedIn, edit }: ReviewFor
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
 
   // The sign-in code typed so far (signed-out authors only). Post needs all six
-  // digits before it can be clicked — the exchange in the action is the
+  // digits before it can be clicked; the exchange in the action is the
   // authoritative check; this just keeps a half-typed code from spending a
   // guess.
   const [codeDigits, setCodeDigits] = useState("");
 
   // Surface a field's error only once the user has engaged it, so the form
-  // doesn't open shouting. Once engaged, the LIVE result governs — so a field
+  // doesn't open shouting. Once engaged, the LIVE result governs, so a field
   // the user has since corrected stops showing its message immediately, and a
   // stale server error from an earlier bounce can't linger past the fix. A
   // server error still shows for a field the user hasn't touched yet.
@@ -248,7 +249,7 @@ export default function ReviewForm({ prefill, terms, signedIn, edit }: ReviewFor
 
   // Submit by hand rather than via `<form action>`: React resets a form after
   // a form-action completes, which visually blanks the native selects and
-  // wipes the uncontrolled optional details — exactly the draft a bounced
+  // wipes the uncontrolled optional details, exactly the draft a bounced
   // submit (wrong sign-in code, server-side rejection) must leave untouched
   // (issue #47). Dispatching the same action from onSubmit inside a transition
   // keeps `pending`/state semantics and skips the reset.
@@ -404,7 +405,7 @@ export default function ReviewForm({ prefill, terms, signedIn, edit }: ReviewFor
           placeholder="What surprised you? How would you prepare? What was the workload actually like week to week?"
           value={body}
           // Mark touched on the first keystroke, not on blur, so the door-block
-          // reason (link/contact/slur/too-short) shows live as the user types —
+          // reason (link/contact/slur/too-short) shows live as the user types;
           // §11's "live, before Submit is clickable," not a blur-gated reveal.
           onChange={(e) => {
             setBody(e.target.value);
@@ -458,7 +459,7 @@ export default function ReviewForm({ prefill, terms, signedIn, edit }: ReviewFor
           <strong>Authentication</strong>
           <span className="note">
             Only verified Auburn students can post. Enter your Auburn email, send yourself a
-            code, and type it here — you&apos;ll be signed in when you post. Your address is
+            code, and type it here; you&apos;ll be signed in when you post. Your address is
             never stored with the review.
           </span>
           <SignInCodeFields
@@ -470,7 +471,7 @@ export default function ReviewForm({ prefill, terms, signedIn, edit }: ReviewFor
 
       {/* The §13 ToS/Privacy/18+ assent line. Terms and Privacy are named in
           plain text, not linked, until the legal pages ship (a separate §13
-          ticket) — a live link to a 404 is worse than none. */}
+          ticket); a live link to a 404 is worse than none. */}
       <p className="assent">
         By posting you agree to our Terms and Privacy Policy, and confirm you are 18 or older.
       </p>
@@ -566,7 +567,7 @@ function CourseSearch({ onSelect }: { onSelect: (option: CourseOption) => void }
 // input the parent renders, so the button group posts like a native control.
 // `lowLabel`/`highLabel` are the §4 anchor captions (1 = "very easy" … 5 = "very
 // hard") that make a rating mean the same thing to everyone; each button also
-// gets a spoken "N — label" so a screen reader announces the anchors too.
+// gets a spoken "N, label" so a screen reader announces the anchors too.
 function Scale({
   label,
   lowLabel,
@@ -594,7 +595,7 @@ function Scale({
               key={v}
               role="radio"
               aria-checked={value === v}
-              aria-label={anchor ? `${v} — ${anchor}` : String(v)}
+              aria-label={anchor ? `${v}, ${anchor}` : String(v)}
               className={value === v ? "sel" : undefined}
               onClick={() => onPick(v)}
             >
@@ -626,7 +627,7 @@ function hasOptionalDetails(initial: OptionalInitial): boolean {
   );
 }
 
-// The optional "Course details" zone (§4) — collapsed by default and (bar the
+// The optional "Course details" zone (§4): collapsed by default and (bar the
 // Languages "Other" reveal, pure visibility) uncontrolled: nothing here feeds
 // the live gate, so nothing here can block Submit. On an edit the controls
 // open with the stored values as their defaults; closing and reopening the
@@ -676,7 +677,7 @@ function OptionalDetails({
   );
 }
 
-// Languages with the "Other" write-in revealed only while Other is picked —
+// Languages with the "Other" write-in revealed only while Other is picked;
 // no permanent extra field. The one piece of state here is pure visibility; it
 // never feeds the gate, and unpicking Other unmounts the write-in so a
 // half-typed value can't ride along (the server ignores `languagesOther`
@@ -765,7 +766,7 @@ function SelectField({
     <div style={{ flex: 1 }}>
       <div className="field-label">{label}</div>
       <select name={name} className="select-input" defaultValue={value ?? ""}>
-        <option value="">—</option>
+        <option value="">{NO_DATA}</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
@@ -776,7 +777,7 @@ function SelectField({
   );
 }
 
-// The inline Review Guidelines panel (§11/§13) — shown at authoring time so the
+// The inline Review Guidelines panel (§11/§13), shown at authoring time so the
 // prohibited categories are visible before posting, not just enforced after.
 function GuidelinesPanel({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   return (

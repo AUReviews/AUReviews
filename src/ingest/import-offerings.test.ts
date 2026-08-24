@@ -61,7 +61,7 @@ function schedulePage(termCode: string, sections: FakeSection[]): string {
 /**
  * In-memory stand-in for the db offerings layer, applying plans with the same
  * semantics as `src/db/offerings.ts`: idempotent creates, link add/remove,
- * pending dedupe by nameKey — and no way to delete an instructor at all.
+ * pending dedupe by nameKey, and no way to delete an instructor at all.
  */
 class FakeOfferingsStore {
   instructors = new Map<InstructorId, ExistingInstructor>();

@@ -1,12 +1,12 @@
 /**
- * Course detail presentation logic (v1-spec §6/§13; issue #21) — pure,
+ * Course detail presentation logic (v1-spec §6/§13; issue #21): pure,
  * framework- and DB-free, so URL slugging and catalog-attribute formatting are
  * unit-testable in isolation. The `db` layer supplies a {@link CourseDetail} and
  * the `courses/[code]` route renders it; both defer slug parsing and every
  * display-string decision to this module (the same split as `browse.ts`).
  *
  * A course is addressed in the URL by its CURRENT catalog code (`comp-3270`),
- * not its durable internal id — the shareable, conventional form. This is a
+ * not its durable internal id: the shareable, conventional form. This is a
  * display/routing concern only: reviews still attach to the durable `Course.id`
  * (ADR 0001), and because the crosswalk retains old catalog keys across a
  * renumber (ADR 0002), an old code URL can still be made to resolve later.
@@ -17,9 +17,9 @@ import type { BrowseCourse } from "./browse";
 
 /**
  * The full catalog-side record a course page renders (issue #21). It IS a
- * {@link BrowseCourse} — same id/code/status and same nullable rating columns,
+ * {@link BrowseCourse} (same id/code/status and same nullable rating columns,
  * so the low-data display rule (§5) and the review seam stay defined in exactly
- * one place — plus the extra catalog attributes only the detail page shows. The
+ * one place) plus the extra catalog attributes only the detail page shows. The
  * three averages are `null` and `reviewCount` is 0 in v1 until reviews land (#6).
  */
 export interface CourseDetail extends BrowseCourse {
@@ -37,7 +37,7 @@ export function courseSlug(subject: string, number: string): string {
 /**
  * Parse a `subject-number` slug back into upper-cased catalog attributes the DB
  * query keys on, or `null` if the slug is malformed. Exactly one separator, a
- * non-empty alphabetic subject, and a non-empty alphanumeric number — so a bad
+ * non-empty alphabetic subject, and a non-empty alphanumeric number, so a bad
  * URL is a clean 404 rather than a failed query.
  */
 export function parseCourseSlug(
@@ -66,7 +66,7 @@ export function formatCreditHours(creditHours: string | null): string | null {
 }
 
 /**
- * The catalog-year stamp (§6) — "how current is this page". The ingest stores
+ * The catalog-year stamp (§6): "how current is this page". The ingest stores
  * an academic-year range (`2026-2027`); normalize its hyphen to an en dash and
  * stamp it, without inventing a range for a bare value.
  */
@@ -74,7 +74,7 @@ export function formatCatalogYear(catalogYear: string): string {
   return `${catalogYear.trim().replace(/-/g, "–")} catalog`;
 }
 
-// A `Pr.`/`Coreq.` clause, marker through the first terminating period — the
+// A `Pr.`/`Coreq.` clause, marker through the first terminating period; the
 // same shape the ingest lifts into `prereqText` and the parser structures.
 const PREREQ_CLAUSE_RE = /(?:Pr\.|Coreq\.)[^.]*\./g;
 // The leading run of bulletin contact-type codes and their hour numbers that
@@ -85,13 +85,13 @@ const LOAD_PREFIX_RE =
 
 /**
  * Clean a raw bulletin course body into just its prose description for display
- * (issue #22). The stored `description` is the lossless body — it still carries
+ * (issue #22). The stored `description` is the lossless body; it still carries
  * the `LEC./LAB.` contact-hour breakdown (now in the header credit line) and the
  * `Pr./Coreq.` prerequisite prose (now the Prerequisites/Unlocks chips). This
  * drops that duplicated scaffolding: every `Pr.`/`Coreq.` clause, then the
  * leading run of contact-type codes. Returns null when only scaffolding remains
  * (or there was no description), so the page shows its "No catalog description on
- * file." state. Purely presentational — the lossless body stays in the DB.
+ * file." state. Purely presentational; the lossless body stays in the DB.
  */
 export function formatCourseDescription(
   description: string | null,
@@ -107,7 +107,7 @@ export function formatCourseDescription(
 
 /**
  * The "Typically offered" badge text (§6; issue #23): a display-time rollup of
- * the distinct semesters in the course's Banner Offering history — computed on
+ * the distinct semesters in the course's Banner Offering history, computed on
  * every render, never a stored flag, so it self-corrects as offerings accrue.
  * Returns null when there is no usable history (no offerings ingested yet, or
  * a course Banner never listed), and the page simply shows no badge.
@@ -126,7 +126,7 @@ export function courseHref(subject: string, number: string): string {
 /**
  * Link to the review form with this course prefilled (issue #40). Authoring
  * lives at the single `/reviews/new` route; the course rides along as a query
- * param the page resolves server-side — the course is data on the review, not
+ * param the page resolves server-side; the course is data on the review, not
  * a location, so every entry path lands on the same form.
  */
 export function reviewFormHref(subject: string, number: string): string {

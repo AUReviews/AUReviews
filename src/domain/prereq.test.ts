@@ -122,7 +122,7 @@ describe("parsePrereqs", () => {
   });
 
   it("treats a clause with unknown prose mixed with a course as a verbatim fallback", () => {
-    // "or equivalent" is not a course token — don't half-structure it.
+    // "or equivalent" is not a course token; don't half-structure it.
     const parsed = parsePrereqs("Pr. COMP 2210 or equivalent.");
     expect(parsed.structured).toBe(false);
     expect(parsed.requirements[0].groups).toEqual([]);

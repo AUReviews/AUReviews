@@ -33,7 +33,7 @@ export const placeholder = pgTable("placeholder", {
  * Catalog-side Course (v1-spec §3, ADR 0001/0002; issue #18).
  *
  * The durable, review-anchoring unit. `id` is an internally-minted surrogate we
- * own — NOT a default in the DB, because the crosswalk mints it (ADR 0001) so a
+ * own; NOT a default in the DB, because the crosswalk mints it (ADR 0001) so a
  * renumber never moves reviews. Auburn's `(subject, number, title, description,
  * creditHours, prereqText)` are mutable current attributes, last-import-wins.
  * `status` flips `active`↔`retired`; a catalog dropout is retired, never deleted
@@ -52,9 +52,9 @@ export const courses = pgTable("courses", {
   // Verbatim `Pr.`/`Coreq.` prose; structured parsing is a later ticket (§9).
   prereqText: text("prereq_text"),
   catalogYear: text("catalog_year").notNull(),
-  // 'active' | 'retired' — see ADR 0002. Kept as text (no enum) to stay cheap.
+  // 'active' | 'retired'; see ADR 0002. Kept as text (no enum) to stay cheap.
   status: text("status").notNull().default("active"),
-  // Array of { subject, number, title, catalogYearRange } — numbering/title only.
+  // Array of { subject, number, title, catalogYearRange }: numbering/title only.
   formerIdentities: jsonb("former_identities")
     .notNull()
     .default(sql`'[]'::jsonb`),
@@ -71,7 +71,7 @@ export const courses = pgTable("courses", {
  * Auburn `(subject number)` catalog key to a durable Course. Unambiguous matches
  * live here and are applied automatically on import; a Course may accumulate more
  * than one key across renumbers (all pointing at the same durable id). The unique
- * `catalog_key` is what makes re-imports idempotent — one key resolves to exactly
+ * `catalog_key` is what makes re-imports idempotent: one key resolves to exactly
  * one Course.
  */
 export const courseCrosswalk = pgTable("course_crosswalk", {
@@ -87,7 +87,7 @@ export const courseCrosswalk = pgTable("course_crosswalk", {
 
 /**
  * Pending crosswalk decisions (v1-spec §3/§12, ADR 0002): ambiguous incoming keys
- * — candidate renumbers, splits, merges, cross-lists — that an import must NEVER
+ * (candidate renumbers, splits, merges, cross-lists) that an import must NEVER
  * infer. They land here for an explicit admin decision (resolution mechanics are
  * a later ticket). `catalogKey` is unique so a repeated import doesn't re-queue
  * the same undecided key. `payload` carries the full scraped attributes so a
@@ -113,7 +113,7 @@ export const crosswalkPending = pgTable("crosswalk_pending", {
  * philosophy as `courses`: `id` is minted by the offerings planner, NOT a DB
  * default, and is never deleted by an import (ADR 0002). `displayName` is a
  * mutable last-import-wins attribute. `bannerKey` is Banner's stable person
- * key — the Auburn NetID lifted from the schedule page's `mailto:` link —
+ * key (the Auburn NetID lifted from the schedule page's `mailto:` link)
  * unique where present; instructors Banner lists without one are keyed by
  * `nameKey` (normalized display name) with ambiguous matches routed to
  * `instructor_pending`, never auto-merged.
@@ -137,7 +137,7 @@ export const instructors = pgTable(
 
 /**
  * Offerings (v1-spec §3/§6; issue #23): the historical fact that a Course ran
- * in a Term, at exactly `(course, term)` grain — Banner's section rows are
+ * in a Term, at exactly `(course, term)` grain; Banner's section rows are
  * collapsed before they get here, and Section is deliberately not modeled (no
  * CRNs/seats/meeting times). `termCode` is the validated Banner `YYYYT0` code
  * (`200810` = Fall 2007, the history floor). The composite key is the
@@ -185,7 +185,7 @@ export const offeringInstructors = pgTable(
 );
 
 /**
- * Pending instructor-identity decisions (v1-spec §3; issue #23) — the
+ * Pending instructor-identity decisions (v1-spec §3; issue #23): the
  * instructor analog of `crosswalk_pending`. An ambiguous match (a new Banner
  * key colliding with an existing instructor's name, or a keyless name matching
  * several instructors) lands here for an explicit admin decision instead of
@@ -213,7 +213,7 @@ export const instructorPending = pgTable("instructor_pending", {
  *
  * This is BOTH the anonymity store and the Auth.js "user" table. It holds only a
  * non-reversible `identity_hash = HMAC(PEPPER, normalize(email))` and when it was
- * verified — NEVER the plaintext email (the pepper lives outside the DB, so a
+ * verified, NEVER the plaintext email (the pepper lives outside the DB, so a
  * dump yields nothing brute-forceable). `id` is an opaque surrogate the session
  * table references, so `sessions` never even stores the hash; the hash is looked
  * up server-side only when a write must be attributed. Reviews (#6) will key to
@@ -230,13 +230,13 @@ export const identities = pgTable("identities", {
 /**
  * User-authored reviews (v1-spec §4; issue #24). The one permanent, append-only
  * Review-side record. References the durable `Course.id` and an optional durable
- * `Instructor.id` — both captured at write time, so no catalog refresh ever
+ * `Instructor.id`, both captured at write time, so no catalog refresh ever
  * moves a review (ADR 0001/0002); an import never touches this table.
  *
  * The instructor field is *required* at the form, but resolves to one of three
  * things: a real `instructorId`, or an explicit unknown recorded in
  * `instructorUnknown` (`not-listed` | `dont-remember`) with `instructorId` null.
- * An explicit unknown beats a bare null (§4) — a null `instructorId` with a null
+ * An explicit unknown beats a bare null (§4): a null `instructorId` with a null
  * `instructorUnknown` is never written.
  *
  * The optional "Course details" zone (`workloadShape` … `prep`) never blocks
@@ -244,7 +244,7 @@ export const identities = pgTable("identities", {
  * text, all nullable.
  *
  * `identityHash` is the author's HMAC token (§7), stored so an operator can
- * correlate one person's reviews — deliberately NOT a uniqueness key: there is
+ * correlate one person's reviews. Deliberately NOT a uniqueness key: there is
  * NO `(identity_hash, course_id)` unique index, so multiple correlated reviews
  * per person per course are allowed (§4 contradiction callout). `status`
  * defaults to `published`; `edited`/`contested` back the moderation flows (§11).
@@ -259,7 +259,7 @@ export const reviews = pgTable(
     // Null when the author chose an unknown escape; then `instructorUnknown`
     // carries which one. Never both null (an explicit unknown beats a null, §4).
     instructorId: uuid("instructor_id").references(() => instructors.id),
-    // null | 'not-listed' | 'dont-remember' — the two §4 escape hatches.
+    // null | 'not-listed' | 'dont-remember': the two §4 escape hatches.
     instructorUnknown: text("instructor_unknown"),
     // The validated Banner `YYYYT0` code of the term the review describes. The
     // actual term is always stored; the rolling window (§4) governs only what
@@ -272,7 +272,7 @@ export const reviews = pgTable(
     workloadHours: integer("workload_hours").notNull(),
     // Free text, ≥100 chars (door-blocked, §11). No maximum.
     body: text("body").notNull(),
-    // Optional "Course details" (§4) — none can block submission.
+    // Optional "Course details" (§4); none can block submission.
     workloadShape: jsonb("workload_shape")
       .notNull()
       .default(sql`'[]'::jsonb`),
@@ -284,14 +284,14 @@ export const reviews = pgTable(
     prep: text("prep"),
     // System fields (§4). `identity_hash` is correlation-only, NOT unique here.
     identityHash: text("identity_hash").notNull(),
-    // 'published' (default) | 'pending' | 'removed' | 'deleted' — text, no enum,
+    // 'published' (default) | 'pending' | 'removed' | 'deleted'. Text, no enum,
     // so the panic-switch/takedown states need no migration (§4/§11).
     status: text("status").notNull().default("published"),
     edited: boolean("edited").notNull().default(false),
     contested: boolean("contested").notNull().default(false),
     // Takedown bookkeeping (§11/§12; issue #26): set by runbook/takedown.sql
     // alongside `status='removed'`. `removedReason` is a REPORT_REASONS value
-    // or the operator's own words — the one thing the author is shown.
+    // or the operator's own words: the one thing the author is shown.
     removedReason: text("removed_reason"),
     removedAt: timestamp("removed_at", { withTimezone: true }),
     // Author self-delete stamp (§11 soft-delete), set with `status='deleted'`.
@@ -305,7 +305,7 @@ export const reviews = pgTable(
   },
   (t) => [
     // Aggregates and the by-instructor breakdown (§5) scan by course; the author
-    // correlation trail (§7) scans by identity. Neither index is unique — the
+    // correlation trail (§7) scans by identity. Neither index is unique; the
     // absence of a `(identity_hash, course_id)` unique constraint is deliberate.
     index("reviews_course_idx").on(t.courseId),
     index("reviews_identity_idx").on(t.identityHash),
@@ -314,8 +314,8 @@ export const reviews = pgTable(
 
 /**
  * Per-voter helpful votes (v1-spec §4/§5; issue #24). Votes are retractable and
- * flippable (§10), so they are tracked per voter — one row per
- * `(review, identity)` — not as two bare counters on the review. `direction` is
+ * flippable (§10), so they are tracked per voter, one row per
+ * `(review, identity)`, not as two bare counters on the review. `direction` is
  * `up` | `down`; the composite primary key makes a re-vote an upsert and caps
  * each identity at one live vote per review. Removing the row is a retraction.
  */
@@ -352,8 +352,8 @@ export const sessions = pgTable("sessions", {
 /**
  * Auth.js sign-in code tokens (issues #19, #43). Single-use and expiring
  * (v1-spec §7: one live token per address). `identifier` is the PEPPERED HASH
- * of the target address — `HMAC(PEPPER, normalize(email))`, the same derivation
- * as `identity_hash` — so the plaintext address is never at rest anywhere, even
+ * of the target address (`HMAC(PEPPER, normalize(email))`, the same derivation
+ * as `identity_hash`), so the plaintext address is never at rest anywhere, even
  * transiently. `token` is the 6-digit code hashed with the Auth.js secret.
  * The adapter deletes any prior token for an identifier before issuing a new
  * one so only one code is ever live per address, and `attempts` counts wrong
@@ -398,11 +398,11 @@ export const emailSendLog = pgTable(
  * "Report this review" rows (v1-spec §11.B/§12; issue #27). The per-review,
  * post-publish moderation surface: a reader flags one review against the
  * published guidelines, a row lands here, and the operator is emailed the
- * review's id/link (src/lib/operator-mail.ts). Pull-based — nothing reads this
+ * review's id/link (src/lib/operator-mail.ts). Pull-based: nothing reads this
  * table proactively; it is the durable record behind the notification.
  * `reason` is one of the neutral `REPORT_REASONS` values (text, no enum).
  * `reporterIdentityHash` is the reporter's HMAC token when signed in, null
- * otherwise — reporting is open to readers too (§11 has no sign-in gate on
+ * otherwise; reporting is open to readers too (§11 has no sign-in gate on
  * reports), and the hash is correlation-only, never an identity.
  */
 export const reviewReports = pgTable(

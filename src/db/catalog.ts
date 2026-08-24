@@ -9,7 +9,7 @@ import { getDb } from "./client";
 import { courseCrosswalk, courses, crosswalkPending } from "./schema";
 
 /**
- * DB catalog layer (issue #18) — the thin, mechanical shell around the pure
+ * DB catalog layer (issue #18): the thin, mechanical shell around the pure
  * crosswalk planner. `loadCatalogSnapshot` reads the current catalog-side state;
  * `applyCatalogPlan` writes an {@link IngestPlan} back. All the invariants live
  * in the domain planner; this file only translates a plan into SQL.
@@ -18,7 +18,7 @@ import { courseCrosswalk, courses, crosswalkPending } from "./schema";
  * sequential rather than atomic. That is safe here precisely because the plan is
  * idempotent: minted ids and the unique `catalog_key` mean a re-run (even after a
  * partial failure) converges to the same state without duplicating Courses. No
- * write here ever touches a Review — the plan only carries catalog-side actions
+ * write here ever touches a Review; the plan only carries catalog-side actions
  * (ADR 0002).
  */
 
@@ -82,7 +82,7 @@ export async function applyCatalogPlan(plan: IngestPlan): Promise<void> {
 
   for (const apply of plan.applies) {
     // Last-import-wins on the catalog attributes; `active` also un-retires a
-    // course that reappeared. A same-number *rename* changes the title here —
+    // course that reappeared. A same-number *rename* changes the title here;
     // historising the prior identity into `former_identities` needs catalog-year
     // range tracking and is a deliberate follow-up (renumbers route through
     // pending, not apply), so the column stays unwritten for now.

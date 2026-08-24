@@ -1,7 +1,7 @@
 /**
  * The HMAC pepper (v1-spec §7): a secret that lives in the host's env / secret
  * manager and NEVER in the database. It is the single value that makes
- * `identity_hash` non-reversible, so a missing or empty pepper is a hard error —
+ * `identity_hash` non-reversible, so a missing or empty pepper is a hard error,
  * we refuse to hash rather than silently produce a weak, brute-forceable token.
  */
 export function getPepper(): string {

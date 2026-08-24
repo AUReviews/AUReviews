@@ -20,7 +20,7 @@ import ReportReview from "./ReportReview";
 // server render, so the full review list is in the static/ISR HTML; this
 // island only re-orders and filters that same data, and runs the helpful-vote
 // flow. Per-viewer vote state is fetched from the dynamic /api/votes route
-// after mount — it can never bake into the shared CDN-static page (§8).
+// after mount, so it can never bake into the shared CDN-static page (§8).
 // The per-professor rows feed only the filter tabs: the maintainer cut the
 // §5 "By professor" ratings table from this tab.
 
@@ -54,7 +54,7 @@ export default function ReviewsSection({
   const [overrides, setOverrides] = useState<Record<string, VoteOverride>>({});
 
   // The viewer's own votes, from the dynamic per-user route (§8). Failure
-  // (offline, signed out) just leaves the buttons unlit — votes still work
+  // (offline, signed out) just leaves the buttons unlit; votes still work
   // server-side, and the action re-checks auth anyway.
   useEffect(() => {
     let cancelled = false;
@@ -78,7 +78,7 @@ export default function ReviewsSection({
     return sortCourseReviews(filtered, reviewSort);
   }, [reviews, filter, reviewSort]);
 
-  // Filter tabs offer only instructors who actually have reviews — a tab that
+  // Filter tabs offer only instructors who actually have reviews; a tab that
   // filters to nothing helps no one.
   const filterTabs = instructorRows.filter((r) => r.reviewCount > 0);
 

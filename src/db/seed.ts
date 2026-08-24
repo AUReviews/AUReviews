@@ -3,7 +3,7 @@
  * has real DB data to render (v1-spec §8 acceptance: "not hardcoded").
  *
  * Run locally against the pooled endpoint:  npm run db:seed
- * (loads .env.local via tsx). Idempotent — does nothing if a row already exists.
+ * (loads .env.local via tsx). Idempotent: does nothing if a row already exists.
  */
 import { getDb } from "./client";
 import { placeholder } from "./schema";
@@ -13,19 +13,19 @@ import { placeholder } from "./schema";
 try {
   process.loadEnvFile(".env.local");
 } catch {
-  // No .env.local — rely on the ambient environment.
+  // No .env.local; rely on the ambient environment.
 }
 
 async function main(): Promise<void> {
   const db = getDb();
   const existing = await db.select().from(placeholder).limit(1);
   if (existing.length > 0) {
-    console.log("placeholder already seeded — nothing to do.");
+    console.log("placeholder already seeded; nothing to do.");
     return;
   }
   await db.insert(placeholder).values({
     message:
-      "AUReviews walking skeleton is live — this line was read from Neon Postgres.",
+      "AUReviews walking skeleton is live: this line was read from Neon Postgres.",
   });
   console.log("Seeded one placeholder row.");
 }

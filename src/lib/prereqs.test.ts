@@ -38,7 +38,7 @@ function target(subject: string, number: string): PrereqCatalogRow {
   return row;
 }
 
-describe("buildCoursePrereqView — prerequisites", () => {
+describe("buildCoursePrereqView: prerequisites", () => {
   it("renders an or-group as chips linking to the referenced courses, with the grade", () => {
     const view = buildCoursePrereqView(target("COMP", "2210"), CATALOG);
     expect(view.rawFallback).toBeNull();
@@ -93,7 +93,7 @@ describe("buildCoursePrereqView — prerequisites", () => {
   });
 });
 
-describe("buildCoursePrereqView — unlocks (the inverse of prerequisites)", () => {
+describe("buildCoursePrereqView: unlocks (the inverse of prerequisites)", () => {
   it("lists every course that requires this one, linked, in catalog order", () => {
     // COMP 2210 is a prereq of 2240, 3270 (both directly). Catalog order: 2240 < 3270.
     const view = buildCoursePrereqView(target("COMP", "2210"), CATALOG);

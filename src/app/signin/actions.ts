@@ -28,10 +28,10 @@ function emailFromForm(formData: FormData): string {
 
 // Server action: the "Send code" entry point and the enforced send gate.
 //   1. Domain is checked here for a friendly inline message AND again in the
-//      signIn callback as the security gate (v1-spec §7) — an invalid address is
+//      signIn callback as the security gate (v1-spec §7); an invalid address is
 //      rejected before any email is sent.
 //   2. Send rate limits (≤3/address/hr, ≤10/IP/hr, <100/day) are enforced HERE,
-//      before signIn issues a token — so a throttled request never rotates an
+//      before signIn issues a token, so a throttled request never rotates an
 //      existing live code.
 export async function requestSignInCode(
   _prev: SignInFormState,
@@ -49,7 +49,7 @@ export async function requestSignInCode(
     return { status: "error", reason: "rate" };
   }
 
-  // redirect: false — the form stays on screen with the address still typed in,
+  // redirect: false, so the form stays on screen with the address still typed in,
   // so the user can enter the code the moment it arrives.
   try {
     // signIn hands back a URL instead of redirecting: the verify-request URL on
@@ -70,8 +70,8 @@ export async function requestSignInCode(
 }
 
 // Server action: exchange the typed code for a session, in-process (issue #47,
-// ADR 0003). `exchangeCodeForSession` is the ONE exchange path — the review
-// form's Post action calls the same module — so it, not this action, owns the
+// ADR 0003). `exchangeCodeForSession` is the ONE exchange path (the review
+// form's Post action calls the same module), so it, not this action, owns the
 // domain check, the Auth.js token hash, single use, and the attempt cap. A
 // failure comes back as state, never a navigation: the form stays mounted with
 // the address still typed in, and every failed exchange resolves to the one

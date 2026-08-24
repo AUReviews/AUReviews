@@ -3,7 +3,7 @@ import { parseBannerSchedule, parseTermOptions } from "./banner";
 
 /**
  * Verbatim excerpt of the live `bwckschd.p_disp_dyn_sched` term dropdown
- * (fetched 2026-08-11) — the source the `YYYYT0` scheme was validated against.
+ * (fetched 2026-08-11), the source the `YYYYT0` scheme was validated against.
  */
 const TERM_DROPDOWN_FIXTURE = `
 <select name="p_term" size="1"  BYPASS_ESC="Y" ID="term_input_id">
@@ -154,7 +154,7 @@ describe("parseBannerSchedule", () => {
   });
 
   it("collapses irregular whitespace in names and parses hyphenated titles", () => {
-    // "The Power of AI: Fundamentals to Applications" — the title's own
+    // "The Power of AI: Fundamentals to Applications": the title's own
     // punctuation must not confuse the ` - CRN - CODE - SEQ` suffix parse.
     expect(sections[1].instructors).toEqual([
       { displayName: "Sathyanarayanan Narasimhan Aakur", bannerKey: "san0028" },

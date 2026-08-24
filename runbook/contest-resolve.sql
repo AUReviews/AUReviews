@@ -1,6 +1,6 @@
 -- Resolve a contested removal (v1-spec §11/§12). Run ONE of the two blocks.
 --
--- :review_id — the contested review's uuid.
+-- :review_id: the contested review's uuid.
 --
 -- List what's waiting:
 SELECT id, course_id, removed_reason, removed_at, created_at

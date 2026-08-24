@@ -5,7 +5,7 @@ import { type ReactNode, useState } from "react";
 // Overview/Reviews tab switcher for the course page (issue #21, §13). A tiny
 // client island: both panels are rendered server-side and passed in as props, so
 // the full catalog record (Overview) is in the static/ISR HTML and readable with
-// JS off — this island only toggles which panel is visible. The prototype's
+// JS off; this island only toggles which panel is visible. The prototype's
 // course view drove the same two tabs from vanilla JS; this is its RSC-friendly
 // translation.
 

@@ -23,5 +23,5 @@ the store's Items tab), no redeploy, live in seconds. Defaults: `"open"`,
 unreachable falls back to those defaults.
 
 Retention windows live in `src/domain/activity.ts` (`RETENTION_DAYS`): ~30 days
-after a self-delete, ~90 after a takedown — attorney-confirm before treating
+after a self-delete, ~90 after a takedown; attorney-confirm before treating
 as final (§10).

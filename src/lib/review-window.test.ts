@@ -8,7 +8,7 @@ afterEach(() => {
   else process.env.REVIEW_TERM_WINDOW = original;
 });
 
-describe("reviewTermWindowMode — env config (§4)", () => {
+describe("reviewTermWindowMode: env config (§4)", () => {
   it("defaults to the launch (4-year) window when unset", () => {
     delete process.env.REVIEW_TERM_WINDOW;
     expect(reviewTermWindowMode()).toBe("launch");

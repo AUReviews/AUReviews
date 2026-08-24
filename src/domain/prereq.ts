@@ -2,7 +2,7 @@
  * Prerequisite prose parser (v1-spec §6/§9; issue #22).
  *
  * Auburn publishes prerequisites as semi-structured prose following a regular
- * `Pr.`/`Coreq.` grammar — course tokens (`COMP 2210`), boolean `and`/`or`/`&`,
+ * `Pr.`/`Coreq.` grammar: course tokens (`COMP 2210`), boolean `and`/`or`/`&`,
  * parenthetical grouping, grade thresholds (`with a grade of C or higher`), and
  * cross-department tokens (`ELEC 2220`). This module is the custom parser the
  * spec accepts as a cost: it turns that prose into **structured prerequisite
@@ -17,13 +17,13 @@
  *    courses does this one require", and the inverse (who requires *this* course)
  *    is computed from it over the whole catalog by the caller (`lib/prereqs.ts`).
  *
- * Pure and dependency-free — no framework, no persistence — so the grammar is
+ * Pure and dependency-free (no framework, no persistence), so the grammar is
  * exhaustively unit-testable against real bulletin samples (see prereq.test.ts).
  */
 
 /** A course reference lifted from prereq prose, with the grade threshold (if any)
  * that governed it. `subject`/`number` are upper-cased; cross-department refs
- * (e.g. `ELEC 2220`) are kept verbatim — the parser never assumes COMP-only. */
+ * (e.g. `ELEC 2220`) are kept verbatim; the parser never assumes COMP-only. */
 export interface PrereqCourseRef {
   subject: string;
   number: string;
@@ -97,13 +97,13 @@ export function parsePrereqs(prereqText: string | null): ParsedPrereqs {
 
 /**
  * The prerequisite edge set for one course: the distinct courses it requires,
- * corequisites excluded. This is the ONE definition of a prerequisite edge — the
+ * corequisites excluded. This is the ONE definition of a prerequisite edge; the
  * course page renders it as "Prerequisites" chips, and every other course's
  * "Unlocks" list is the inverse of this same relation (issue #22, §6).
  *
  * Edges are extracted even from a clause that fell back to verbatim prose (via a
  * token scan) so the inverse graph stays complete when the full boolean parse
- * couldn't — a code is a valid edge whether or not its surrounding logic parsed.
+ * couldn't; a code is a valid edge whether or not its surrounding logic parsed.
  */
 export function prerequisiteEdges(prereqText: string | null): PrereqCourseRef[] {
   const parsed = parsePrereqs(prereqText);
@@ -212,15 +212,15 @@ function tokenize(body: string): Token[] | null {
       rest = rest.slice(number[0].length);
       continue;
     }
-    return null; // unrecognized prose — the clause falls back to verbatim
+    return null; // unrecognized prose; the clause falls back to verbatim
   }
   return tokens;
 }
 
 /**
  * Recursive-descent parser producing conjunctive normal form:
- *   expr   := term (AND term)*        — conjunction, concatenates groups
- *   term   := factor (OR factor)*     — disjunction, one OR-group
+ *   expr   := term (AND term)*        (conjunction, concatenates groups)
+ *   term   := factor (OR factor)*     (disjunction, one OR-group)
  *   factor := '(' expr ')' | course
  *
  * A bare number inherits the most recent subject (`COMP 2210 or 2213`). An OR of
@@ -313,11 +313,11 @@ function single(groups: PrereqGroup[]): PrereqCourseRef[] | null {
 // ---------------------------------------------------------------------------
 
 /**
- * The bulletin routinely restates grade thresholds in a second sentence — e.g.
+ * The bulletin routinely restates grade thresholds in a second sentence, e.g.
  * "Pr. COMP 1210 or COMP 1213. Pr. COMP 1210 with a grade of C or higher." Left
  * alone, that renders as a confusing duplicate requirement. This folds such a
- * restatement — a fully structured clause of single courses, all already named
- * earlier, that only adds a grade — into the earlier clause's matching refs and
+ * restatement (a fully structured clause of single courses, all already named
+ * earlier, that only adds a grade) into the earlier clause's matching refs and
  * drops it. A clause that introduces a *new* course is never dropped (that would
  * lose information); it stays as its own requirement.
  */
@@ -337,7 +337,7 @@ function mergeGradeRestatements(
 }
 
 /** A structured clause of single graded courses, each already named earlier in a
- * clause of the same relation — i.e. it adds only grades, no new courses. */
+ * clause of the same relation, i.e. it adds only grades, no new courses. */
 function isGradeRestatement(
   req: PrereqRequirement,
   earlier: PrereqRequirement[],
@@ -388,7 +388,7 @@ function findRef(
 const SCAN_COURSE_RE = /\b([A-Za-z]{2,4})\s+(\d{3,4}[A-Za-z]?)\b/g;
 
 /** Lift every `SUBJECT NUMBER` token out of prose (subject-inheriting continuations
- * are not attempted here — a fallback clause is rare and its explicit codes are
+ * are not attempted here; a fallback clause is rare and its explicit codes are
  * enough to keep the inverse graph complete). */
 function scanCourseRefs(text: string): PrereqCourseRef[] {
   const refs: PrereqCourseRef[] = [];

@@ -88,14 +88,14 @@ describe("collapseSections", () => {
   });
 });
 
-describe("planOfferings — first import", () => {
+describe("planOfferings: first import", () => {
   it("mints instructors once per person, creates offerings, links instructors", () => {
     const rows = [
       offering("COMP 1210", "202520", [
         { displayName: "Vishalini Laguduva Ramnath", bannerKey: "vlr0013" },
       ]),
       offering("COMP 3270", "202520", [
-        // Same person teaches a second course — one durable identity.
+        // Same person teaches a second course: one durable identity.
         { displayName: "Vishalini Laguduva Ramnath", bannerKey: "vlr0013" },
         { displayName: "James Cross", bannerKey: null },
       ]),
@@ -135,7 +135,7 @@ describe("planOfferings — first import", () => {
   });
 });
 
-describe("planOfferings — idempotency", () => {
+describe("planOfferings: idempotency", () => {
   it("plans nothing when the snapshot already reflects the import", () => {
     const snapshot: OfferingsSnapshot = {
       ...emptySnapshot(),
@@ -172,7 +172,7 @@ describe("planOfferings — idempotency", () => {
   });
 });
 
-describe("planOfferings — instructor identity resolution", () => {
+describe("planOfferings: instructor identity resolution", () => {
   const existingVlr = {
     id: "instructor-1" as InstructorId,
     displayName: "Vishalini Laguduva Ramnath",
@@ -261,7 +261,7 @@ describe("planOfferings — instructor identity resolution", () => {
     ]);
   });
 
-  it("flags a new Banner key colliding with an existing name as pending — never auto-merged", () => {
+  it("flags a new Banner key colliding with an existing name as pending, never auto-merged", () => {
     const existingKeyless = { ...existingVlr, bannerKey: null };
     const snapshot = { ...emptySnapshot(), instructors: [existingKeyless] };
     const rows = [
@@ -334,7 +334,7 @@ describe("planOfferings — instructor identity resolution", () => {
   });
 });
 
-describe("planOfferings — instructor-set changes on an existing offering", () => {
+describe("planOfferings: instructor-set changes on an existing offering", () => {
   it("adds newly listed instructors and unlinks ones no longer listed, without deleting anyone", () => {
     const kept = {
       id: "existing-kept" as InstructorId,
@@ -374,7 +374,7 @@ describe("planOfferings — instructor-set changes on an existing offering", () 
       // Kept Person is already linked; only the newly minted instructor joins.
       { courseId: COURSE_A, termCode: "202710", instructorId: "instructor-1" },
     ]);
-    // The link is catalog-side and re-derivable — removed. The durable
+    // The link is catalog-side and re-derivable, so it is removed. The durable
     // Instructor row itself is never deleted (no such action exists).
     expect(plan.linkRemovals).toEqual([
       { courseId: COURSE_A, termCode: "202710", instructorId: dropped.id },

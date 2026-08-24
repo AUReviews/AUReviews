@@ -1,12 +1,12 @@
 /* ===========================================================================
-   AUReviews — global visual system (issue #20)
+   AUReviews global visual system (issue #20)
 
    Ported from `prototype/index.html` (the canonical design is the Claude Design
    project; see prototype/SOURCE.md). The prototype drives its palette off a
    `[data-theme="light|dark"]` attribute flipped by an in-page toggle. Here the
    same token VALUES are attached to `:root` (light) with a `prefers-color-
    scheme: dark` override, so theming is correct and flash-free with zero client
-   JS — which keeps the landing/browse pages fully static for CDN/ISR (§8). The
+   JS, which keeps the landing/browse pages fully static for CDN/ISR (§8). The
    interactive light/dark/system toggle is a later ticket (it belongs to the
    review-form/header work, §13); when it lands it can layer `[data-theme]`
    overrides on top of these same tokens.
@@ -423,7 +423,7 @@ td.muted {
   border-radius: 6px;
   padding: 3px 9px;
 }
-/* "Typically offered: Fall, Spring" — the Banner-derived rollup badge (#23).
+/* "Typically offered: Fall, Spring": the Banner-derived rollup badge (#23).
    Same pill treatment as the catalog stamp; no uppercase, the semester list
    reads as prose. */
 .offered-stamp {
@@ -602,7 +602,7 @@ a.chip-link:hover {
   flex-direction: column;
   gap: 14px;
 }
-/* Full-width variant of .btn-accent for the sidebar CTA — same accent role, so
+/* Full-width variant of .btn-accent for the sidebar CTA. Same accent role, so
    it reuses the button's color/hover rather than re-declaring them. */
 .btn-block {
   display: block;
@@ -793,7 +793,7 @@ a.chip-link:hover {
 .num-input:focus,
 .textarea-input:focus {
   /* Tailwind-forms style (omscentral): the border itself turns accent and a
-     1px ring hugs it outside — 2px centred on the border edge, no gap. */
+     1px ring hugs it outside: 2px centred on the border edge, no gap. */
   outline: none;
   border-color: var(--link);
   box-shadow: 0 0 0 1px var(--link);
@@ -906,7 +906,7 @@ a.chip-link:hover {
   position: relative;
 }
 /* The native checkbox still posts the value and carries keyboard/AT semantics;
-   only its box is hidden — the chip itself fills in when checked, matching the
+   only its box is hidden; the chip itself fills in when checked, matching the
    1–5 scale's selected treatment. */
 .check-chip input {
   position: absolute;
@@ -955,7 +955,7 @@ a.chip-link:hover {
 }
 
 /* The inline Authentication section (issue #47): shown to a signed-out
-   author, above Post — the shared email + sign-in-code block lives inside. */
+   author, above Post; the shared email + sign-in-code block lives inside. */
 .auth {
   background: var(--bg-page);
   border: 1px solid var(--border-default);
@@ -990,7 +990,7 @@ a.chip-link:hover {
   text-decoration: underline;
 }
 
-/* The shared email + sign-in-code fields (SignInCodeFields, issue #47) — the
+/* The shared email + sign-in-code fields (SignInCodeFields, issue #47): the
    one code path both /signin and the review form render. */
 .code-fields {
   display: flex;
@@ -1028,7 +1028,7 @@ a.chip-link:hover {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-/* The static "@auburn.edu" addon — the one accepted domain, so no control. */
+/* The static "@auburn.edu" addon: the one accepted domain, so no control. */
 .email-domain {
   flex-shrink: 0;
   display: inline-flex;
@@ -1097,7 +1097,7 @@ a.chip-link:hover {
   }
 }
 
-/* The standalone /signin page — the same card language as the review form. */
+/* The standalone /signin page: the same card language as the review form. */
 .signin {
   display: flex;
   justify-content: center;

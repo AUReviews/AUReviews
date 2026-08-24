@@ -13,7 +13,7 @@ import {
   listOfferingTermCodes,
   listPrereqRows,
 } from "@/db/queries";
-import { formatAverage } from "@/lib/browse";
+import { formatAverage, NO_DATA } from "@/lib/browse";
 import {
   type CourseReview,
   type InstructorRow,
@@ -41,16 +41,16 @@ import {
 } from "@/lib/prereqs";
 import CourseTabs from "./CourseTabs";
 
-// Course detail page (issues #21/#25, v1-spec §5/§6/§13). The catalog side —
-// the full standalone record plus a clear path to write the first review — and
+// Course detail page (issues #21/#25, v1-spec §5/§6/§13). The catalog side
+// (the full standalone record plus a clear path to write the first review) and
 // the review side: the three-metric headline and the review list with
 // professor filter tabs and helpful voting.
 //
 // ISR: CDN-static with a time-based fallback, refreshable on demand via the
 // "catalog" cache tag after an import (§8). Review-side reads run UNCACHED
 // inside each (re)render: a review submit or a vote calls `revalidatePath` on
-// this page, so aggregates and tallies recompute then — "a SQL query computed
-// at revalidation time" (§5) — while reads stay CDN-served between writes.
+// this page, so aggregates and tallies recompute then ("a SQL query computed
+// at revalidation time", §5) while reads stay CDN-served between writes.
 export const revalidate = 3600;
 
 // Behind the "catalog" tag so a catalog import (#18) refreshes every course page
@@ -65,7 +65,7 @@ const loadCourse = unstable_cache(
 
 // The whole-catalog prereq snapshot the Prerequisites/Unlocks graph is derived
 // from (issue #22). Shared across every course page and behind the same "catalog"
-// tag, so one import refreshes all prereq chips. Keyed with no arguments — it's
+// tag, so one import refreshes all prereq chips. Keyed with no arguments; it's
 // the same snapshot for every course; the per-course slice happens in-process via
 // buildCoursePrereqView.
 const loadPrereqRows = unstable_cache(
@@ -87,7 +87,7 @@ const loadOfferingTermCodes = unstable_cache(
 // Prerender every course page at build so the catalog is CDN-static from the
 // first request (§8). Unknown/new slugs still render on-demand (dynamicParams
 // defaults to true) and are cached under the same ISR window. If the DB is not
-// reachable at build — e.g. before Neon is provisioned — this falls back to no
+// reachable at build (e.g. before Neon is provisioned), this falls back to no
 // prerendered pages and pure on-demand ISR, exactly as the /courses index does.
 export async function generateStaticParams(): Promise<{ code: string }[]> {
   try {
@@ -112,11 +112,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { code } = await params;
   const course = await resolveCourse(code);
-  if (!course) return { title: "Course not found — AUReviews" };
+  if (!course) return { title: "Course not found | AUReviews" };
 
   const codeLabel = formatCourseCode(course.subject, course.number);
   return {
-    title: `${codeLabel} ${course.title} — AUReviews`,
+    title: `${codeLabel} ${course.title} | AUReviews`,
     description:
       formatCourseDescription(course.description) ??
       `Reviews and catalog details for ${codeLabel} ${course.title} at Auburn.`,
@@ -136,10 +136,10 @@ export default async function CoursePage({
   const credits = formatCreditHours(course.creditHours);
   const reviewHref = reviewFormHref(course.subject, course.number);
 
-  // The review side (§5, issue #25), read fresh each revalidation — never
+  // The review side (§5, issue #25), read fresh each revalidation, never
   // behind the "catalog" tag, so a submit/vote's revalidatePath recomputes it.
   // The headline aggregates are fixed course-wide and never mutate on the
-  // instructor filter (§5) — the filter is client-side display state only.
+  // instructor filter (§5); the filter is client-side display state only.
   const [aggregates, reviews, instructorStats, taughtInstructors] =
     await Promise.all([
       getCourseAggregates(course.id),
@@ -149,7 +149,7 @@ export default async function CoursePage({
     ]);
   const instructorRows = buildInstructorRows(taughtInstructors, instructorStats);
 
-  // Display-time rollup over the course's Offering history — never a stored
+  // Display-time rollup over the course's Offering history, never a stored
   // flag (§6, issue #23). Null (no ingested history) renders as no badge.
   const typicallyOffered = formatTypicallyOffered(
     await loadOfferingTermCodes(course.id),
@@ -229,7 +229,7 @@ export default async function CoursePage({
 // is verbatim from the last import; the prereq block now renders parsed
 // Prerequisites/Unlocks chips (issue #22, §6), falling back to verbatim prose
 // wherever the parse can't confidently structure a clause. When N = 0 the "No
-// reviews — write one" CTA is shown here too — Overview is the default tab, so
+// reviews yet, write one" CTA is shown here too: Overview is the default tab, so
 // §5's "the catalog page stands alone with the CTA" holds without the reader
 // first clicking into Reviews.
 function Overview({
@@ -271,7 +271,7 @@ function Overview({
 
 // Prerequisites (issue #22): the parsed requirement groups as clickable course
 // chips, verbatim prose wherever a clause couldn't be structured. Corequisites
-// share the parser and render under their own label. Nothing is ever dropped —
+// share the parser and render under their own label. Nothing is ever dropped;
 // an unparseable clause shows its original text (§6).
 function PrerequisitesCard({ view }: { view: CoursePrereqView }) {
   const prereqs = view.requirements.filter((r) => r.relation === "prerequisite");
@@ -356,7 +356,7 @@ function CourseChip({ chip }: { chip: PrereqChipView }) {
   );
 }
 
-// Unlocks (issue #22): the inverse of Prerequisites — the courses that require
+// Unlocks (issue #22): the inverse of Prerequisites, the courses that require
 // this one. Every entry is a course we carry, so every chip links. Omitted
 // entirely when this course unlocks nothing.
 function UnlocksCard({ unlocks }: { unlocks: UnlockChipView[] }) {
@@ -380,12 +380,12 @@ function UnlocksCard({ unlocks }: { unlocks: UnlockChipView[] }) {
   );
 }
 
-// The Reviews tab (issues #21/#25, §5): with N = 0, the "No reviews — write
+// The Reviews tab (issues #21/#25, §5): with N = 0, the "No reviews yet, write
 // one" CTA into the review form; otherwise the votable review list with
-// professor filter tabs (the per-professor rows feed the tabs only — the "By
+// professor filter tabs (the per-professor rows feed the tabs only; the "By
 // professor" ratings table was cut by maintainer decision). All data is
 // fetched server-side and handed to the client island, which only re-orders/
-// filters the same rows — the full list is in the static HTML, readable with
+// filters the same rows; the full list is in the static HTML, readable with
 // JS off.
 function ReviewsPanel({
   course,
@@ -410,7 +410,7 @@ function ReviewsPanel({
   );
 }
 
-// §5's N = 0 state: "the catalog page still stands alone with a 'No reviews —
+// §5's N = 0 state: "the catalog page still stands alone with a 'No reviews yet,
 // write one' CTA linking straight into the review form." Shared by both the
 // Overview (default) and Reviews tabs so a first visitor always meets it.
 function NoReviewsCta({
@@ -422,7 +422,7 @@ function NoReviewsCta({
 }) {
   return (
     <div className="no-reviews">
-      <strong>No reviews yet — write one</strong>
+      <strong>No reviews yet, write one</strong>
       <p>
         Be the first to review {formatCourseCode(course.subject, course.number)}.
         Your Auburn email verifies you and is never stored with the review.
@@ -434,18 +434,18 @@ function NoReviewsCta({
   );
 }
 
-// The course headline (§5): three separate metrics — never a composite — one
+// The course headline (§5): three separate metrics (never a composite), one
 // per row, equal weight, in Overall / Difficulty / Workload order (the
 // maintainer's chosen presentation over §5's hero-tile emphasis). Averages
 // are already run through the low-data gate before they get here
-// (`getCourseAggregates`), so a sub-threshold course shows "—" with its true
-// count. The headline is course-wide and fixed — the Reviews tab's instructor
+// (`getCourseAggregates`), so a sub-threshold course shows the no-data dash with its true
+// count. The headline is course-wide and fixed; the Reviews tab's instructor
 // filter never touches it.
 function Metrics({ aggregates }: { aggregates: CourseAggregates }) {
   const n = aggregates.reviewCount;
   const note =
     n === 0
-      ? "No reviews yet — be the first to write one."
+      ? "No reviews yet. Be the first to write one."
       : `Averages over ${n} ${n === 1 ? "review" : "reviews"}.`;
 
   return (
@@ -478,7 +478,7 @@ function MetricRow({
   return (
     <div className="stat-row">
       <span className="lbl">{label}</span>
-      <strong className={`val${value === "—" ? " muted" : ""}`}>
+      <strong className={`val${value === NO_DATA ? " muted" : ""}`}>
         {value}
         <small> {unit}</small>
       </strong>

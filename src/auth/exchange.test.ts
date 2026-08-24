@@ -53,7 +53,7 @@ describe("hashVerificationToken", () => {
   });
 });
 
-describe("exchangeCode — happy path", () => {
+describe("exchangeCode: happy path", () => {
   it("consumes the code via the adapter, mints a session, and resolves the identity hash", async () => {
     const adapter = fakeAdapter();
     const result = await exchangeCode({ email: EMAIL, code: CODE }, deps(adapter));
@@ -120,7 +120,7 @@ describe("exchangeCode — happy path", () => {
   });
 });
 
-describe("exchangeCode — rejections", () => {
+describe("exchangeCode: rejections", () => {
   it("returns the generic Verification failure for a wrong code and mints nothing", async () => {
     const adapter = fakeAdapter({ useVerificationToken: vi.fn(async () => null) });
     const result = await exchangeCode({ email: EMAIL, code: CODE }, deps(adapter));
@@ -162,7 +162,7 @@ describe("exchangeCode — rejections", () => {
   });
 });
 
-describe("sessionCookie — Auth.js's database-session cookie contract", () => {
+describe("sessionCookie: Auth.js's database-session cookie contract", () => {
   const expires = new Date(NOW.getTime() + 1000);
 
   it("is the unprefixed name with lax/httpOnly/path=/ over http", () => {
@@ -182,7 +182,7 @@ describe("sessionCookie — Auth.js's database-session cookie contract", () => {
   });
 });
 
-describe("secureCookiesFor — mirrors how Auth.js picks the cookie prefix", () => {
+describe("secureCookiesFor: mirrors how Auth.js picks the cookie prefix", () => {
   it("follows AUTH_URL's protocol when set", () => {
     expect(secureCookiesFor(new Headers(), { AUTH_URL: "https://aureviews.com" })).toBe(true);
     expect(secureCookiesFor(new Headers(), { AUTH_URL: "http://localhost:3000" })).toBe(false);

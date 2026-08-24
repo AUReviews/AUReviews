@@ -1,5 +1,5 @@
 /**
- * The Auburn address gate (v1-spec §7) — the pure, browser-safe half of the
+ * The Auburn address gate (v1-spec §7): the pure, browser-safe half of the
  * anonymity core. Split out of `anonymity.ts` (issue #47) so client
  * components can run the SAME domain check the server enforces without
  * dragging `node:crypto` into the bundle. `anonymity.ts` re-exports these, so
@@ -10,7 +10,7 @@
  * The ONE accepted domain (owner decision 2026-08-17, PR #48). Auburn's
  * `@tigermail.auburn.edu` is the same mailbox as `@auburn.edu` (an alias, see
  * research/edu-verification-auth.md), so accepting only the canonical form
- * loses nobody — and lets the sign-in fields show the domain as a single
+ * loses nobody, and lets the sign-in fields show the domain as a single
  * fixed suffix with no selector. Exported so those fields and this gate can
  * never disagree.
  */
@@ -19,7 +19,7 @@ export const AUBURN_DOMAIN = "auburn.edu";
 /**
  * Canonical form of an address for both the domain check and hashing: trimmed
  * and lower-cased. Auburn addresses carry no inner whitespace, so edge-trimming
- * plus lower-casing is the whole normalization — and it must be identical
+ * plus lower-casing is the whole normalization, and it must be identical
  * everywhere or the same person would hash to two different `identity_hash`es.
  */
 export function normalizeEmail(email: string): string {
@@ -27,7 +27,7 @@ export function normalizeEmail(email: string): string {
 }
 
 /**
- * True iff the address is a verified-Auburn-student address — the §7 gate,
+ * True iff the address is a verified-Auburn-student address: the §7 gate,
  * applied "before doing anything else." Matches on the domain as a whole label,
  * not a substring, so `auburn.edu.evil.com` and `notauburn.edu` are rejected.
  */
@@ -42,7 +42,7 @@ export function isAuburnStudentEmail(email: string): boolean {
 /**
  * What a user typed or pasted into the username-only sign-in field, resolved
  * (issue #47): the field shows `@auburn.edu` as a fixed suffix, so a FULL
- * address that lands in it — pasted, or browser-autofilled — is reduced to
+ * address that lands in it (pasted, or browser-autofilled) is reduced to
  * its username once the part after the @ is our domain. Anything else (an
  * "@" typed mid-way, some other domain) is left exactly as typed, so a
  * keystroke is never swallowed; the field simply isn't a valid username while

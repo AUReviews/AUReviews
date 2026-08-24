@@ -15,7 +15,7 @@ import {
   type SignInFormState,
 } from "@/app/signin/actions";
 
-// The email + sign-in-code block (issue #47) — ONE client component used by
+// The email + sign-in-code block (issue #47): ONE client component used by
 // both `/signin` and the review form, so there is exactly one code path for the
 // Auburn-domain gate, the rate-limit and send copy, and the error copy. It
 // renders the fields and the "Send code" control; the ENCLOSING form owns the
@@ -24,12 +24,12 @@ import {
 // rate-limit-gated `requestSignInCode` action from a plain button, so the
 // address, the draft around it, and the notice all stay on screen.
 //
-// The address on screen is the user's own live input — the server never echoes
+// The address on screen is the user's own live input; the server never echoes
 // it back (v1-spec §7).
 //
 // The domain is not typed (omscentral pattern, owner review 2026-08-17): the
 // user enters only their username, and `@auburn.edu` sits beside the field as
-// a fixed, static suffix (the one accepted domain — see AUBURN_DOMAIN). The
+// a fixed, static suffix (the one accepted domain; see AUBURN_DOMAIN). The
 // full address is assembled here and posted through a hidden `email` field.
 // "Send code" is not shown at all until something is typed; once it is, any
 // username makes a valid Auburn address.
@@ -40,7 +40,7 @@ export const RESEND_DELAY_MS = 30_000;
 
 /** Turn a sign-in-code error code into user copy. `Verification` is the ONE
  * message for wrong / expired / exhausted codes (issue #43: indistinguishable
- * from outside) — both the exchange and the Auth.js `?error=` fallback use it. */
+ * from outside); both the exchange and the Auth.js `?error=` fallback use it. */
 export function signInErrorMessage(code: string): string {
   switch (code) {
     case "domain":
@@ -49,7 +49,7 @@ export function signInErrorMessage(code: string): string {
     case "rate":
       return "Too many sign-in requests. Please wait an hour and try again.";
     case "Verification":
-      return "That code is invalid or has expired — request a new one.";
+      return "That code is invalid or has expired. Request a new one.";
     default:
       return "Something went wrong sending your code. Please try again in a moment.";
   }
@@ -87,7 +87,7 @@ export default function SignInCodeFields({
 }: SignInCodeFieldsProps) {
   const [local, setLocal] = useState("");
   const [code, setCode] = useState("");
-  // The assembled address — what is posted and what the send action gets.
+  // The assembled address: what is posted and what the send action gets.
   // Empty until the field holds a bare username: a half-typed "abc@tiger…"
   // must never be joined to the suffix (see isUsernameOnly).
   const usernameOnly = isUsernameOnly(local);
@@ -189,7 +189,7 @@ export default function SignInCodeFields({
         </div>
         {showSend && !usernameOnly && (
           <p className="code-hint">
-            Just your username — the Auburn domain is filled in on the right.
+            Just your username; the Auburn domain is filled in on the right.
           </p>
         )}
         {sendState.status === "error" && (

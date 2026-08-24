@@ -23,8 +23,8 @@ export type VoteResult =
 
 /**
  * Set or clear the signed-in viewer's helpful vote on a review (v1-spec
- * §4/§5/§10; issue #25). The client states the DESIRED end state — `up`,
- * `down`, or `null` to retract — making the write idempotent: a re-click or
+ * §4/§5/§10; issue #25). The client states the DESIRED end state (`up`,
+ * `down`, or `null` to retract), making the write idempotent: a re-click or
  * double-fire can't invert the intent the way a server-side toggle would.
  * Per-voter rows in `review_votes` are what make votes retractable and
  * flippable; one identity holds at most one live vote per review (the table's
@@ -39,7 +39,7 @@ export async function castReviewVote(
   const identityHash = await getCurrentIdentityHash();
   if (!identityHash) return { ok: false, error: "signin" };
 
-  // Re-validate the posted arguments — this is a public endpoint and the
+  // Re-validate the posted arguments; this is a public endpoint and the
   // typed signature doesn't survive a crafted POST. A malformed id is bounced
   // here rather than reaching Postgres as an invalid uuid cast.
   if (direction !== "up" && direction !== "down" && direction !== null) {

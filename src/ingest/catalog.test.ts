@@ -5,7 +5,7 @@ import { parseCatalogHtml, parseCreditHours } from "./catalog";
  * Fixture in the real CourseLeaf ("Courses of Instruction") markup the bulletin
  * serves (verified against a live fetch of the COMP page): one `.courseblock` div
  * per course, each a single `<p>` whose `<strong>` is the title line and whose
- * trailing text is the body — `LEC./LAB.` breakdowns, `Pr./Coreq.` prose (course
+ * trailing text is the body: `LEC./LAB.` breakdowns, `Pr./Coreq.` prose (course
  * codes as `<a>` links, separated by `&#160;`), and the description in one run.
  * The visible text is pasted verbatim from a live fetch / research/auburn-course-
  * data.md so the parser is exercised against real strings.
@@ -93,7 +93,7 @@ describe("parseCatalogHtml", () => {
     const rows = parseCatalogHtml(html);
     expect(rows).toHaveLength(1);
     expect(rows[0].title).toBe("COMPUTER ORGANIZATION & ASSEMBLY");
-    expect(rows[0].description).toBe("Registers & memory — a hands-on survey.");
+    expect(rows[0].description).toBe("Registers & memory \u2014 a hands-on survey.");
   });
 
   it("ignores non-course markup and returns an empty list for a page with no blocks", () => {

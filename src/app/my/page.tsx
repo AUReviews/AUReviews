@@ -17,7 +17,7 @@ import {
 } from "@/lib/my-activity";
 import { ContestRemoval, LiveReviewActions } from "./ReviewActions";
 
-// My Activity (v1-spec §11/§13; issue #26) — the signed-in author's one
+// My Activity (v1-spec §11/§13; issue #26): the signed-in author's one
 // pull-only page: their own reviews with helpful scores and edit/delete, any
 // REMOVED review with its reason and "Contest this removal", and the reviews
 // they've voted on. It is the ONLY place a takedown is surfaced (§11
@@ -26,10 +26,10 @@ import { ContestRemoval, LiveReviewActions } from "./ReviewActions";
 // model to function. Everything is resolved server-side from the session →
 // `identity_hash` (§7); the hash itself never reaches the client.
 //
-// Per-user and never cached — force-dynamic, like /signin and the review form.
+// Per-user and never cached: force-dynamic, like /signin and the review form.
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "My activity — AUReviews" };
+export const metadata: Metadata = { title: "My activity | AUReviews" };
 
 export default async function MyActivityPage() {
   const identityHash = await getCurrentIdentityHash();
@@ -64,7 +64,7 @@ export default async function MyActivityPage() {
         <h1>My activity</h1>
         <p className="lede">
           Your reviews and votes, tied to your verified Auburn email by a
-          non-reversible token — nobody else can see this page. If a review of
+          non-reversible token, so nobody else can see this page. If a review of
           yours is ever removed, this is where you&apos;ll find out why.
         </p>
 

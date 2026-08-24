@@ -4,24 +4,24 @@
  * Given one Banner import (section rows already collapsed to `(Course, Term)`
  * grain) and a snapshot of what we already know, decide which durable
  * Instructor identities to mint, which existing ones each row refers to, and
- * which offering/link rows to write. Like `crosswalk.ts`, this module is pure —
- * no framework, no persistence, no clock, ids from an injected minter — so the
+ * which offering/link rows to write. Like `crosswalk.ts`, this module is pure
+ * (no framework, no persistence, no clock, ids from an injected minter), so the
  * import-contract invariants are exhaustively unit-testable and the db layer
  * stays a thin shell.
  *
  * Identity rules (§3):
- * - An Instructor is keyed on Banner's stable person key where one exists —
- *   the Auburn NetID lifted from the schedule page's `mailto:` link — else on
+ * - An Instructor is keyed on Banner's stable person key where one exists
+ *   (the Auburn NetID lifted from the schedule page's `mailto:` link), else on
  *   the normalized display name.
  * - Display name is a mutable attribute (last-import-wins rename); identity is
  *   the durable {@link InstructorId} alone.
  * - An ambiguous match (a new Banner key colliding with an existing name, or a
  *   keyless name matching several instructors) surfaces as a *pending* admin
- *   decision — never auto-merged, mirroring the course crosswalk.
+ *   decision, never auto-merged, mirroring the course crosswalk.
  *
  * Import contract (ADR 0002): idempotent; offerings and instructor links are
  * catalog-side and re-derivable (links may be dropped when Banner drops them),
- * but a durable Instructor is never deleted — no such action even exists in
+ * but a durable Instructor is never deleted; no such action even exists in
  * the plan shape.
  */
 import {
@@ -41,7 +41,7 @@ export interface IncomingInstructor {
 }
 
 /** One Banner section row: course code + its instructor list. Sections are
- * deliberately not modeled (§3) — this shape exists only to be collapsed. */
+ * deliberately not modeled (§3); this shape exists only to be collapsed. */
 export interface IncomingSection {
   subject: string;
   number: string;
@@ -115,7 +115,7 @@ export interface OfferingKey {
   termCode: string;
 }
 
-/** The composite map/lookup key for an Offering — one definition shared by the
+/** The composite map/lookup key for an Offering: one definition shared by the
  * planner and the db layer so the two can never encode it differently. */
 export function offeringKey(courseId: CourseId, termCode: string): string {
   return `${courseId} ${termCode}`;
@@ -142,9 +142,9 @@ export interface OfferingsPlan {
   offeringCreates: OfferingKey[];
   linkAdds: OfferingLink[];
   /** Links whose instructor Banner no longer lists for that (course, term).
-   * Catalog-side and re-derivable — the Instructor itself is never deleted. */
+   * Catalog-side and re-derivable; the Instructor itself is never deleted. */
   linkRemovals: OfferingLink[];
-  /** Banner course keys with no crosswalk mapping — skipped, never guessed. */
+  /** Banner course keys with no crosswalk mapping: skipped, never guessed. */
   unmatchedCatalogKeys: string[];
 }
 
@@ -288,7 +288,7 @@ export function planOfferings(
 
         // A new Banner key whose name matches existing instructor(s): possibly
         // the same person finally exposing a key, possibly a namesake. Never
-        // auto-merged — surface for an admin (ADR 0002 philosophy).
+        // auto-merged; surface for an admin (ADR 0002 philosophy).
         const nameMatches = byNameKey.get(nameKey) ?? [];
         if (nameMatches.length > 0) {
           queuePending(incoming, nameKey, nameMatches, firstSeen);
@@ -341,7 +341,7 @@ export function planOfferings(
     if (!courseId) {
       // Banner knows a course the crosswalk doesn't (e.g. long-retired, never
       // in the current bulletin). Minting a Course from Banner alone would
-      // bypass the crosswalk — report and skip instead.
+      // bypass the crosswalk; report and skip instead.
       if (!unmatchedReported.has(row.catalogKey)) {
         unmatchedReported.add(row.catalogKey);
         plan.unmatchedCatalogKeys.push(row.catalogKey);
@@ -373,7 +373,7 @@ export function planOfferings(
       }
     }
 
-    // Only offerings present in THIS import may shed links — Banner is
+    // Only offerings present in THIS import may shed links; Banner is
     // authoritative for the terms it was asked about, nothing else.
     for (const instructorId of linkedBefore) {
       if (!linkedNow.has(instructorId)) {
