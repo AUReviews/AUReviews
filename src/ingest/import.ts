@@ -1,10 +1,10 @@
 /**
- * Ingest orchestrator (issue #18) — the glue that runs one COMP catalog import.
+ * Ingest orchestrator (issue #18): the glue that runs one COMP catalog import.
  *
  * fetch bulletin HTML → parse rows (ingest/catalog) → resolve against a snapshot
  * (domain/crosswalk) → apply the plan. Every side-effecting edge (network, DB
- * reads, DB writes) is injected as a dependency so the whole pipeline — including
- * idempotency and retire-not-delete — is testable without a live bulletin or a
+ * reads, DB writes) is injected as a dependency so the whole pipeline, including
+ * idempotency and retire-not-delete, is testable without a live bulletin or a
  * real Postgres. The real edges are wired in `run.ts`.
  *
  * The seam direction holds: ingest imports the domain, never the reverse
@@ -34,7 +34,7 @@ export function resolveCatalogYear(
   return env.AUBURN_CATALOG_YEAR || DEFAULT_CATALOG_YEAR;
 }
 
-/** Injected side-effecting edges — real ones in run.ts, fakes in tests. */
+/** Injected side-effecting edges: real ones in run.ts, fakes in tests. */
 export interface IngestDeps {
   /** Fetch the COMP catalog page HTML. */
   fetchHtml: () => Promise<string>;

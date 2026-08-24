@@ -2,7 +2,7 @@
  * Custom Auth.js adapter (issue #19, v1-spec §7).
  *
  * A stock adapter stores the user's email in a `users` row and hands it back in
- * the session — exactly what the anonymity architecture forbids. This adapter
+ * the session, exactly what the anonymity architecture forbids. This adapter
  * inverts that: the moment an address is known (createUser / getUserByEmail /
  * updateUser) it is folded into `identity_hash = HMAC(PEPPER, normalize(email))`
  * and only the hash is persisted (in `identities`). The email is never at rest
@@ -10,7 +10,7 @@
  * identifier (issue #43), so even the transient token row carries no address.
  *
  * The `AdapterUser` type demands an `email` field, so we return the empty string
- * for it everywhere — no read path ever exposes the real address, and the
+ * for it everywhere; no read path ever exposes the real address, and the
  * `session` callback (see ./index.ts) strips even that. Server code that needs to
  * attribute a write resolves the session to `identity_hash` via ./session.ts,
  * never through this synthetic user object.
@@ -32,7 +32,7 @@ function hashTokenIdentifier(identifier: string): string {
   return computeIdentityHash(getPepper(), identifier);
 }
 
-/** Shape returned for every user read/write. The email is deliberately blanked —
+/** Shape returned for every user read/write. The email is deliberately blanked;
  * we hold only the hash, and this object never reaches the client. */
 function toAdapterUser(row: {
   id: string;
@@ -85,7 +85,7 @@ export function createHashingAdapter(): Adapter {
         .where(eq(identities.identityHash, identityHash))
         .limit(1);
       if (!row) return null;
-      // Echo the caller's address back — Auth.js needs it to run the signIn
+      // Echo the caller's address back; Auth.js needs it to run the signIn
       // domain re-check when a RETURNING user requests a new link (otherwise a
       // blanked email fails the check and throws AccessDenied). This address is
       // the method's own input, used transiently server-side; it is never stored
@@ -94,7 +94,7 @@ export function createHashingAdapter(): Adapter {
       return { id: row.id, email, emailVerified: row.verifiedAt };
     },
 
-    // No OAuth accounts in v1 — the email provider never links one.
+    // No OAuth accounts in v1; the email provider never links one.
     async getUserByAccount() {
       return null;
     },
@@ -204,12 +204,12 @@ export function createHashingAdapter(): Adapter {
         .returning();
       if (match) {
         // Auth.js compares the returned identifier against its email param and
-        // then builds the user from it — hand back the caller's raw address.
+        // then builds the user from it, so hand back the caller's raw address.
         return { identifier, token: match.token, expires: match.expires };
       }
       // Wrong code: count the guess against the address's live token (if any),
       // atomically, and invalidate it once the cap is reached (issue #43). The
-      // caller sees only null either way — wrong, expired, and exhausted are
+      // caller sees only null either way; wrong, expired, and exhausted are
       // indistinguishable from outside.
       const [counted] = await db
         .update(verificationTokens)

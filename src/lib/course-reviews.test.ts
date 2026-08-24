@@ -126,7 +126,7 @@ describe("sortCourseReviews", () => {
     helpfulDown: 12,
   });
 
-  it("ranks by Wilson lower bound under 'helpful' — evidence beats ratio", () => {
+  it("ranks by Wilson lower bound under 'helpful': evidence beats ratio", () => {
     expect(sortCourseReviews([newer, sunk, older], "helpful").map((r) => r.id)).toEqual(
       ["older", "newer", "sunk"],
     );
@@ -183,7 +183,7 @@ describe("buildInstructorRows", () => {
     const beth = rows.find((r) => r.id === "i-b")!;
     expect(beth.reviewCount).toBe(2);
     expect(beth.overall).toBe(4.5);
-    // Al taught but has no reviews — an honest zero row with no averages.
+    // Al taught but has no reviews: an honest zero row with no averages.
     const al = rows.find((r) => r.id === "i-a")!;
     expect(al.reviewCount).toBe(0);
     expect(al.overall).toBeNull();

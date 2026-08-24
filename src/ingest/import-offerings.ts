@@ -1,11 +1,11 @@
 /**
- * Offerings ingest orchestrator (issue #23) — the glue that runs one full
+ * Offerings ingest orchestrator (issue #23): the glue that runs one full
  * Banner import: fetch the live term dropdown → for each ingestible term
  * (Fall 2007 onward), fetch that term's COMP schedule and collapse its
  * sections to `(Course, Term)` rows → resolve everything against a snapshot
  * (domain/offerings) → apply the plan. Like the catalog import, every
- * side-effecting edge is injected so the pipeline — idempotency, pending
- * flags, never-delete-an-Instructor — is testable without live Banner or
+ * side-effecting edge is injected so the pipeline (idempotency, pending
+ * flags, never-delete-an-Instructor) is testable without live Banner or
  * Postgres. Real edges are wired in `run-offerings.ts`.
  *
  * The term list is read from the live dropdown on every run rather than
@@ -22,7 +22,7 @@ import {
 } from "@/domain";
 import { parseBannerSchedule, parseTermOptions } from "./banner";
 
-/** Injected side-effecting edges — real ones in run-offerings.ts, fakes in tests. */
+/** Injected side-effecting edges: real ones in run-offerings.ts, fakes in tests. */
 export interface OfferingsIngestDeps {
   /** Fetch the Banner term-dropdown page HTML. */
   fetchTermListHtml: () => Promise<string>;
@@ -44,7 +44,7 @@ export interface OfferingsIngestSummary {
   pending: number;
   linksAdded: number;
   linksRemoved: number;
-  /** Banner course keys with no crosswalk mapping — skipped, for review. */
+  /** Banner course keys with no crosswalk mapping: skipped, for review. */
   unmatchedCatalogKeys: string[];
 }
 
@@ -55,7 +55,7 @@ export async function runOfferingsIngest(
   const termCodes = parseTermOptions(await deps.fetchTermListHtml())
     .map((o) => o.code)
     .filter(isIngestibleTermCode)
-    .sort(); // chronological — fixed-width numeric codes sort correctly
+    .sort(); // chronological; fixed-width numeric codes sort correctly
 
   const rows: IncomingOffering[] = [];
   for (const termCode of termCodes) {

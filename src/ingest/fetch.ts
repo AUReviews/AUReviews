@@ -4,9 +4,9 @@
  * The one place ingest actually touches the wire, kept out of the orchestrators
  * so they stay network-free and testable.
  *
- * Bulletin: the full COMP catalog is a single server-rendered page — one polite
+ * Bulletin: the full COMP catalog is a single server-rendered page, one polite
  * GET covers the whole import. Banner 8 (`ssbprod.auburn.edu`, public,
- * no-login, no robots.txt — scrape politely per §9): the term dropdown is one
+ * no-login, no robots.txt; scrape politely per §9): the term dropdown is one
  * GET, and each term's full COMP section listing is one POST to the schedule
  * search, so a complete Fall-2007-to-present import is ~60 requests, spaced by
  * a courtesy delay.
@@ -14,12 +14,12 @@
 import { COMP_CATALOG_URL } from "./import";
 
 const BANNER_BASE_URL = "https://ssbprod.auburn.edu/pls/PROD";
-/** The term dropdown — source of the validated `YYYYT0` codes. */
+/** The term dropdown: source of the validated `YYYYT0` codes. */
 export const BANNER_TERM_LIST_URL = `${BANNER_BASE_URL}/bwckschd.p_disp_dyn_sched`;
 /** The class-schedule search one term's listing is POSTed to. */
 export const BANNER_SCHEDULE_URL = `${BANNER_BASE_URL}/bwckschd.p_get_crse_unsec`;
 
-/** Pause between Banner requests — unhurried by design (§9). */
+/** Pause between Banner requests, unhurried by design (§9). */
 const BANNER_REQUEST_DELAY_MS = 500;
 
 /** Transient-failure retries for Banner. A full-history run is ~60 sequential

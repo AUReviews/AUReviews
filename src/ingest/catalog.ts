@@ -6,7 +6,7 @@
  * page is server-rendered HTML (not JS-gated) with one `.courseblock` div per
  * course, each holding a single `<p>`: the title line is bold
  * (`<strong>COMP 2210 FUNDAMENTALS OF COMPUTING II (4) </strong>`) and everything
- * after the `</strong>` is the body — `LEC./LAB.` credit breakdowns, `Pr./Coreq.`
+ * after the `</strong>` is the body: `LEC./LAB.` credit breakdowns, `Pr./Coreq.`
  * prerequisite prose (course codes rendered as `<a>` links), and the description,
  * all in one run of text. Verified against a live fetch of the COMP page.
  *
@@ -14,7 +14,7 @@
  * DOM. The whole course body is kept as the description losslessly, so the fully
  * verbatim prose (prereqs included) is always retained. `prereqText` is a
  * convenience field lifting each `Pr.`/`Coreq.` clause out verbatim per-clause
- * (joined by a space when a course has several) — structured `Pr.` parsing is a
+ * (joined by a space when a course has several); structured `Pr.` parsing is a
  * separate ticket (§9).
  */
 
@@ -23,7 +23,7 @@ import { toText } from "./html";
 
 /**
  * A raw catalog row as scraped from one bulletin course block. Structurally the
- * domain's {@link IncomingCourse} — aliased, not re-declared, so the parser's
+ * domain's {@link IncomingCourse}, aliased, not re-declared, so the parser's
  * output and the crosswalk planner's input can never silently drift apart.
  */
 export type RawCatalogRow = IncomingCourse;

@@ -9,6 +9,7 @@ import {
   DEFAULT_SORT,
   formatAverage,
   formatReviewCount,
+  NO_DATA,
   sortBrowseCourses,
 } from "@/lib/browse";
 import { courseHref, formatCourseCode } from "@/lib/course-detail";
@@ -16,7 +17,7 @@ import { courseHref, formatCourseCode } from "@/lib/course-detail";
 // The click-to-sort catalog table (issue #20, §5). The full row set is rendered
 // server-side in catalog order (so the static/ISR HTML is already correct and
 // works with JS off); this island only re-orders that same set in the browser
-// when a header is clicked — no network round trip, no leaderboard default.
+// when a header is clicked: no network round trip, no leaderboard default.
 
 interface Column {
   key: SortKey;
@@ -137,5 +138,5 @@ function ColumnHeader({
 
 function RatingCell({ value }: { value: number | null }) {
   const text = formatAverage(value);
-  return <td className={`numeric${text === "—" ? " muted" : ""}`}>{text}</td>;
+  return <td className={`numeric${text === NO_DATA ? " muted" : ""}`}>{text}</td>;
 }

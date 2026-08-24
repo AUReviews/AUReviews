@@ -25,12 +25,12 @@ const config = [
               target: "./src/domain",
               from: "./src/ingest",
               message:
-                "Domain must not import ingest — the seam is one-way (ingest -> domain). See ADR 0002.",
+                "Domain must not import ingest; the seam is one-way (ingest -> domain). See ADR 0002.",
             },
             {
               target: "./src/domain",
               from: "./src/db",
-              message: "Domain must stay persistence-agnostic — no db/ imports.",
+              message: "Domain must stay persistence-agnostic: no db/ imports.",
             },
             {
               target: "./src/domain",
@@ -55,7 +55,7 @@ const config = [
                 "@neondatabase/*",
               ],
               message:
-                "The domain layer must stay pure — no framework or DB imports.",
+                "The domain layer must stay pure: no framework or DB imports.",
             },
           ],
         },

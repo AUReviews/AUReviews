@@ -15,7 +15,7 @@ hover styles, driven by a `DCLogic` subclass and the proprietary `support.js`
 runtime (which itself needs `window.React` / `window.ReactDOM`).
 
 `index.html` reproduces the same visuals and behavior with **no runtime
-dependency** — inline styles became CSS classes (with real `:hover` rules), and
+dependency**: inline styles became CSS classes (with real `:hover` rules), and
 the `DCLogic` state machine became a small vanilla-JS module. Behavior kept 1:1:
 
 - Views: landing / list / course / add (routed by `data-active`)

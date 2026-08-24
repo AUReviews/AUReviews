@@ -1,12 +1,12 @@
 /**
- * "Report this review" rules (v1-spec §11/§12; issue #27) — the pure core
+ * "Report this review" rules (v1-spec §11/§12; issue #27): the pure core
  * behind the per-review, post-publish moderation surface (§11.B): a reader
  * picks one of the guideline categories below and optionally says more. It is
  * pull-based: the operator acts only when a report arrives (§11.B "never
  * proactively scans"). Bugs and feature requests go to GitHub issues instead
- * (footer links) — there is no site-side general-concern form in v1.
+ * (footer links); there is no site-side general-concern form in v1.
  *
- * Every option offered here is deliberately neutral and descriptive — the
+ * Every option offered here is deliberately neutral and descriptive; the
  * site must never supply an accusatory prompt (§10, the *Roommates.com*
  * material-contribution line); any substantive claim originates in the
  * reader's free text.
@@ -44,7 +44,7 @@ export type ReviewReportResult =
 
 /**
  * Validate a "Report this review" submission. `details` is optional for every
- * guideline category but required for `other` — a bare "something else" gives
+ * guideline category but required for `other`; a bare "something else" gives
  * the operator nothing to act on.
  */
 export function validateReviewReport(input: {

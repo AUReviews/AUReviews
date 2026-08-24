@@ -1,8 +1,8 @@
 /**
  * Catalog ingest entrypoint (issue #18).
  *
- * Wires the real edges — a live bulletin fetch and the Neon-backed catalog layer
- * — into the pure orchestrator, then runs one COMP import and logs a summary.
+ * Wires the real edges (a live bulletin fetch and the Neon-backed catalog layer)
+ * into the pure orchestrator, then runs one COMP import and logs a summary.
  * Safe to re-run: the import is idempotent and only ever touches catalog-side
  * Course/crosswalk state, never a Review (ADR 0002).
  *
@@ -20,7 +20,7 @@ import { resolveCatalogYear, runIngest } from "./import";
 try {
   process.loadEnvFile(".env.local");
 } catch {
-  // No .env.local — rely on the ambient environment.
+  // No .env.local; rely on the ambient environment.
 }
 
 async function main(): Promise<void> {
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
   if (summary.pending > 0) {
     console.log(
       `${summary.pending} ambiguous crosswalk row(s) await an admin decision ` +
-        `(crosswalk_pending) — none were auto-applied.`,
+        `(crosswalk_pending); none were auto-applied.`,
     );
   }
 }

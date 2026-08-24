@@ -9,13 +9,13 @@ the spec was written.
 ## Admin dashboard (design-of-record: prototype #15)
 
 - **It reads `review_reports`.** The table shipped in #27 (migration
-  `0006_review_reports`): one row per "Report this review" submission —
+  `0006_review_reports`): one row per "Report this review" submission,
   `review_id`, neutral `reason`, optional `details`, nullable
   `reporter_identity_hash`, `created_at`. The dashboard's reported-reviews
   queue is a view over this table; no new capture is needed.
 - **Takedown = soft delete.** Sets `reviews.status = 'removed'`; the row
   stays. `review_reports` cascades only on a *hard* delete, which v1 never
-  does — if the §11 tombstone purge is ever implemented as a hard `DELETE`,
+  does; if the §11 tombstone purge is ever implemented as a hard `DELETE`,
   decide then whether report history should survive it.
 - **The email push (§12) can stay or go** once the dashboard exists. Today it
   is the only notification channel (`OPERATOR_EMAIL`, via Resend); with a

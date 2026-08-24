@@ -9,7 +9,7 @@
 -- Both are 🔴 attorney-confirm (§10) before this runs on a schedule.
 --
 -- Two statements: first drop the helpful votes on rows about to be purged
--- (votes are per-voter identity rows — part of the content trail, not the
+-- (votes are per-voter identity rows, part of the content trail, not the
 -- tombstone), then strip the rows themselves.
 DELETE FROM review_votes
 WHERE review_id IN (

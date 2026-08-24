@@ -1,7 +1,7 @@
 /**
  * Drift guard for the code exchange (issue #47, ADR 0003).
  *
- * `exchange.ts` reproduces two Auth.js internals — the verification-token hash
+ * `exchange.ts` reproduces two Auth.js internals, the verification-token hash
  * and the session-cookie contract. This test pins both against the REAL
  * library, end to end:
  *   1. mint a code through the real `signIn("resend")` path (Auth.js hashes and
@@ -10,7 +10,7 @@
  *   2. exchange it through OUR `exchangeCodeForSession` (which must compute
  *      the same hash to find the token, then set the cookie),
  *   3. read the session back through the REAL Auth.js session route using
- *      only that cookie — the same route `useSession` in the header polls.
+ *      only that cookie, the same route `useSession` in the header polls.
  * If Auth.js changes its token hashing or cookie naming, step 2 or 3 fails
  * here, loudly, instead of every sign-in silently breaking in production.
  *
@@ -184,8 +184,8 @@ describe("exchange ↔ Auth.js round trip", () => {
     const [session] = sessions.values();
     expect(cookie!.value).toBe(session.sessionToken);
 
-    // 4. Auth.js's own session route accepts it — the header's useSession would
-    //    flip to "authenticated" — and exposes nothing identifying.
+    // 4. Auth.js's own session route accepts it (the header's useSession would
+    //    flip to "authenticated") and exposes nothing identifying.
     const { status, body } = await readSessionViaAuthJs(
       `authjs.session-token=${cookie!.value}`,
     );

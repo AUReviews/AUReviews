@@ -5,10 +5,10 @@ import { defineConfig } from "drizzle-kit";
 try {
   process.loadEnvFile(".env.local");
 } catch {
-  // No .env.local — rely on the ambient environment (Vercel/CI/exported vars).
+  // No .env.local; rely on the ambient environment (Vercel/CI/exported vars).
 }
 
-// Migrations run against the DIRECT (non-pooled) Neon endpoint — see §8 of
+// Migrations run against the DIRECT (non-pooled) Neon endpoint; see §8 of
 // docs/v1-spec.md. The application/Auth.js path uses the POOLED endpoint
 // (DATABASE_URL) at runtime; schema changes must not go through PgBouncer.
 const databaseUrlUnpooled = process.env.DATABASE_URL_UNPOOLED;

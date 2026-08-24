@@ -3,7 +3,7 @@
  *
  * The door's hard-block term list: dehumanizing slurs keyed to a protected
  * characteristic (race, ethnicity, religion, sexual orientation, gender
- * identity, disability). It is deliberately SHORT and unambiguous — the door
+ * identity, disability). It is deliberately SHORT and unambiguous; the door
  * only catches what can be caught reliably with zero operator review (§11.A);
  * everything subtler (coded language, targeted-but-clean abuse) publishes and is
  * handled reactively by report → takedown (§11.B). Profanity is intentionally

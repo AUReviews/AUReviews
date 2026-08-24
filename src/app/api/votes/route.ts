@@ -7,7 +7,7 @@ import { listViewerVotes } from "@/db/queries";
  * The signed-in viewer's helpful votes on one course's reviews (issue #25):
  * `GET /api/votes?course=<courseId>` → `{ signedIn, votes: { [reviewId]:
  * "up" | "down" } }`. Course pages are shared CDN-static HTML (§8), so
- * per-viewer vote state can never bake into them — the reviews island fetches
+ * per-viewer vote state can never bake into them; the reviews island fetches
  * it here after mount instead. Only vote *directions* keyed by review id ever
  * leave the server; the identity hash resolving them does not (§7).
  */

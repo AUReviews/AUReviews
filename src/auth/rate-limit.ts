@@ -2,12 +2,12 @@
  * Email-send rate limiting (v1-spec §7, research §5).
  *
  * Two parts, kept separate so the policy is unit-testable without a database:
- *   - `evaluateSendRateLimit` — the pure decision over already-counted hits.
- *   - `checkAndRecordSend` — the DB-backed gate that counts the trailing window
+ *   - `evaluateSendRateLimit`: the pure decision over already-counted hits.
+ *   - `checkAndRecordSend`: the DB-backed gate that counts the trailing window
  *     of `email_send_log`, evaluates, and (on allow) records the attempt.
  *
  * The gate is called from the sign-in server action BEFORE `signIn` runs, so a
- * throttled request never reaches token issuance — it can't rotate a victim's
+ * throttled request never reaches token issuance, so it can't rotate a victim's
  * live sign-in code (v1-spec §7: "one live verification token per address").
  *
  * Addresses are logged as a keyed hash, never plaintext (v1-spec §7): the same
@@ -126,7 +126,7 @@ export async function checkAndRecordSend(input: {
  * Per-IP ceiling on "Report this review" submissions (issue #27). A report is
  * an email send too (it pushes to the operator inbox, §12), so it is logged
  * in the same `email_send_log` under a fixed sentinel "address" and counted
- * against the same global/day ceiling that protects the Resend quota —
+ * against the same global/day ceiling that protects the Resend quota;
  * otherwise a script could burn the day's quota and lock every real student
  * out of sign-in codes. There is no per-address cap here: the sentinel is
  * shared by every reporter, so only the IP and global limits apply.

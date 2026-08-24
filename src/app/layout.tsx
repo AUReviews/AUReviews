@@ -20,9 +20,9 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "AUReviews — Auburn CSSE Course Reviews",
+  title: "AUReviews: Auburn CSSE Course Reviews",
   description:
-    "Anonymous, verified reviews of Auburn's COMP catalog. Independent and student-run — not affiliated with Auburn University.",
+    "Anonymous, verified reviews of Auburn's COMP catalog. Independent and student-run, not affiliated with Auburn University.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

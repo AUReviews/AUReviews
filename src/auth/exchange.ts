@@ -1,20 +1,20 @@
 /**
  * The sign-in code exchange (issue #47, ADR 0003): turn a typed 6-digit code
- * plus its address into a session — server-side, in-process, with NO
+ * plus its address into a session: server-side, in-process, with NO
  * navigation. This is a server-only module, not an HTTP endpoint: it adds zero
  * public surface. Both `/signin`'s verify action and `submitReview` call it, so
  * a review can be posted and the author signed in inside one server action.
  *
- * Auth.js remains the auth system — it still mints and hashes the token
+ * Auth.js remains the auth system; it still mints and hashes the token
  * (`signIn("resend")` → `sendToken`), owns the session strategy, `signOut`,
  * `useSession`, and the `/api/auth/*` handlers. Only this exchange step is
  * ours, and it deliberately reproduces two Auth.js internals so its output is
  * indistinguishable from a callback-route sign-in:
- *   1. the verification-token hash — `sha256(token + secret)`, hex — so the
+ *   1. the verification-token hash, `sha256(token + secret)` as hex, so the
  *      adapter lookup matches what `sendToken` stored;
- *   2. the session cookie contract — `authjs.session-token` (dev) /
+ *   2. the session cookie contract: `authjs.session-token` (dev) /
  *      `__Secure-authjs.session-token` (https), httpOnly, sameSite=lax, path=/,
- *      expiring with the session — so `useSession` and the session route see it.
+ *      expiring with the session, so `useSession` and the session route see it.
  * Both are pinned by `exchange.roundtrip.test.ts`, which mints a code through
  * the REAL `signIn("resend")` path and reads the resulting session back through
  * the REAL Auth.js session route: if Auth.js ever changes either contract, that
@@ -22,7 +22,7 @@
  *
  * Everything else stays with the adapter (./adapter.ts): single-use
  * delete-and-return, the 5-attempt cap, the peppered token identifier, and the
- * hash-only identity — none of that is duplicated here.
+ * hash-only identity; none of that is duplicated here.
  */
 import { createHash, randomUUID } from "node:crypto";
 import { cookies, headers } from "next/headers";
@@ -42,7 +42,7 @@ export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 /** Why an exchange failed. `Verification` is deliberately the one bucket for
  * wrong, expired, and exhausted codes (issue #43: indistinguishable from
  * outside) and matches the error code Auth.js itself redirects with, so the
- * shared sign-in copy map covers both paths. `domain` is not secret — the send
+ * shared sign-in copy map covers both paths. `domain` is not secret; the send
  * step already refuses such addresses with the same message. */
 export type ExchangeFailure = "domain" | "Verification";
 
@@ -59,13 +59,13 @@ export function hashVerificationToken(token: string, secret: string): string {
 
 /** The Auth.js database-session cookie name, by whether the site runs over
  * https (`@auth/core` `defaultCookies`): unprefixed in dev, `__Secure-` in
- * production. The ONE definition — ./session.ts reads by these names, this
+ * production. The ONE definition: ./session.ts reads by these names, this
  * module writes by them, and the round-trip test pins them to Auth.js. */
 export function sessionCookieName(secure: boolean): string {
   return `${secure ? "__Secure-" : ""}authjs.session-token`;
 }
 
-/** What the user types plus where the code was sent — the input to every
+/** What the user types plus where the code was sent: the input to every
  * exchange call site (the /signin verify action, the review Post action). */
 export interface SignInCodeInput {
   email: string;
@@ -101,7 +101,7 @@ export function sessionCookie(
  * Whether Auth.js would use the `__Secure-` cookie prefix for this request:
  * it keys off the request URL's protocol, which next-auth derives from
  * `AUTH_URL`/`NEXTAUTH_URL` when set and otherwise from `x-forwarded-proto`
- * (defaulting to https) — mirrored from `@auth/core`'s `createActionURL`.
+ * (defaulting to https), mirrored from `@auth/core`'s `createActionURL`.
  */
 export function secureCookiesFor(
   requestHeaders: Headers,
@@ -117,7 +117,7 @@ export function secureCookiesFor(
  * the contract without a database or a request. */
 export interface ExchangeDeps {
   adapter: Adapter;
-  /** `AUTH_SECRET` — the token-hash secret Auth.js used when minting. */
+  /** `AUTH_SECRET`: the token-hash secret Auth.js used when minting. */
   secret: string;
   now?: () => Date;
   /** Auth.js's default `generateSessionToken` is `crypto.randomUUID`. */
@@ -144,19 +144,19 @@ export async function exchangeCode(
     generateSessionToken = randomUUID,
   } = deps;
 
-  // 1. The Auburn gate — the same check the signIn callback applies on send.
+  // 1. The Auburn gate: the same check the signIn callback applies on send.
   const email = normalizeEmail(input.email);
   if (!isAuburnStudentEmail(email)) return { ok: false, reason: "domain" };
 
   // 2. Shape: six digits (the grouped "123 456" display form is accepted). A
   //    malformed guess is rejected here without spending one of the adapter's
-  //    counted attempts — it can't be a real code, so nothing is learned.
+  //    counted attempts; it can't be a real code, so nothing is learned.
   const code = input.code.replace(/\D/g, "");
   if (code.length !== 6) return { ok: false, reason: "Verification" };
 
   // 3. Look the code up exactly as the Auth.js callback route does. The adapter
   //    is single-use (delete-and-return) and enforces the attempt cap; a miss
-  //    of any kind is null. An expired-but-present token is a miss too — it
+  //    of any kind is null. An expired-but-present token is a miss too; it
   //    has already been consumed by the lookup, as in Auth.js.
   const token = await adapter.useVerificationToken!({
     identifier: email,
@@ -166,7 +166,7 @@ export async function exchangeCode(
     return { ok: false, reason: "Verification" };
   }
 
-  // 4. Resolve or create the identity — hash-only, via the adapter — the same
+  // 4. Resolve or create the identity (hash-only, via the adapter), the same
   //    order Auth.js's `handleLoginOrRegister` follows for the email provider.
   const existing = await adapter.getUserByEmail!(email);
   const user =
@@ -203,7 +203,7 @@ function authSecret(): string {
 /**
  * Exchange a typed sign-in code for a session in the CURRENT request: on
  * success the session cookie is set on the response (the caller is then free
- * to redirect or to keep going — e.g. insert the review — with the user signed
+ * to redirect or to keep going (e.g. insert the review) with the user signed
  * in), and the author's `identity_hash` is returned. On failure nothing is
  * written and the caller gets the reason to render; no navigation happens.
  * Safe to call from Server Actions only (it writes a cookie).

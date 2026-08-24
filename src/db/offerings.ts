@@ -16,7 +16,7 @@ import {
 } from "./schema";
 
 /**
- * DB offerings layer (issue #23) — the thin, mechanical shell around the pure
+ * DB offerings layer (issue #23): the thin, mechanical shell around the pure
  * offerings planner, exactly like `catalog.ts` around the crosswalk planner.
  * `loadOfferingsSnapshot` reads current offering-side state;
  * `applyOfferingsPlan` writes an {@link OfferingsPlan} back. All invariants
@@ -113,7 +113,7 @@ export async function applyOfferingsPlan(plan: OfferingsPlan): Promise<void> {
 
   for (const rename of plan.instructorRenames) {
     // Display name is a mutable attribute, last-import-wins (§3); the durable
-    // id — and every offering link and future review pointing at it — holds.
+    // id (and every offering link and future review pointing at it) holds.
     await db
       .update(instructors)
       .set({ displayName: rename.displayName, updatedAt: now })

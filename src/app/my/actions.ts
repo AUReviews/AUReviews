@@ -42,7 +42,7 @@ export async function deleteMyReview(reviewId: string): Promise<ActivityResult> 
 
 /**
  * "Contest this removal" (v1-spec §11; issue #26): flip `contested=true` on
- * the author's own removed review. Nothing else happens here — the operator
+ * the author's own removed review. Nothing else happens here; the operator
  * resolves it by hand (§12, runbook/contest-resolve.sql). Pressing it twice is
  * harmless: the second call matches no row and reports `unknown`.
  */

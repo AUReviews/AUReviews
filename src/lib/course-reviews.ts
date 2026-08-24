@@ -1,12 +1,12 @@
 /**
- * Course-page review presentation logic (v1-spec §5; issue #25) — pure,
+ * Course-page review presentation logic (v1-spec §5; issue #25): pure,
  * framework- and DB-free, following the same split as `browse.ts`: the `db`
  * layer supplies rows, the course page renders them, and every ordering and
  * formatting decision lives here where it is unit-testable.
  *
  * Two §5 rules are centralized in this module:
- *  - the review list's sort options (helpful — the Wilson ranking that sinks
- *    low-quality reviews — plus newest and term; no recency decay anywhere);
+ *  - the review list's sort options (helpful, the Wilson ranking that sinks
+ *    low-quality reviews, plus newest and term; no recency decay anywhere);
  *  - the low-data gate applied to each per-instructor row via
  *    `gateAverages` (the same gate the course headline and browse rows use).
  */
@@ -55,7 +55,7 @@ export function instructorLabel(
 }
 
 /** A review's term as its human label (`Spring 2026`); the raw code if somehow
- * unparseable — shown rather than dropped, since data is never hidden (§5). */
+ * unparseable, shown rather than dropped, since data is never hidden (§5). */
 export function formatReviewTerm(termCode: string): string {
   const term = parseTermCode(termCode);
   return term ? formatTerm(term) : termCode;
@@ -66,7 +66,7 @@ const MONTHS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-/** Posted-date stamp: `Aug 2026`. Month granularity — precise enough to date a
+/** Posted-date stamp: `Aug 2026`. Month granularity: precise enough to date a
  * review, coarse enough not to fingerprint its author. UTC so the server and
  * any client re-render agree. */
 export function formatReviewDate(date: Date): string {
@@ -97,14 +97,14 @@ export function reviewPills(review: CourseReview): string[] {
 }
 
 /** The review list's sort options (§5): helpful (default, Wilson-ranked),
- * newest, and term — the term is always shown and is a sort option. */
+ * newest, and term; the term is always shown and is a sort option. */
 export type ReviewSortKey = "helpful" | "newest" | "term";
 
 /**
  * Sort a copy of the review list. Every key reads "best/most recent first":
  * `helpful` by Wilson lower bound (ties → newest), `newest` by post date,
  * `term` by the term reviewed (ties → newest). The final tiebreak is the id,
- * so the order is total and never reshuffles between renders. Pure — the
+ * so the order is total and never reshuffles between renders. Pure: the
  * input array is never mutated.
  */
 export function sortCourseReviews(
@@ -124,7 +124,7 @@ export function sortCourseReviews(
       case "newest":
         return 0; // byNewest below is the primary order
       case "term":
-        // Banner codes are fixed-width numerics — string compare is
+        // Banner codes are fixed-width numerics, so string compare is
         // chronological (see domain/term.ts).
         return b.termCode.localeCompare(a.termCode);
     }
@@ -160,7 +160,7 @@ export interface InstructorRow {
 /**
  * Build the per-instructor rows (§5): one row per instructor who taught the
  * course (from the Banner offering links), merged with the review aggregates,
- * in **neutral order — alphabetical, not ranked**. Instructors who taught but
+ * in **neutral order: alphabetical, not ranked**. Instructors who taught but
  * have no reviews get an honest zero row; an instructor with reviews whose
  * offering link a later re-import dropped is kept (reviews are never hidden).
  * Averages are gated per row by the domain's low-data threshold.

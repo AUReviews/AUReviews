@@ -29,7 +29,7 @@ function coreInput(over: Partial<ReviewCoreInput> = {}): ReviewCoreInput {
   };
 }
 
-describe("selectableTerms — rolling window (§4)", () => {
+describe("selectableTerms: rolling window (§4)", () => {
   // 2026-08-15 is squarely in Fall 2026 (month index 7).
   const fall2026 = new Date("2026-08-15T12:00:00Z");
 
@@ -67,7 +67,7 @@ describe("selectableTerms — rolling window (§4)", () => {
   });
 });
 
-describe("checkReviewBody — the door (§11.A)", () => {
+describe("checkReviewBody: the door (§11.A)", () => {
   it("passes a clean, long-enough body", () => {
     expect(checkReviewBody(CLEAN_BODY)).toEqual([]);
   });
@@ -134,7 +134,7 @@ describe("checkReviewBody — the door (§11.A)", () => {
   });
 });
 
-describe("parseInstructorChoice — required with escapes (§4)", () => {
+describe("parseInstructorChoice: required with escapes (§4)", () => {
   it("resolves the two unknown escapes and a real id", () => {
     expect(parseInstructorChoice("not-listed")).toEqual({ kind: "not-listed" });
     expect(parseInstructorChoice("dont-remember")).toEqual({ kind: "dont-remember" });
@@ -147,7 +147,7 @@ describe("parseInstructorChoice — required with escapes (§4)", () => {
   });
 });
 
-describe("validateReviewCore — the full submit gate (§4/§11)", () => {
+describe("validateReviewCore: the full submit gate (§4/§11)", () => {
   const opts = { selectableTermCodes: ["202710", "202630", "202620"] };
 
   it("accepts a complete, clean submission", () => {
@@ -191,7 +191,7 @@ describe("validateReviewCore — the full submit gate (§4/§11)", () => {
   });
 });
 
-describe("optional-detail sanitizers (§4 — never block, drop junk)", () => {
+describe("optional-detail sanitizers (§4: never block, drop junk)", () => {
   it("keeps only allowed multi-select values, deduped and ordered", () => {
     expect(
       sanitizeMultiSelect(["Java", "made-up", "Python", "Java"], LANGUAGE_OPTIONS),

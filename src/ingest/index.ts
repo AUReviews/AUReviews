@@ -4,7 +4,7 @@
  * The COMP imports: scrape the Auburn bulletin (catalog attributes) and Banner
  * (term offerings + instructors-of-record), resolve rows against the domain
  * planners, and write catalog-side state idempotently. This module imports the
- * domain layer and NEVER the reverse — the catalog/review seam is one-way.
+ * domain layer and NEVER the reverse; the catalog/review seam is one-way.
  */
 export {
   type RawCatalogRow,

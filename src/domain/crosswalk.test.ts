@@ -65,7 +65,7 @@ describe("planIngest", () => {
   });
 
   it("repairs an orphaned course (present but missing its crosswalk edge) by applying, not minting", () => {
-    // A prior run inserted the course but its crosswalk insert failed — the
+    // A prior run inserted the course but its crosswalk insert failed; the
     // course carries the current key yet no mapping exists. A re-run must not
     // mint a duplicate; it applies to the existing course and re-maps it.
     const snapshot: CatalogSnapshot = {
@@ -123,7 +123,7 @@ describe("planIngest", () => {
       pendingKeys: [],
     };
 
-    // Import contains only COMP 2210 now — COMP 1000 dropped out.
+    // Import contains only COMP 2210 now; COMP 1000 dropped out.
     const plan = planIngest(
       [row({ subject: "COMP", number: "2210", title: "Data Structures" })],
       snapshot,
@@ -134,7 +134,7 @@ describe("planIngest", () => {
     expect(plan.retirements).toEqual(["c2" as CourseId]);
   });
 
-  it("does not retire a course that reappears — it re-applies (un-retires) instead", () => {
+  it("does not retire a course that reappears; it re-applies (un-retires) instead", () => {
     const snapshot: CatalogSnapshot = {
       courses: [
         { id: "c1" as CourseId, catalogKey: "COMP 2210", title: "Data Structures", status: "retired" },
@@ -164,7 +164,7 @@ describe("planIngest", () => {
       pendingKeys: [],
     };
 
-    // Incoming: same title, new number COMP 2220. Could be a renumber — never inferred.
+    // Incoming: same title, new number COMP 2220. Could be a renumber, never inferred.
     const plan = planIngest(
       [row({ subject: "COMP", number: "2220", title: "Fundamentals of Computing II" })],
       snapshot,

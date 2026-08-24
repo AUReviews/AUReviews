@@ -2,7 +2,7 @@
  * Server-side resolution of the current session to its `identity_hash`
  * (v1-spec §7 steps 4 & 7). The opaque database session-token cookie is mapped
  * here, on the server only, to the author token that later edit/delete/vote
- * actions (#24) key on. The hash never travels to the client — this is the one
+ * actions (#24) key on. The hash never travels to the client; this is the one
  * sanctioned way to obtain it for the signed-in request.
  */
 import { cookies } from "next/headers";
@@ -13,7 +13,7 @@ import type { IdentityHash } from "@/domain";
 import { sessionCookieName } from "./exchange";
 
 // Auth.js database-strategy cookie names: unprefixed in dev, __Secure- over
-// https. Read by BOTH names rather than re-deriving the protocol here — the
+// https. Read by BOTH names rather than re-deriving the protocol here; the
 // one definition lives in ./exchange.ts, where the drift test pins it.
 const SESSION_COOKIE_NAMES = [sessionCookieName(false), sessionCookieName(true)];
 
