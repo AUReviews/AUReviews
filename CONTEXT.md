@@ -61,3 +61,11 @@ _Avoid_: flag, complaint (as data terms); "report" is canonical
 
 **Operator inbox**:
 The v1 substitute for an admin console (v1-spec §12; the dashboard is v2): every review report pushes an email (Resend, to `OPERATOR_EMAIL`) so the operator never polls; the `review_reports` rows are the durable record a later dashboard will read. An undelivered email never fails the reader's submission. Bugs and feature requests are not site features at all — the footer links to GitHub issue templates.
+
+**My Activity**:
+The signed-in author's one pull-only page (`/my`; v1-spec §11/§13, issue #26), resolved server-side from the session to `identity_hash` with no email round-trip. It lists their own reviews in every lifecycle state with helpful scores and edit/delete; any **removed** review with the operator's recorded reason and a one-shot **Contest this removal** action (`contested=true`, resolved by hand via `runbook/contest-resolve.sql`); and the reviews they have voted on, from `review_votes`. It is the *only* place a takedown is surfaced — "author-notified, publicly silent" — because no email→review link exists to push to.
+_Avoid_: profile, dashboard, account page
+
+**Review lifecycle**:
+The author-facing fold of a Review's stored `status`: **live** (`published`, or `pending` behind the §12 panic switch — editable and self-deletable), **removed** (an operator takedown, stamped `removed_reason`/`removed_at`), or **deleted** (the author's own soft-delete, stamped `deleted_at`). Editing re-runs the full submit pipeline — every door-block, the instructor-taught-course check — keeps helpful votes, and stamps `edited`; the course and term are fixed, since they are what the review *is*. Removed and deleted content survives a bounded **retention window** (`RETENTION_DAYS`: ~30 days for a self-delete, ~90 for a takedown; 🔴 attorney-confirm) and is then purged to a **tombstone** — `id`, `course`, `identity_hash`, `created_at`, `deleted_at`, `status=deleted` — by `runbook/purge-tombstones.sql`, so the correlation trail outlives the content.
+_Avoid_: hard delete, archived, hidden

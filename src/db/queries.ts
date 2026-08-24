@@ -3,12 +3,14 @@ import {
   type InstructorUnknown,
   type PlaceholderRow,
   type VoteDirection,
+  canEditReview,
   gateAverages,
 } from "@/domain";
 import type { BrowseCourse } from "@/lib/browse";
 import type { CourseDetail } from "@/lib/course-detail";
 import type { CourseReview, InstructorStats } from "@/lib/course-reviews";
 import { type CourseSearchRow, escapeLikePattern } from "@/lib/course-search";
+import { type MyReview, type MyVote, type OwnReview, excerpt } from "@/lib/my-activity";
 import type { PrereqCatalogRow } from "@/lib/prereqs";
 import { getDb } from "./client";
 import {
@@ -378,6 +380,10 @@ export async function getCourseAggregates(
   };
 }
 
+// The stored escape-hatch sentinel, or null for anything else (§4).
+const parseInstructorUnknown = (v: string | null): InstructorUnknown | null =>
+  v === "not-listed" || v === "dont-remember" ? v : null;
+
 // jsonb columns come back untyped; the writer only ever stores string arrays
 // (sanitized multi-selects), so anything else collapses to empty.
 function asStringArray(value: unknown): string[] {
@@ -431,10 +437,7 @@ export async function listCourseReviews(
     id: r.id,
     instructorId: r.instructorId,
     instructorName: r.instructorName,
-    instructorUnknown:
-      r.instructorUnknown === "not-listed" || r.instructorUnknown === "dont-remember"
-        ? r.instructorUnknown
-        : null,
+    instructorUnknown: parseInstructorUnknown(r.instructorUnknown),
     termCode: r.termCode,
     overall: r.overall,
     difficulty: r.difficulty,
@@ -615,4 +618,245 @@ export async function insertReviewReport(report: {
     .values(report)
     .returning({ id: reviewReports.id });
   return row.id;
+}
+
+// ---- My Activity (v1-spec §11/§13; issue #26) --------------------------------
+// Every read and write below is keyed on the caller's `identity_hash`, resolved
+// server-side from the session (§7) — the hash is the ONLY link between a
+// person and their rows, so the WHERE clause is the authorization check.
+
+/** The statuses an author may still act on (edit, delete): live on the site,
+ * or queued behind the §12 panic switch. Mirrors `canEditReview`. */
+const editableReviews = () =>
+  or(eq(reviews.status, "published"), eq(reviews.status, "pending"));
+
+/**
+ * The signed-in author's own reviews in EVERY lifecycle state — published,
+ * pending, removed, and (inside the retention window) deleted — each with its
+ * course code/title, instructor, removal bookkeeping, and live helpful
+ * tallies. This is the only read that surfaces `removed` rows to anyone but
+ * the operator: §11's "author-notified, publicly silent." Unordered; grouping
+ * and order are `groupMyReviews`'s job.
+ */
+export async function listMyReviews(identityHash: string): Promise<MyReview[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: reviews.id,
+      courseSubject: courses.subject,
+      courseNumber: courses.number,
+      courseTitle: courses.title,
+      instructorName: instructors.displayName,
+      instructorUnknown: reviews.instructorUnknown,
+      termCode: reviews.termCode,
+      overall: reviews.overall,
+      difficulty: reviews.difficulty,
+      workloadHours: reviews.workloadHours,
+      body: reviews.body,
+      status: reviews.status,
+      edited: reviews.edited,
+      contested: reviews.contested,
+      removedReason: reviews.removedReason,
+      removedAt: reviews.removedAt,
+      deletedAt: reviews.deletedAt,
+      createdAt: reviews.createdAt,
+      helpfulUp: voteTally("up"),
+      helpfulDown: voteTally("down"),
+    })
+    .from(reviews)
+    .innerJoin(courses, eq(reviews.courseId, courses.id))
+    .leftJoin(instructors, eq(reviews.instructorId, instructors.id))
+    .leftJoin(reviewVotes, eq(reviewVotes.reviewId, reviews.id))
+    .where(eq(reviews.identityHash, identityHash))
+    .groupBy(reviews.id, courses.id, instructors.displayName);
+
+  return rows.map((r) => ({
+    ...r,
+    instructorUnknown: parseInstructorUnknown(r.instructorUnknown),
+  }));
+}
+
+/**
+ * The reviews the signed-in user has voted on (§13), built from
+ * `review_votes`. A vote on a review that has since been removed or deleted
+ * is still listed (the vote happened) but flagged not live, so the page
+ * never links into a missing review. Newest vote first.
+ */
+export async function listMyVotes(identityHash: string): Promise<MyVote[]> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      reviewId: reviewVotes.reviewId,
+      direction: reviewVotes.direction,
+      votedAt: reviewVotes.createdAt,
+      courseSubject: courses.subject,
+      courseNumber: courses.number,
+      courseTitle: courses.title,
+      reviewTermCode: reviews.termCode,
+      body: reviews.body,
+      status: reviews.status,
+    })
+    .from(reviewVotes)
+    .innerJoin(reviews, eq(reviewVotes.reviewId, reviews.id))
+    .innerJoin(courses, eq(reviews.courseId, courses.id))
+    .where(eq(reviewVotes.identityHash, identityHash))
+    .orderBy(desc(reviewVotes.createdAt));
+
+  return rows.flatMap((r) => {
+    if (r.direction !== "up" && r.direction !== "down") return [];
+    return [
+      {
+        reviewId: r.reviewId,
+        direction: r.direction,
+        votedAt: r.votedAt,
+        courseSubject: r.courseSubject,
+        courseNumber: r.courseNumber,
+        courseTitle: r.courseTitle,
+        reviewTermCode: r.reviewTermCode,
+        reviewExcerpt: excerpt(r.body),
+        reviewLive: r.status === "published",
+      },
+    ];
+  });
+}
+
+/** A review as the edit form needs it: the full stored content plus its
+ * course, scoped to the author (`identityHash` in the WHERE) and to live
+ * status (§11: removed/deleted reviews are not editable). Null otherwise. */
+export async function getOwnEditableReview(
+  reviewId: string,
+  identityHash: string,
+): Promise<OwnReview | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({
+      id: reviews.id,
+      courseId: courses.id,
+      courseSubject: courses.subject,
+      courseNumber: courses.number,
+      courseTitle: courses.title,
+      instructorId: reviews.instructorId,
+      instructorUnknown: reviews.instructorUnknown,
+      termCode: reviews.termCode,
+      overall: reviews.overall,
+      difficulty: reviews.difficulty,
+      workloadHours: reviews.workloadHours,
+      body: reviews.body,
+      workloadShape: reviews.workloadShape,
+      grade: reviews.grade,
+      languages: reviews.languages,
+      languagesOther: reviews.languagesOther,
+      curved: reviews.curved,
+      attendance: reviews.attendance,
+      prep: reviews.prep,
+      status: reviews.status,
+    })
+    .from(reviews)
+    .innerJoin(courses, eq(reviews.courseId, courses.id))
+    .where(and(eq(reviews.id, reviewId), eq(reviews.identityHash, identityHash)))
+    .limit(1);
+  if (!row || !canEditReview(row.status)) return null;
+  return {
+    ...row,
+    instructorUnknown: parseInstructorUnknown(row.instructorUnknown),
+    workloadShape: asStringArray(row.workloadShape),
+    languages: asStringArray(row.languages),
+  };
+}
+
+/** Everything an author may change on edit: the review minus its identity
+ * (`courseId`, `identityHash`) and its term — the course and term are what the
+ * review IS, not content on it; changing them is a new review. */
+export type ReviewEdit = Omit<NewReview, "courseId" | "identityHash" | "termCode">;
+
+/**
+ * Apply an author's edit (§11): overwrite the content fields, stamp `edited`,
+ * and leave `review_votes` untouched so helpful votes are KEPT. Scoped to the
+ * author and to live status in the WHERE, so a forged id or a since-removed
+ * review updates nothing. Returns whether a row was updated.
+ */
+export async function updateOwnReview(
+  reviewId: string,
+  identityHash: string,
+  edit: ReviewEdit,
+): Promise<boolean> {
+  const db = getDb();
+  const rows = await db
+    .update(reviews)
+    .set({ ...edit, edited: true })
+    .where(
+      and(
+        eq(reviews.id, reviewId),
+        eq(reviews.identityHash, identityHash),
+        editableReviews(),
+      ),
+    )
+    .returning({ id: reviews.id });
+  return rows.length > 0;
+}
+
+/**
+ * Author self-delete (§11): a SOFT delete — `status='deleted'` plus a
+ * `deletedAt` stamp, content kept for the retention window and then purged by
+ * runbook/purge-tombstones.sql. The row drops out of every aggregate and page
+ * immediately via `publishedReviews()`. Only a live review can be deleted;
+ * returns whether a row changed.
+ */
+export async function softDeleteOwnReview(
+  reviewId: string,
+  identityHash: string,
+): Promise<boolean> {
+  const db = getDb();
+  const rows = await db
+    .update(reviews)
+    .set({ status: "deleted", deletedAt: new Date() })
+    .where(
+      and(
+        eq(reviews.id, reviewId),
+        eq(reviews.identityHash, identityHash),
+        editableReviews(),
+      ),
+    )
+    .returning({ id: reviews.id });
+  return rows.length > 0;
+}
+
+/**
+ * "Contest this removal" (§11): flip `contested=true` on the author's own
+ * removed review. The operator resolves it by hand (§12,
+ * runbook/contest-resolve.sql). Idempotent; returns whether a row changed.
+ */
+export async function contestOwnRemoval(
+  reviewId: string,
+  identityHash: string,
+): Promise<boolean> {
+  const db = getDb();
+  const rows = await db
+    .update(reviews)
+    .set({ contested: true })
+    .where(
+      and(
+        eq(reviews.id, reviewId),
+        eq(reviews.identityHash, identityHash),
+        eq(reviews.status, "removed"),
+        eq(reviews.contested, false),
+      ),
+    )
+    .returning({ id: reviews.id });
+  return rows.length > 0;
+}
+
+/** The course a review belongs to, regardless of status — for revalidating
+ * that course page after an edit or delete. Null for an unknown id. */
+export async function getReviewCourseAnyStatus(
+  reviewId: string,
+): Promise<{ subject: string; number: string } | null> {
+  const db = getDb();
+  const [row] = await db
+    .select({ subject: courses.subject, number: courses.number })
+    .from(reviews)
+    .innerJoin(courses, eq(reviews.courseId, courses.id))
+    .where(eq(reviews.id, reviewId))
+    .limit(1);
+  return row ?? null;
 }

@@ -11,6 +11,7 @@ import {
   PREP_OPTIONS,
   type ReviewFieldError,
   WORKLOAD_SHAPE_OPTIONS,
+  isUuid,
   parseInstructorChoice,
   sanitizeMultiSelect,
   sanitizeSingleSelect,
@@ -20,10 +21,13 @@ import { exchangeCodeForSession, type ExchangeFailure } from "@/auth/exchange";
 import { getCurrentIdentityHash } from "@/auth/session";
 import {
   type CourseInstructor,
+  type ReviewEdit,
   getCourseByCode,
+  getOwnEditableReview,
   insertReview,
   listCourseInstructors,
   searchCoursesByText,
+  updateOwnReview,
 } from "@/db/queries";
 import { courseHref, parseCourseSlug } from "@/lib/course-detail";
 import {
@@ -103,7 +107,7 @@ export async function submitReview(
 ): Promise<ReviewFormState> {
   // 1. Auth, part one: a signed-in Auburn student resolves to the author token
   //    server-side (§7); it never reaches the client. A signed-out one is
-  //    verified in step 6, once the review itself is known to be clean.
+  //    verified in step 4, once the review itself is known to be clean.
   let identityHash = await getCurrentIdentityHash();
 
   // 2. Resolve the course from the posted slug to its durable id (captured at
@@ -115,49 +119,13 @@ export async function submitReview(
     return { formError: "That course could not be found." };
   }
 
-  // 3. Re-derive the live window and validate the required core + body door.
+  // 3. The door: re-derive the live window and run the full §4/§11 gate —
+  //    the same pipeline an edit re-runs (issue #26).
   const selectableTermCodes = currentSelectableTerms().map((t) => t.code);
-  const instructor = parseInstructorChoice(str(formData.get("instructor")));
-  const core = {
-    overall: intOrNull(formData.get("overall")),
-    difficulty: intOrNull(formData.get("difficulty")),
-    workloadHours: intOrNull(formData.get("workloadHours")),
-    termCode: str(formData.get("termCode")),
-    instructor,
-    body: String(formData.get("body") ?? ""),
-  };
-  const errors = validateReviewCore(core, { selectableTermCodes });
-  if (errors.length > 0) {
-    return { errors };
-  }
+  const content = await parseReviewContent(formData, course.id, { selectableTermCodes });
+  if ("errors" in content) return content;
 
-  // 4. Resolve the instructor choice into id XOR unknown-sentinel, and confirm a
-  //    real id actually taught this course (the dropdown was course-scoped, but
-  //    re-check so a forged id can't attach a review to an unrelated instructor).
-  //    `validateReviewCore` above already guaranteed a non-null choice.
-  const choice = instructor!;
-  let instructorId: string | null = null;
-  let instructorUnknown: InstructorUnknown | null = null;
-  if (choice.kind === "instructor") {
-    const taught = await listCourseInstructors(course.id);
-    if (!taught.some((i) => i.id === choice.id)) {
-      return {
-        errors: [{ field: "instructor", message: "Choose an instructor from the list." }],
-      };
-    }
-    instructorId = choice.id;
-  } else {
-    instructorUnknown = choice.kind;
-  }
-
-  // 5. Sanitize the optional "Course details" — kept only if recognized, never
-  //    blocking (§4). Multi-selects come through as repeated form fields.
-  const languages = sanitizeMultiSelect(strList(formData.getAll("languages")), LANGUAGE_OPTIONS);
-  const languagesOther = languages.includes("Other")
-    ? str(formData.get("languagesOther"))?.slice(0, 60) ?? null
-    : null;
-
-  // 6. Auth, part two: a signed-out author proves mailbox control now, with the
+  // 4. Auth, part two: a signed-out author proves mailbox control now, with the
   //    email + code posted alongside the review. The exchange (ADR 0003) is
   //    the same module `/signin` uses: it owns the domain gate, the Auth.js
   //    token hash, single use, and the attempt cap, and on success sets the
@@ -178,27 +146,12 @@ export async function submitReview(
 
   await insertReview({
     courseId: course.id,
-    instructorId,
-    instructorUnknown,
-    termCode: core.termCode!,
-    overall: core.overall!,
-    difficulty: core.difficulty!,
-    workloadHours: core.workloadHours!,
-    body: core.body.trim(),
     identityHash,
-    workloadShape: sanitizeMultiSelect(
-      strList(formData.getAll("workloadShape")),
-      WORKLOAD_SHAPE_OPTIONS,
-    ),
-    grade: sanitizeSingleSelect(str(formData.get("grade")), GRADE_OPTIONS),
-    languages,
-    languagesOther,
-    curved: sanitizeSingleSelect(str(formData.get("curved")), CURVED_OPTIONS),
-    attendance: sanitizeSingleSelect(str(formData.get("attendance")), ATTENDANCE_OPTIONS),
-    prep: sanitizeSingleSelect(str(formData.get("prep")), PREP_OPTIONS),
+    termCode: content.termCode,
+    ...content.edit,
   });
 
-  // 7. Revalidate what the new review changed (§4/§5/§8): the affected course
+  // 5. Revalidate what the new review changed (§4/§5/§8): the affected course
   //    page (headline, list), and the "reviews" tag so the browse index's
   //    rating columns recompute — every other page stays CDN-served. The tag
   //    must go through `updateTag`, the Server-Action read-your-own-writes
@@ -211,6 +164,131 @@ export async function submitReview(
   revalidatePath(href);
   updateTag("reviews");
   redirect(href);
+}
+
+/**
+ * Edit an existing review (v1-spec §11; issue #26). Re-runs the FULL submit
+ * pipeline — every door-block, the instructor-taught-course check, the
+ * optional-details sanitizing — so a bait-and-switch edit can't ride earned
+ * trust past the filters. The course and term are fixed (they are what the
+ * review *is*); the term is re-validated against itself rather than the
+ * rolling window, since an old review's term may have aged out of what can be
+ * newly submitted (§4: the window governs submission, never lifespan).
+ * Helpful votes are kept and the review is stamped `edited` (updateOwnReview).
+ * Authorization is the session → `identity_hash` → row ownership chain; a
+ * review that isn't the caller's, or is no longer live, updates nothing.
+ */
+export async function updateReview(
+  _prev: ReviewFormState,
+  formData: FormData,
+): Promise<ReviewFormState> {
+  const identityHash = await getCurrentIdentityHash();
+  if (!identityHash) {
+    return { formError: "Sign in to edit your review." };
+  }
+
+  const reviewId = String(formData.get("reviewId") ?? "");
+  if (!isUuid(reviewId)) {
+    return { formError: "That review could not be found." };
+  }
+  const existing = await getOwnEditableReview(reviewId, identityHash);
+  if (!existing) {
+    return { formError: "That review could not be found or can no longer be edited." };
+  }
+
+  // The term is pinned to the stored one — the form posts it back as a hidden
+  // field, and anything else is rejected by the gate.
+  const content = await parseReviewContent(formData, existing.courseId, {
+    selectableTermCodes: [existing.termCode],
+  });
+  if ("errors" in content) return content;
+
+  const updated = await updateOwnReview(reviewId, identityHash, content.edit);
+  if (!updated) {
+    return { formError: "That review could not be found or can no longer be edited." };
+  }
+
+  const href = courseHref(existing.courseSubject, existing.courseNumber);
+  revalidatePath(href);
+  revalidatePath("/my");
+  updateTag("reviews");
+  redirect(href);
+}
+
+/**
+ * The shared submit pipeline (issues #24/#26): parse the posted fields, run
+ * the authoritative §4/§11 gate, confirm a chosen instructor actually taught
+ * the course, and sanitize the optional "Course details". Returns either the
+ * per-field errors to re-render, or the clean content both `insertReview` and
+ * `updateOwnReview` write. Everything the door checks lives here so create
+ * and edit can never drift apart.
+ */
+async function parseReviewContent(
+  formData: FormData,
+  courseId: string,
+  { selectableTermCodes }: { selectableTermCodes: readonly string[] },
+): Promise<{ errors: ReviewFieldError[] } | { termCode: string; edit: ReviewEdit }> {
+  const instructor = parseInstructorChoice(str(formData.get("instructor")));
+  const core = {
+    overall: intOrNull(formData.get("overall")),
+    difficulty: intOrNull(formData.get("difficulty")),
+    workloadHours: intOrNull(formData.get("workloadHours")),
+    termCode: str(formData.get("termCode")),
+    instructor,
+    body: String(formData.get("body") ?? ""),
+  };
+  const errors = validateReviewCore(core, { selectableTermCodes });
+  if (errors.length > 0) {
+    return { errors };
+  }
+
+  // Resolve the instructor choice into id XOR unknown-sentinel, and confirm a
+  // real id actually taught this course (the dropdown was course-scoped, but
+  // re-check so a forged id can't attach a review to an unrelated instructor).
+  // `validateReviewCore` above already guaranteed a non-null choice.
+  const choice = instructor!;
+  let instructorId: string | null = null;
+  let instructorUnknown: InstructorUnknown | null = null;
+  if (choice.kind === "instructor") {
+    const taught = await listCourseInstructors(courseId);
+    if (!taught.some((i) => i.id === choice.id)) {
+      return {
+        errors: [{ field: "instructor", message: "Choose an instructor from the list." }],
+      };
+    }
+    instructorId = choice.id;
+  } else {
+    instructorUnknown = choice.kind;
+  }
+
+  // Sanitize the optional "Course details" — kept only if recognized, never
+  // blocking (§4). Multi-selects come through as repeated form fields.
+  const languages = sanitizeMultiSelect(strList(formData.getAll("languages")), LANGUAGE_OPTIONS);
+  const languagesOther = languages.includes("Other")
+    ? str(formData.get("languagesOther"))?.slice(0, 60) ?? null
+    : null;
+
+  return {
+    termCode: core.termCode!,
+    edit: {
+      instructorId,
+      instructorUnknown,
+      overall: core.overall!,
+      difficulty: core.difficulty!,
+      workloadHours: core.workloadHours!,
+      body: core.body.trim(),
+      workloadShape: sanitizeMultiSelect(
+        strList(formData.getAll("workloadShape")),
+        WORKLOAD_SHAPE_OPTIONS,
+      ),
+      grade: sanitizeSingleSelect(str(formData.get("grade")), GRADE_OPTIONS),
+      languages,
+      languagesOther,
+      curved: sanitizeSingleSelect(str(formData.get("curved")), CURVED_OPTIONS),
+      attendance: sanitizeSingleSelect(str(formData.get("attendance")), ATTENDANCE_OPTIONS),
+      prep: sanitizeSingleSelect(str(formData.get("prep")), PREP_OPTIONS),
+    },
+  };
 }
 
 function str(v: FormDataEntryValue | null): string | null {

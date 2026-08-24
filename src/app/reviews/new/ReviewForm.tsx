@@ -37,6 +37,7 @@ import {
   listInstructorOptions,
   searchCourseOptions,
   submitReview,
+  updateReview,
 } from "./actions";
 
 // The review submission form (v1-spec §4/§11/§13; issues #24/#40) — the one
@@ -77,10 +78,40 @@ export interface ReviewFormPrefill {
   instructors: InstructorOption[];
 }
 
+/**
+ * Edit mode (issue #26): the review being edited, with every stored field as
+ * the form's initial value. The course and term are fixed (they are what the
+ * review *is*); everything else is open. The `updateReview` action re-runs
+ * the full door, keeps votes, and stamps `edited`.
+ */
+export interface ReviewFormEdit {
+  reviewId: string;
+  termLabel: string;
+  initial: {
+    instructorId: string | null;
+    instructorUnknown: "not-listed" | "dont-remember" | null;
+    termCode: string;
+    overall: number;
+    difficulty: number;
+    workloadHours: number;
+    body: string;
+    workloadShape: string[];
+    grade: string | null;
+    languages: string[];
+    languagesOther: string | null;
+    curved: string | null;
+    attendance: string | null;
+    prep: string | null;
+  };
+}
+
 export interface ReviewFormProps {
   prefill: ReviewFormPrefill | null;
   terms: { code: string; label: string }[];
   signedIn: boolean;
+  /** Present when editing an existing review; `prefill` then carries the
+   * fixed course and its instructor list. */
+  edit?: ReviewFormEdit;
 }
 
 const RATING_VALUES = [1, 2, 3, 4, 5];
@@ -89,14 +120,19 @@ const RATING_VALUES = [1, 2, 3, 4, 5];
 // short enough that results still feel live.
 const SEARCH_DEBOUNCE_MS = 200;
 
-export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps) {
+export default function ReviewForm({ prefill, terms, signedIn, edit }: ReviewFormProps) {
   // The selectable window is exactly the terms offered; derive it here rather
-  // than passing the same list twice from the server.
-  const selectableTermCodes = useMemo(() => terms.map((t) => t.code), [terms]);
+  // than passing the same list twice from the server. An edit pins the term
+  // to the review's own (§4: the window governs submission, not lifespan).
+  const selectableTermCodes = useMemo(
+    () => (edit ? [edit.initial.termCode] : terms.map((t) => t.code)),
+    [edit, terms],
+  );
   const [state, formAction, pending] = useActionState<ReviewFormState, FormData>(
-    submitReview,
+    edit ? updateReview : submitReview,
     {},
   );
+  const initial = edit?.initial;
 
   // The selected course and its scoped instructor list move together: a pick
   // loads the dropdown for that course, a "change" clears both, so the
@@ -110,14 +146,18 @@ export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps
   const [instructorsLoading, setInstructorsLoading] = useState(false);
 
   // Required-core state — the only inputs the live gate reads.
-  const [overall, setOverall] = useState<number | null>(null);
-  const [difficulty, setDifficulty] = useState<number | null>(null);
-  const [workload, setWorkload] = useState("");
-  const [termCode, setTermCode] = useState("");
-  const [instructor, setInstructor] = useState("");
-  const [body, setBody] = useState("");
+  const [overall, setOverall] = useState<number | null>(initial?.overall ?? null);
+  const [difficulty, setDifficulty] = useState<number | null>(initial?.difficulty ?? null);
+  const [workload, setWorkload] = useState(initial ? String(initial.workloadHours) : "");
+  const [termCode, setTermCode] = useState(initial?.termCode ?? "");
+  const [instructor, setInstructor] = useState(
+    initial?.instructorId ?? initial?.instructorUnknown ?? "",
+  );
+  const [body, setBody] = useState(initial?.body ?? "");
 
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  // An edit opens the optional zone when the review already carries details,
+  // so they're visible to change rather than silently re-posted.
+  const [detailsOpen, setDetailsOpen] = useState(hasOptionalDetails(initial));
   const [guidelinesOpen, setGuidelinesOpen] = useState(false);
 
   // The sign-in code typed so far (signed-out authors only). Post needs all six
@@ -204,7 +244,7 @@ export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps
   const verified = signedIn || codeDigits.length === 6;
   const canSubmit =
     verified && course !== null && liveErrors.length === 0 && !pending;
-  const cancelHref = course ? `/courses/${course.slug}` : "/courses";
+  const cancelHref = edit ? "/my" : course ? `/courses/${course.slug}` : "/courses";
 
   // Submit by hand rather than via `<form action>`: React resets a form after
   // a form-action completes, which visually blanks the native selects and
@@ -224,11 +264,15 @@ export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps
       <input type="hidden" name="courseSlug" value={course?.slug ?? ""} />
       <input type="hidden" name="overall" value={overall ?? ""} />
       <input type="hidden" name="difficulty" value={difficulty ?? ""} />
+      {edit && <input type="hidden" name="reviewId" value={edit.reviewId} />}
+      {edit && <input type="hidden" name="termCode" value={edit.initial.termCode} />}
 
       <div>
-        <h1>Add a review</h1>
+        <h1>{edit ? "Edit your review" : "Add a review"}</h1>
         <p className="lede">
-          Anonymous. Your Auburn email verifies you and is never stored with the review.
+          {edit
+            ? "Same rules as posting: every check runs again. Helpful votes stay with the review, which will be marked as edited."
+            : "Anonymous. Your Auburn email verifies you and is never stored with the review."}
         </p>
       </div>
 
@@ -238,9 +282,11 @@ export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps
           {course ? (
             <div className="fake-input between">
               <span>{course.label}</span>
-              <button type="button" className="change" onClick={clearCourse}>
-                change
-              </button>
+              {!edit && (
+                <button type="button" className="change" onClick={clearCourse}>
+                  change
+                </button>
+              )}
             </div>
           ) : (
             <CourseSearch onSelect={selectCourse} />
@@ -248,20 +294,24 @@ export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps
         </div>
         <div style={{ flex: 1 }}>
           <div className="field-label">Term</div>
-          <select
-            name="termCode"
-            className="select-input"
-            value={termCode}
-            onChange={(e) => setTermCode(e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, termCode: true }))}
-          >
-            <option value="">Select…</option>
-            {terms.map((t) => (
-              <option key={t.code} value={t.code}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+          {edit ? (
+            <div className="fake-input">{edit.termLabel}</div>
+          ) : (
+            <select
+              name="termCode"
+              className="select-input"
+              value={termCode}
+              onChange={(e) => setTermCode(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, termCode: true }))}
+            >
+              <option value="">Select…</option>
+              {terms.map((t) => (
+                <option key={t.code} value={t.code}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          )}
           <FieldError message={errorFor("termCode")} />
         </div>
       </div>
@@ -372,6 +422,7 @@ export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps
       <OptionalDetails
         open={detailsOpen}
         onToggle={() => setDetailsOpen((v) => !v)}
+        initial={initial}
       />
 
       <GuidelinesPanel
@@ -385,7 +436,7 @@ export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps
         </p>
       )}
 
-      {signedIn ? (
+      {edit ? null : signedIn ? (
         <p className="auth-status">
           Posting as a verified Auburn student ·{" "}
           <button
@@ -428,7 +479,13 @@ export default function ReviewForm({ prefill, terms, signedIn }: ReviewFormProps
           Cancel
         </Link>
         <button type="submit" className="btn-post" disabled={!canSubmit}>
-          {pending ? "Posting…" : "Post anonymously"}
+          {edit
+            ? pending
+              ? "Saving…"
+              : "Save changes"
+            : pending
+              ? "Posting…"
+              : "Post anonymously"}
         </button>
       </div>
     </form>
@@ -554,10 +611,35 @@ function Scale({
   );
 }
 
+/** The stored optional details an edit opens with (absent on a new review). */
+type OptionalInitial = ReviewFormEdit["initial"] | undefined;
+
+function hasOptionalDetails(initial: OptionalInitial): boolean {
+  if (!initial) return false;
+  return (
+    initial.workloadShape.length > 0 ||
+    initial.languages.length > 0 ||
+    initial.grade !== null ||
+    initial.curved !== null ||
+    initial.attendance !== null ||
+    initial.prep !== null
+  );
+}
+
 // The optional "Course details" zone (§4) — collapsed by default and (bar the
 // Languages "Other" reveal, pure visibility) uncontrolled: nothing here feeds
-// the live gate, so nothing here can block Submit.
-function OptionalDetails({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+// the live gate, so nothing here can block Submit. On an edit the controls
+// open with the stored values as their defaults; closing and reopening the
+// zone remounts them, so the stored values (not a half-changed draft) return.
+function OptionalDetails({
+  open,
+  onToggle,
+  initial,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  initial: OptionalInitial;
+}) {
   return (
     <div className="details">
       <button type="button" className="details-toggle" onClick={onToggle} aria-expanded={open}>
@@ -565,16 +647,29 @@ function OptionalDetails({ open, onToggle }: { open: boolean; onToggle: () => vo
       </button>
       {open && (
         <div className="details-body">
-          <CheckGroup label="Workload shape" name="workloadShape" options={WORKLOAD_SHAPE_OPTIONS} />
+          <CheckGroup
+            label="Workload shape"
+            name="workloadShape"
+            options={WORKLOAD_SHAPE_OPTIONS}
+            checked={initial?.workloadShape ?? []}
+          />
           <div className="frow">
-            <SelectField label="Grade" name="grade" options={GRADE_OPTIONS} />
-            <SelectField label="Curved" name="curved" options={CURVED_OPTIONS} />
+            <SelectField label="Grade" name="grade" options={GRADE_OPTIONS} value={initial?.grade} />
+            <SelectField label="Curved" name="curved" options={CURVED_OPTIONS} value={initial?.curved} />
           </div>
           <div className="frow">
-            <SelectField label="Attendance" name="attendance" options={ATTENDANCE_OPTIONS} />
-            <SelectField label="Preparation" name="prep" options={PREP_OPTIONS} />
+            <SelectField
+              label="Attendance"
+              name="attendance"
+              options={ATTENDANCE_OPTIONS}
+              value={initial?.attendance}
+            />
+            <SelectField label="Preparation" name="prep" options={PREP_OPTIONS} value={initial?.prep} />
           </div>
-          <LanguagesGroup />
+          <LanguagesGroup
+            checked={initial?.languages ?? []}
+            other={initial?.languagesOther ?? null}
+          />
         </div>
       )}
     </div>
@@ -586,8 +681,8 @@ function OptionalDetails({ open, onToggle }: { open: boolean; onToggle: () => vo
 // never feeds the gate, and unpicking Other unmounts the write-in so a
 // half-typed value can't ride along (the server ignores `languagesOther`
 // without "Other" anyway).
-function LanguagesGroup() {
-  const [otherPicked, setOtherPicked] = useState(false);
+function LanguagesGroup({ checked, other }: { checked: string[]; other: string | null }) {
+  const [otherPicked, setOtherPicked] = useState(checked.includes("Other"));
   return (
     <div>
       <div className="field-label">Languages</div>
@@ -598,6 +693,7 @@ function LanguagesGroup() {
               type="checkbox"
               name="languages"
               value={opt}
+              defaultChecked={checked.includes(opt)}
               onChange={
                 opt === "Other"
                   ? (e) => setOtherPicked(e.target.checked)
@@ -616,6 +712,7 @@ function LanguagesGroup() {
           maxLength={60}
           placeholder="Which language?"
           aria-label="Other language"
+          defaultValue={other ?? ""}
         />
       )}
     </div>
@@ -626,10 +723,12 @@ function CheckGroup({
   label,
   name,
   options,
+  checked,
 }: {
   label: string;
   name: string;
   options: readonly string[];
+  checked: string[];
 }) {
   return (
     <div>
@@ -637,7 +736,12 @@ function CheckGroup({
       <div className="check-group">
         {options.map((opt) => (
           <label key={opt} className="check-chip">
-            <input type="checkbox" name={name} value={opt} />
+            <input
+              type="checkbox"
+              name={name}
+              value={opt}
+              defaultChecked={checked.includes(opt)}
+            />
             {opt}
           </label>
         ))}
@@ -650,15 +754,17 @@ function SelectField({
   label,
   name,
   options,
+  value,
 }: {
   label: string;
   name: string;
   options: readonly string[];
+  value?: string | null;
 }) {
   return (
     <div style={{ flex: 1 }}>
       <div className="field-label">{label}</div>
-      <select name={name} className="select-input" defaultValue="">
+      <select name={name} className="select-input" defaultValue={value ?? ""}>
         <option value="">—</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>

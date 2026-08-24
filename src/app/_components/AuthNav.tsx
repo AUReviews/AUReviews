@@ -32,6 +32,11 @@ export default function AuthNav() {
     return (
       <span style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem" }}>
         <span style={{ color: "#0a7" }}>Verified Auburn student</span>
+        {/* The author's pull-only page (issue #26, §11/§13) — the one place a
+            takedown is surfaced, so it must be reachable from every page. */}
+        <Link href="/my" className="nav-link">
+          My activity
+        </Link>
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
