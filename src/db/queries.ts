@@ -2,6 +2,7 @@ import { and, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import {
   type InstructorUnknown,
   type PlaceholderRow,
+  type ReviewSubmitStatus,
   type VoteDirection,
   canEditReview,
   gateAverages,
@@ -298,11 +299,15 @@ export interface NewReview {
   curved: string | null;
   attendance: string | null;
   prep: string | null;
+  /** `published` in normal operation, `pending` behind the §12 panic switch,
+   * decided by the submit action from the Global Config flags (issue #28). */
+  status: ReviewSubmitStatus;
 }
 
 /**
- * Insert a review (issue #24) and return its new id. `status` defaults to
- * `published` (§4/§11 publish-on-submit) via the schema. There is deliberately
+ * Insert a review (issue #24) and return its new id. `status` is passed by the
+ * caller: publish-on-submit (§4/§11), or `pending` when `moderationMode:
+ * "queue"` is flipped (§12; issue #28). There is deliberately
  * NO pre-insert dedupe on `(identity_hash, course_id)`; multiple correlated
  * reviews per person per course are allowed (§4), so a second submission simply
  * inserts a second row. The row's durable `courseId`/`instructorId` are captured
@@ -329,6 +334,7 @@ export async function insertReview(review: NewReview): Promise<string> {
       curved: review.curved,
       attendance: review.attendance,
       prep: review.prep,
+      status: review.status,
     })
     .returning({ id: reviews.id });
   return row.id;
@@ -765,9 +771,14 @@ export async function getOwnEditableReview(
 }
 
 /** Everything an author may change on edit: the review minus its identity
- * (`courseId`, `identityHash`) and its term; the course and term are what the
- * review IS, not content on it; changing them is a new review. */
-export type ReviewEdit = Omit<NewReview, "courseId" | "identityHash" | "termCode">;
+ * (`courseId`, `identityHash`), its term (the course and term are what the
+ * review IS, not content on it; changing them is a new review), and its
+ * `status`, which an edit never moves (a queued-pending review stays pending,
+ * a published one stays published; §11/§12). */
+export type ReviewEdit = Omit<
+  NewReview,
+  "courseId" | "identityHash" | "termCode" | "status"
+>;
 
 /**
  * Apply an author's edit (§11): overwrite the content fields, stamp `edited`,
