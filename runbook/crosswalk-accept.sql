@@ -1,13 +1,13 @@
 -- Accept a pending crosswalk match (v1-spec §12, ADR 0002): assert that the
 -- incoming catalog key the import refused to guess about IS one of its
--- candidate Courses — a renumber (or admin-identified merge/split leg). Maps
--- the key onto the durable Course id (which never moves, ADR 0001), historises
--- the identity being replaced into former_identities, applies the scraped
--- attributes, and re-activates the Course. Reviews never move — that is the
--- whole point of the durable id.
+-- candidate Courses, i.e. a renumber (or admin-identified merge/split leg).
+-- Maps the key onto the durable Course id (which never moves, ADR 0001),
+-- historises the identity being replaced into former_identities, applies the
+-- scraped attributes, and re-activates the Course. Reviews never move; that
+-- is the whole point of the durable id.
 --
--- :pending_id — the crosswalk_pending row's uuid (see the SELECT below).
--- :course_id  — the candidate Course uuid the key maps onto.
+-- :pending_id: the crosswalk_pending row's uuid (see the SELECT below).
+-- :course_id:  the candidate Course uuid the key maps onto.
 --
 -- psql: \set pending_id '...'  \set course_id '...'
 --
@@ -20,13 +20,13 @@ ORDER BY created_at;
 
 -- The whole decision is one transaction; every statement is guarded on the row
 -- still being 'pending' AND on the key mapping to :course_id, so re-running is
--- a no-op — and if the key somehow got mapped to a DIFFERENT Course since the
+-- a no-op. And if the key somehow got mapped to a DIFFERENT Course since the
 -- row was queued, the script changes nothing and leaves the row pending
 -- (steps 2/3 find no mapping to :course_id) instead of half-applying.
 BEGIN;
 
 -- 1. Map the key onto the Course. The Course's previous key(s) stay mapped
---    too — a Course accumulates keys across renumbers (schema.ts). DO NOTHING
+--    too: a Course accumulates keys across renumbers (schema.ts). DO NOTHING
 --    keeps an existing mapping, whatever it points at; steps 2/3 then only
 --    proceed if the key really resolves to :course_id.
 INSERT INTO course_crosswalk (catalog_key, course_id)
@@ -79,5 +79,5 @@ WHERE p.id = :'pending_id'
 COMMIT;
 
 -- Afterwards: cached catalog pages still show the old identity until the
--- "catalog" tag revalidates — POST /api/revalidate (src/app/api/revalidate/
+-- "catalog" tag revalidates: POST /api/revalidate (src/app/api/revalidate/
 -- route.ts), run the manual catalog-refresh Action, or wait for the weekly one.

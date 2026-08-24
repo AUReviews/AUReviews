@@ -109,9 +109,9 @@ export async function submitReview(
   formData: FormData,
 ): Promise<ReviewFormState> {
   // 0. The §12 break-glass flags, read fresh on every submit (issue #28).
-  //    `readOnly` pauses new submissions outright — checked first, before any
-  //    DB work, so the pause holds even for a form rendered before the flip.
-  //    `moderationMode` decides the new row's status down at the insert.
+  //    `readOnly` pauses new submissions outright; it is checked first,
+  //    before any DB work, so the pause holds even for a form rendered before
+  //    the flip. `moderationMode` decides the new row's status at the insert.
   const flags = await getOperatorFlags();
   if (flags.readOnly) {
     return { formError: READ_ONLY_MESSAGE };

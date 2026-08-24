@@ -21,6 +21,6 @@ WHERE id = :'review_id'
 RETURNING id, course_id, status, removed_reason, removed_at;
 
 -- Afterwards: the DB is immediately clean, but the cached course page and
--- browse-table numbers still show the review until they revalidate — POST
+-- browse-table numbers still show the review until they revalidate: POST
 -- /api/revalidate (src/app/api/revalidate/route.ts) with the course's path and
 -- the "reviews" tag, or wait for the next ISR pass.

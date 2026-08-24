@@ -1,12 +1,12 @@
 -- Reject a pending crosswalk match (v1-spec §12, ADR 0002): the flagged
--- resemblance was a coincidence — the incoming catalog key is a genuinely new
--- course, not a renumber of any candidate. Mints a fresh durable Course from
+-- resemblance was a coincidence, and the incoming catalog key is a genuinely
+-- new course, not a renumber of any candidate. Mints a fresh durable Course from
 -- the scraped payload and maps the key to it: exactly what the import's create
 -- path would have done had nothing looked ambiguous. Any candidate Course the
 -- import retired stays retired (ADR 0002: retire, never delete).
 --
--- :pending_id — the crosswalk_pending row's uuid (see the SELECT in
---               crosswalk-accept.sql for what's waiting).
+-- :pending_id: the crosswalk_pending row's uuid (see the SELECT in
+--              crosswalk-accept.sql for what's waiting).
 --
 -- psql: \set pending_id '...'
 --
@@ -14,7 +14,7 @@
 -- (and the key still unmapped), so re-running is a no-op.
 BEGIN;
 
--- 1. Mint the new durable Course from what the import saw, and map its key —
+-- 1. Mint the new durable Course from what the import saw, and map its key
 --    atomically, so a re-run can't strand an unmapped Course row.
 WITH p AS (
   SELECT id, catalog_key, payload
@@ -53,6 +53,6 @@ WHERE id = :'pending_id' AND status = 'pending';
 
 COMMIT;
 
--- Afterwards: the new course appears once the "catalog" tag revalidates —
+-- Afterwards: the new course appears once the "catalog" tag revalidates:
 -- POST /api/revalidate, run the manual catalog-refresh Action, or wait for the
 -- weekly one (which also fills in the course's offerings).

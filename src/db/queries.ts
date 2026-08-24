@@ -299,14 +299,14 @@ export interface NewReview {
   curved: string | null;
   attendance: string | null;
   prep: string | null;
-  /** `published` in normal operation, `pending` behind the §12 panic switch —
-   * decided by the submit action from the Edge Config flags (issue #28). */
+  /** `published` in normal operation, `pending` behind the §12 panic switch,
+   * decided by the submit action from the Global Config flags (issue #28). */
   status: ReviewSubmitStatus;
 }
 
 /**
  * Insert a review (issue #24) and return its new id. `status` is passed by the
- * caller — publish-on-submit (§4/§11) or `pending` when `moderationMode:
+ * caller: publish-on-submit (§4/§11), or `pending` when `moderationMode:
  * "queue"` is flipped (§12; issue #28). There is deliberately
  * NO pre-insert dedupe on `(identity_hash, course_id)` — multiple correlated
  * reviews per person per course are allowed (§4), so a second submission simply
@@ -771,8 +771,8 @@ export async function getOwnEditableReview(
 }
 
 /** Everything an author may change on edit: the review minus its identity
- * (`courseId`, `identityHash`), its term — the course and term are what the
- * review IS, not content on it; changing them is a new review — and its
+ * (`courseId`, `identityHash`), its term (the course and term are what the
+ * review IS, not content on it; changing them is a new review), and its
  * `status`, which an edit never moves (a queued-pending review stays pending,
  * a published one stays published; §11/§12). */
 export type ReviewEdit = Omit<

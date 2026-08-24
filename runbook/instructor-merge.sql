@@ -2,11 +2,11 @@
 -- "W. H. Heaton" vs. "William Haynes Heaton"): repoint the duplicate's
 -- Offerings and Reviews onto the keeper, carry over the Banner NetID if only
 -- the duplicate had one, and delete the duplicate row. Also the resolution
--- tool for an instructor_pending row whose answer is "same person" — resolve
+-- tool for an instructor_pending row whose answer is "same person"; resolve
 -- the queue row with the optional statement at the bottom.
 --
--- :keep_id  — the Instructor uuid that survives (usually the fuller name).
--- :merge_id — the duplicate Instructor uuid that goes away.
+-- :keep_id:  the Instructor uuid that survives (usually the fuller name).
+-- :merge_id: the duplicate Instructor uuid that goes away.
 --
 -- psql: \set keep_id '...'  \set merge_id '...'
 --
@@ -29,7 +29,7 @@ SELECT CASE WHEN :'keep_id' = :'merge_id'
 CREATE TEMP TABLE _merge_src ON COMMIT DROP AS
 SELECT banner_key FROM instructors WHERE id = :'merge_id';
 
--- 2. Repoint reviews. The review row's content is untouched — the durable
+-- 2. Repoint reviews. The review row's content is untouched; the durable
 --    instructor id it captured at write time simply resolves to the keeper
 --    now (ADR 0001).
 UPDATE reviews
@@ -37,7 +37,7 @@ SET instructor_id = :'keep_id'
 WHERE instructor_id = :'merge_id';
 
 -- 3. Repoint offering links. The keeper may already be listed on the same
---    (course, term) — the composite PK makes that an ignore, not an error.
+--    (course, term); the composite PK makes that an ignore, not an error.
 INSERT INTO offering_instructors (course_id, term_code, instructor_id)
 SELECT course_id, term_code, :'keep_id'
 FROM offering_instructors
@@ -47,7 +47,7 @@ ON CONFLICT DO NOTHING;
 DELETE FROM offering_instructors WHERE instructor_id = :'merge_id';
 
 -- 4. Delete the duplicate, then carry its Banner NetID onto the keeper if the
---    keeper lacks one (in this order — banner_key is unique, so the keeper
+--    keeper lacks one (in this order because banner_key is unique: the keeper
 --    can only take it once the duplicate no longer holds it). Future imports
 --    keyed on that NetID then resolve straight to the keeper.
 DELETE FROM instructors WHERE id = :'merge_id';
@@ -70,7 +70,7 @@ COMMIT;
 
 -- Caveats:
 -- * v1 has no name-alias table: if Banner still lists the merged spelling
---   WITHOUT a NetID, a later offerings import may re-mint the duplicate —
+--   WITHOUT a NetID, a later offerings import may re-mint the duplicate;
 --   just re-run this merge.
 -- * Course pages cache their instructor lists; revalidate the affected
 --   courses (POST /api/revalidate) or wait for the next catalog refresh.

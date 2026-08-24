@@ -71,7 +71,7 @@ export default async function NewReviewPage({
 }) {
   // Read-only mode (§12; issue #28): say so up front instead of letting the
   // author write a full review the submit action would only bounce. The action
-  // stays the authoritative gate — this render check is a courtesy.
+  // stays the authoritative gate; this render check is a courtesy.
   const flags = await getOperatorFlags();
   if (flags.readOnly) {
     return (

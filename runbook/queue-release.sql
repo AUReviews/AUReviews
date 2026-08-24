@@ -1,6 +1,6 @@
--- Work the panic-switch queue (v1-spec §12; issue #28). While the Edge Config
--- flag `moderationMode: "queue"` is up, new submissions land with
--- status='pending' — live to their author on My Activity, invisible to
+-- Work the panic-switch queue (v1-spec §12; issue #28). While the Global
+-- Config flag `moderationMode: "queue"` is up, new submissions land with
+-- status='pending': live to their author on My Activity, invisible to
 -- everyone else. After the crisis, publish the clean ones here; anything that
 -- shouldn't publish goes through takedown.sql instead (so the author sees a
 -- reason). Flip the flag back to "open" first or the queue keeps refilling.
@@ -23,5 +23,5 @@ RETURNING id, course_id, status;
 -- RETURNING id, course_id;
 
 -- Afterwards: the affected course pages and browse-table numbers refresh on
--- the "reviews" tag / course paths — POST /api/revalidate (src/app/api/
+-- the "reviews" tag / course paths: POST /api/revalidate (src/app/api/
 -- revalidate/route.ts) or wait for the next ISR pass.
