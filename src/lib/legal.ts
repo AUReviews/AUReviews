@@ -16,11 +16,7 @@ import { RETENTION_DAYS } from "@/domain/activity";
 
 /** The §10 footer disclaimer, verbatim. Rendered on every page. */
 export const NON_AFFILIATION_DISCLAIMER =
-  "AUReviews is an independent, student-run website. It is not affiliated with, " +
-  "endorsed by, sponsored by, or connected to Auburn University. " +
-  "“Auburn University,” “Auburn,” “War Eagle,” and related " +
-  "marks are trademarks of Auburn University, used here only to identify the " +
-  "institution whose courses are reviewed.";
+  "AUReviews is an independent, student-run website. It is not affiliated with, endorsed by, or connected to Auburn University."
 
 export type LegalPageKey = "terms" | "privacy" | "guidelines";
 

@@ -173,7 +173,6 @@ a:hover {
   flex: 1;
 }
 .site-footer {
-  padding: 28px 40px;
   border-top: 1px solid var(--border-default);
   background: var(--bg-surface);
   font-size: 12.5px;
@@ -1567,27 +1566,34 @@ a.chip-link:hover {
 }
 
 /* ---- Footer links + legal pages (issue #29) ---------------------------- */
-.footer-links {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-  margin-bottom: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
-}
-.footer-links a {
-  color: var(--text-secondary);
-  text-decoration: none;
-}
-.footer-links a:hover {
-  text-decoration: underline;
+.footer-main {
+  padding: 28px 40px;
 }
 /* Scoped under .site-footer so it outranks the #27 `.site-footer p` reset. */
 .site-footer .footer-disclaimer {
-  margin: 14px auto 0;
+  margin: 0 auto 10px;
   max-width: 720px;
   line-height: 1.55;
+}
+/* GitHub-style legal bar: one muted row, copyright first, then the pages. */
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 14px 40px;
+  border-top: 1px solid var(--border-default);
+  font-size: 12px;
+  text-align: left;
+}
+.site-footer .footer-legal a {
+  color: var(--text-muted);
+  font-weight: 500;
+  text-decoration: none;
+}
+.site-footer .footer-legal a:hover {
+  color: var(--text-secondary);
+  text-decoration: underline;
 }
 .assent a,
 .guidelines a {
