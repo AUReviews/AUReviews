@@ -26,6 +26,7 @@ import {
   formatCatalogYear,
   formatCourseCode,
   formatCourseDescription,
+  formatCourseTitle,
   formatCreditHours,
   formatTypicallyOffered,
   parseCourseSlug,
@@ -116,10 +117,10 @@ export async function generateMetadata({
 
   const codeLabel = formatCourseCode(course.subject, course.number);
   return {
-    title: `${codeLabel} ${course.title} | AUReviews`,
+    title: `${codeLabel} ${formatCourseTitle(course.title)} | AUReviews`,
     description:
       formatCourseDescription(course.description) ??
-      `Reviews and catalog details for ${codeLabel} ${course.title} at Auburn.`,
+      `Reviews and catalog details for ${codeLabel} ${formatCourseTitle(course.title)} at Auburn.`,
   };
 }
 
@@ -170,7 +171,7 @@ export default async function CoursePage({
     <div className="course">
       <div className="course-head">
         <h1>
-          {codeLabel} · {course.title}
+          {codeLabel} · {formatCourseTitle(course.title)}
         </h1>
         <div className="course-meta">
           {credits && <span>{credits}</span>}
@@ -372,7 +373,7 @@ function UnlocksCard({ unlocks }: { unlocks: UnlockChipView[] }) {
             key={course.code}
             href={course.href}
             className="chip chip-link"
-            title={course.title}
+            title={formatCourseTitle(course.title)}
           >
             {course.code}
           </Link>
