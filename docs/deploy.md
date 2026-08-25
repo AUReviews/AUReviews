@@ -135,6 +135,12 @@ Resend sending subdomain. Verify the domain in Resend, publish the records it
 generates, and confirm a test email lands in an Auburn inbox (not Junk) **before**
 opening the review-submission flow.
 
+**Inbound contact address (v1-spec §10/§12, done 2026-08-24):** `admin@aureviews.com`
+is a Porkbun email-forwarding rule to the operator's inbox. It lives on the apex
+(`aureviews.com` MX `fwd1/fwd2.porkbun.com` + Porkbun SPF), separate from
+Resend's records on `send.mail.aureviews.com`, so the two never collide. The
+address is what the Privacy Policy and Guidelines publish (`LEGAL_CONTACT_EMAIL`).
+
 **What's enforced in code** (`src/auth/`): non-Auburn addresses are rejected at
 sign-in before any email is sent; each sign-in code is single-use, expires in
 ~10 min, dies after 5 wrong guesses, and only one is live per address; send rate
