@@ -1583,8 +1583,9 @@ a.chip-link:hover {
 .footer-links a:hover {
   text-decoration: underline;
 }
-.footer-disclaimer {
-  margin: 0 auto;
+/* Scoped under .site-footer so it outranks the #27 `.site-footer p` reset. */
+.site-footer .footer-disclaimer {
+  margin: 14px auto 0;
   max-width: 720px;
   line-height: 1.55;
 }
