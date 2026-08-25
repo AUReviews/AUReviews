@@ -173,7 +173,6 @@ a:hover {
   flex: 1;
 }
 .site-footer {
-  padding: 28px 40px;
   border-top: 1px solid var(--border-default);
   background: var(--bg-surface);
   font-size: 12.5px;
@@ -1564,4 +1563,100 @@ a.chip-link:hover {
   flex: 0 0 auto;
   color: var(--text-muted);
   font-size: 12px;
+}
+
+/* ---- Footer links + legal pages (issue #29) ---------------------------- */
+/* One padding on the footer, one 8px gap between every row (#27's
+   `.site-footer p + p` already gives 8px inside .footer-main). */
+.site-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 40px;
+}
+/* Scoped under .site-footer so it outranks the #27 `.site-footer p` reset. */
+.site-footer .footer-disclaimer {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 720px;
+  line-height: 1.55;
+}
+/* Legal bar: one centered muted row, copyright first, then the pages. */
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 20px;
+  font-size: 12px;
+}
+.site-footer .footer-legal a {
+  color: var(--text-muted);
+  font-weight: 500;
+  text-decoration: none;
+}
+.site-footer .footer-legal a:hover {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+.assent a,
+.guidelines a {
+  color: var(--link);
+}
+
+.legal {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px 72px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--text-body);
+}
+.legal h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-heading);
+  margin: 0 0 4px;
+}
+.legal-meta {
+  margin: 0 0 28px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.legal h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin: 28px 0 8px;
+}
+.legal p {
+  margin: 0 0 12px;
+}
+.legal ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+.legal li {
+  margin: 4px 0;
+}
+.legal a {
+  color: var(--link);
+}
+.legal code {
+  font-size: 0.92em;
+  background: var(--bg-chip);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.legal-dl {
+  margin: 0 0 12px;
+}
+.legal-dl dt {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 12px;
+}
+.legal-dl dd {
+  margin: 2px 0 0;
 }
