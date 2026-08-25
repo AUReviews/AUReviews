@@ -5,6 +5,7 @@ import {
   courseHref,
   courseSlug,
   formatCatalogYear,
+  formatCourseTitle,
   formatCourseCode,
   formatCourseDescription,
   formatCreditHours,
@@ -108,15 +109,21 @@ describe("formatCreditHours", () => {
 describe("formatCatalogYear", () => {
   it("stamps an academic-year range, normalized to an en dash", () => {
     // The ingest always stores a range like "2026-2027" (import.ts).
-    expect(formatCatalogYear("2025-2026")).toBe("2025–2026 catalog");
+    expect(formatCatalogYear("2025-2026")).toBe(
+      "Course details from the 2025–2026 Auburn Bulletin.",
+    );
   });
 
   it("stamps a bare value without inventing a range", () => {
-    expect(formatCatalogYear("2025")).toBe("2025 catalog");
+    expect(formatCatalogYear("2025")).toBe(
+      "Course details from the 2025 Auburn Bulletin.",
+    );
   });
 
   it("trims surrounding whitespace", () => {
-    expect(formatCatalogYear("  2025-2026 ")).toBe("2025–2026 catalog");
+    expect(formatCatalogYear("  2025-2026 ")).toBe(
+      "Course details from the 2025–2026 Auburn Bulletin.",
+    );
   });
 });
 
@@ -213,6 +220,36 @@ describe("addReviewNavHref", () => {
   it("stays bare on deeper or malformed course paths", () => {
     expect(addReviewNavHref("/courses/comp-3270/anything")).toBe("/reviews/new");
     expect(addReviewNavHref("/courses/not_a_slug")).toBe("/reviews/new");
+  });
+});
+
+describe("formatCourseTitle", () => {
+  it("title-cases an all-caps bulletin title, keeping small words lowercase", () => {
+    expect(formatCourseTitle("FUNDAMENTALS OF COMPUTING II")).toBe(
+      "Fundamentals of Computing II",
+    );
+    expect(formatCourseTitle("INTRO TO THE THEORY OF COMPUTATION")).toBe(
+      "Intro to the Theory of Computation",
+    );
+  });
+
+  it("keeps acronyms and hyphenated parts readable", () => {
+    expect(formatCourseTitle("OBJECT-ORIENTED PROGRAMMING FOR AI")).toBe(
+      "Object-Oriented Programming for AI",
+    );
+    expect(formatCourseTitle("IOS APP DEVELOPMENT")).toBe("iOS App Development");
+    expect(
+      formatCourseTitle("THE POWER OF AI: FUNDAMENTALS TO APPLICATIONS"),
+    ).toBe("The Power of AI: Fundamentals to Applications");
+    expect(formatCourseTitle("INTRODUCTION TO COMPUTING WITH MATLAB")).toBe(
+      "Introduction to Computing with MATLAB",
+    );
+  });
+
+  it("leaves a mixed-case title alone", () => {
+    expect(formatCourseTitle("Personal Computer Applications")).toBe(
+      "Personal Computer Applications",
+    );
   });
 });
 

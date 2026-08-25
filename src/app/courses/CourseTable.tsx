@@ -12,7 +12,11 @@ import {
   NO_DATA,
   sortBrowseCourses,
 } from "@/lib/browse";
-import { courseHref, formatCourseCode } from "@/lib/course-detail";
+import {
+  courseHref,
+  formatCourseCode,
+  formatCourseTitle,
+} from "@/lib/course-detail";
 
 // The click-to-sort catalog table (issue #20, §5). The full row set is rendered
 // server-side in catalog order (so the static/ISR HTML is already correct and
@@ -82,7 +86,7 @@ export default function CourseTable({ courses }: { courses: BrowseCourse[] }) {
                     href={courseHref(course.subject, course.number)}
                     className="course-link"
                   >
-                    {course.title}
+                    {formatCourseTitle(course.title)}
                   </Link>
                 </td>
                 <td className="code">

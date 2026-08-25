@@ -29,6 +29,54 @@ export interface CourseDetail extends BrowseCourse {
   catalogYear: string;
 }
 
+// Words kept lowercase mid-title (never at the start) by formatCourseTitle.
+const TITLE_SMALL_WORDS = new Set([
+  "a", "an", "and", "as", "at", "but", "by", "for", "in", "into", "of", "on",
+  "or", "the", "to", "via", "with",
+]);
+// Tokens kept exactly as the bulletin wrote them: roman numerals and
+// acronyms that would read wrong in title case.
+const TITLE_KEEP_UPPER = new Set([
+  "I", "II", "III", "IV", "V", "VI", "AI", "ML", "PC", "GPU", "CPU", "HCI",
+  "UNIX", "SQL", "HTML", "CSS", "OS", "IT", "API", "APIs", "UI", "UX", "3D",
+  "2D", "VR", "AR", "IoT", "CS", "CSSE", "NLP", "C++", "C#", "GIS", "FPGA",
+  "VLSI", "HPC", "DB", "ROTC", "ECE", "STEM", "TA", "MATLAB", "JAVA",
+]);
+const TITLE_SPECIAL: Record<string, string> = { IOS: "iOS", IOT: "IoT" };
+
+/**
+ * Display form of a bulletin course title. Auburn's bulletin lists titles in
+ * all caps ("FUNDAMENTALS OF COMPUTING II"); the stored value stays verbatim
+ * (the catalog side is lossless, ADR 0002) and this title-cases it for the
+ * page. A title that already has lowercase letters is returned untouched.
+ */
+export function formatCourseTitle(title: string): string {
+  const trimmed = title.trim();
+  if (trimmed !== trimmed.toUpperCase()) return trimmed;
+  return trimmed
+    .split(/\s+/)
+    .map((raw, i) => {
+      // Trailing punctuation ("AI:") rides along unchanged.
+      const m = /^(.*?)([:,;.!?]*)$/.exec(raw)!;
+      const word = m[1];
+      const tail = m[2];
+      const special = TITLE_SPECIAL[word];
+      if (special) return special + tail;
+      const keep = [...TITLE_KEEP_UPPER].find(
+        (k) => k.toUpperCase() === word,
+      );
+      if (keep) return keep + tail;
+      const lower = word.toLowerCase();
+      if (i > 0 && TITLE_SMALL_WORDS.has(lower)) return lower + tail;
+      // Capitalise each hyphen/slash-separated part: "OBJECT-ORIENTED".
+      return (
+        lower.replace(/(^|[-/])([a-z])/g, (_, sep, c) => sep + c.toUpperCase()) +
+        tail
+      );
+    })
+    .join(" ");
+}
+
 /** Build the URL slug for a course from its current catalog code: `comp-3270`. */
 export function courseSlug(subject: string, number: string): string {
   return `${subject}-${number}`.toLowerCase();
@@ -71,7 +119,8 @@ export function formatCreditHours(creditHours: string | null): string | null {
  * stamp it, without inventing a range for a bare value.
  */
 export function formatCatalogYear(catalogYear: string): string {
-  return `${catalogYear.trim().replace(/-/g, "–")} catalog`;
+  const year = catalogYear.trim().replace(/-/g, "–");
+  return `Course details from the ${year} Auburn Bulletin.`;
 }
 
 // A `Pr.`/`Coreq.` clause, marker through the first terminating period; the

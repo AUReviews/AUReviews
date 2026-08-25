@@ -7,7 +7,11 @@
  * thin. Framework- and DB-free, like the rest of `lib`.
  */
 
-import { courseSlug, formatCourseCode } from "./course-detail";
+import {
+  courseSlug,
+  formatCourseCode,
+  formatCourseTitle,
+} from "./course-detail";
 
 /** The catalog columns the typeahead matches and displays. */
 export interface CourseSearchRow {
@@ -59,6 +63,6 @@ export function toCourseOption(row: CourseSearchRow): CourseOption {
   return {
     id: row.id,
     slug: courseSlug(row.subject, row.number),
-    label: `${formatCourseCode(row.subject, row.number)} · ${row.title}`,
+    label: `${formatCourseCode(row.subject, row.number)} · ${formatCourseTitle(row.title)}`,
   };
 }
