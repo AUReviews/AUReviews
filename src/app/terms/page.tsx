@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   LEGAL_CONTACT_EMAIL,
   NON_AFFILIATION_DISCLAIMER,
+  TRADEMARK_NOTICE,
   PROHIBITED_CONTENT,
 } from "@/lib/legal";
 import LegalPage from "../_components/LegalPage";
@@ -31,7 +32,9 @@ export default function TermsPage() {
       </p>
 
       <h2>2. Not affiliated with Auburn University</h2>
-      <p>{NON_AFFILIATION_DISCLAIMER}</p>
+      <p>
+        {NON_AFFILIATION_DISCLAIMER} {TRADEMARK_NOTICE}
+      </p>
       <p>
         Course and instructor listings are imported from public university sources to identify
         what is being reviewed. Their presence here does not imply any endorsement by, or

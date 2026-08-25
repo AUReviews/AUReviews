@@ -14,9 +14,20 @@
 import { BODY_MIN_LENGTH } from "@/domain/review";
 import { RETENTION_DAYS } from "@/domain/activity";
 
-/** The §10 footer disclaimer, verbatim. Rendered on every page. */
+/** The non-affiliation disclaimer rendered in the footer of every page. The
+ * §10 draft also carried a trademark sentence; maintainer decision (issue #29)
+ * keeps the footer to this one line and moves that sentence to
+ * {@link TRADEMARK_NOTICE}, shown on the Terms page. */
 export const NON_AFFILIATION_DISCLAIMER =
-  "AUReviews is an independent, student-run website. It is not affiliated with, endorsed by, or connected to Auburn University."
+  "AUReviews is an independent, student-run website. It is not affiliated with, " +
+  "endorsed by, or connected to Auburn University.";
+
+/** The §10 nominative-use sentence for Auburn's marks. Rendered on the Terms
+ * page under the non-affiliation heading, not in the footer. */
+export const TRADEMARK_NOTICE =
+  "“Auburn University,” “Auburn,” “War Eagle,” and related marks are trademarks " +
+  "of Auburn University, used here only to identify the institution whose courses " +
+  "are reviewed.";
 
 export type LegalPageKey = "terms" | "privacy" | "guidelines";
 

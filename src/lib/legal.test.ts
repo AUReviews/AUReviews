@@ -3,6 +3,7 @@ import {
   ATTORNEY_CONFIRM_ITEMS,
   LEGAL_LINKS,
   NON_AFFILIATION_DISCLAIMER,
+  TRADEMARK_NOTICE,
   PROHIBITED_CONTENT,
   RETENTION_DAYS,
   legalPageHref,
@@ -13,10 +14,11 @@ describe("NON_AFFILIATION_DISCLAIMER (v1-spec §10)", () => {
     expect(NON_AFFILIATION_DISCLAIMER).toContain("independent, student-run");
     expect(NON_AFFILIATION_DISCLAIMER).toContain("not affiliated with");
     expect(NON_AFFILIATION_DISCLAIMER).toContain("Auburn University");
-    expect(NON_AFFILIATION_DISCLAIMER).toContain("trademarks of Auburn University");
-    expect(NON_AFFILIATION_DISCLAIMER).toContain(
-      "used here only to identify the institution",
-    );
+  });
+
+  it("keeps the §10 trademark sentence for the Terms page", () => {
+    expect(TRADEMARK_NOTICE).toContain("trademarks of Auburn University");
+    expect(TRADEMARK_NOTICE).toContain("used here only to identify the institution");
   });
 });
 
