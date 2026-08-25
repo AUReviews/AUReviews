@@ -254,7 +254,7 @@ Full detail: [`research/legal-posture.md`](../research/legal-posture.md), settle
 - **Review Guidelines**, shown *inline in the review form at the moment of authoring* (§13), not just buried in the ToS; content specified in §11.
 - **Footer disclaimer** (every page) using the language: *"AUReviews is an independent, student-run website. It is not affiliated with, endorsed by, sponsored by, or connected to Auburn University... 'Auburn University,' 'Auburn,' 'War Eagle,' and related marks are trademarks of Auburn University, used here only to identify the institution whose courses are reviewed."*
 - **DMCA agent registered** with the U.S. Copyright Office (renew every 3 years), published on-site.
-- **`legal@aureviews.com`** forwarding alias (e.g. Cloudflare Email Routing, ~10 min setup) delivering to the operator's personal inbox as a phone notification, the one always-on obligation (§12).
+- **`admin@aureviews.com`** forwarding alias (e.g. Cloudflare Email Routing, ~10 min setup) delivering to the operator's personal inbox as a phone notification, the one always-on obligation (§12).
 
 **🔴 Attorney checklist: bounded, one-time consult, before public launch.**
 - Clear the final name **"AUReviews"** (and domain) against Auburn's marks, including nickname marks.
@@ -318,7 +318,7 @@ The substitute is three mechanisms, all already present in the stack (§8):
 3. **Email-routed inboxes, not a dashboard to poll**, reusing the Resend integration already in the stack (§7/§8):
    - Each "Report this review" submission writes a row **and** emails the operator (via Resend) with the review's id/link.
    - Each "Report a concern" submission (§11) does the same into a `concerns` table.
-   - `legal@aureviews.com` (§10) forwards to the operator's personal inbox as a phone notification, the one duty that's always-on.
+   - `admin@aureviews.com` (§10) forwards to the operator's personal inbox as a phone notification, the one duty that's always-on.
    - The weekly catalog-import GitHub Action (§8) extends its existing run summary to flag when it wrote pending crosswalk/instructor-merge rows (a `::warning::` step annotation is sufficient; an email is optional).
    - **Auto-flagged content** (the door's soft-flag pass that publishes anyway) gets **no email push**, deliberately, so it can be ignored entirely during exam week. It's browsable via a saved runbook query when time permits.
 
@@ -386,7 +386,7 @@ These were deliberately never sharpened into tickets on the map; they don't bloc
 
 1. Run the catalog ingest (§8/§9) once, fully, before opening the review-submission flow; the catalog must stand alone from day one.
 2. DNS: SPF + DKIM + DMARC on the Resend sending subdomain (§7); verify deliverability into Auburn's M365 tenant before relying on it.
-3. Publish ToS, Privacy Policy, Review Guidelines, footer disclaimer (§10/§11); register the DMCA agent; stand up `legal@aureviews.com` (§10/§12).
+3. Publish ToS, Privacy Policy, Review Guidelines, footer disclaimer (§10/§11); register the DMCA agent; stand up `admin@aureviews.com` (§10/§12).
 4. Complete the 🔴 attorney consult (§10); this gates the name, the ToS/Privacy/Guidelines text, and the retention durations (§11) all becoming final, not just launch-day polish.
 5. Confirm both Edge Config flags (§12) default to `moderationMode: "open"`, `readOnly: false`.
 6. Then: the seed drive (§15, operator's call, timed to a registration week).

@@ -45,7 +45,7 @@ export function legalPageHref(key: LegalPageKey): string {
 
 /** The always-on legal contact (§10/§12). 🔴 attorney / ops: alias must exist
  * before launch. */
-export const LEGAL_CONTACT_EMAIL = "legal@aureviews.com";
+export const LEGAL_CONTACT_EMAIL = "admin@aureviews.com";
 
 /** Soft-delete windows before content purges to a tombstone (§11). The
  * numbers live in the domain (`@/domain/activity`, issue #26) next to the
