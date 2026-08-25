@@ -30,8 +30,7 @@ export default function AuthNav() {
 
   if (status === "authenticated") {
     return (
-      <span style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem" }}>
-        <span style={{ color: "#0a7" }}>Verified Auburn student</span>
+      <>
         {/* The author's pull-only page (issue #26, §11/§13), the one place a
             takedown is surfaced, so it must be reachable from every page. */}
         <Link href="/my" className="nav-link">
@@ -39,33 +38,17 @@ export default function AuthNav() {
         </Link>
         <button
           type="button"
+          className="hdr-signin"
           onClick={() => signOut({ callbackUrl: "/" })}
-          style={{
-            padding: "0.35rem 0.75rem",
-            border: "1px solid #ccc",
-            borderRadius: 6,
-            background: "#fff",
-            cursor: "pointer",
-            fontSize: "0.85rem",
-          }}
         >
           Sign out
         </button>
-      </span>
+      </>
     );
   }
 
   return (
-    <Link
-      href="/signin"
-      style={{
-        padding: "0.35rem 0.75rem",
-        border: "1px solid #0a7",
-        borderRadius: 6,
-        color: "#0a7",
-        textDecoration: "none",
-      }}
-    >
+    <Link href="/signin" className="hdr-signin">
       Sign in
     </Link>
   );

@@ -71,7 +71,8 @@ export function formatCreditHours(creditHours: string | null): string | null {
  * stamp it, without inventing a range for a bare value.
  */
 export function formatCatalogYear(catalogYear: string): string {
-  return `${catalogYear.trim().replace(/-/g, "–")} catalog`;
+  const year = catalogYear.trim().replace(/-/g, "–");
+  return `Course details from the ${year} Auburn Bulletin.`;
 }
 
 // A `Pr.`/`Coreq.` clause, marker through the first terminating period; the

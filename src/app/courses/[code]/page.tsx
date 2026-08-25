@@ -177,9 +177,6 @@ export default async function CoursePage({
           {typicallyOffered && (
             <span className="offered-stamp">{typicallyOffered}</span>
           )}
-          <span className="catalog-stamp">
-            {formatCatalogYear(course.catalogYear)}
-          </span>
           {course.status === "retired" && (
             <span className="retired-tag">retired</span>
           )}
@@ -265,6 +262,11 @@ function Overview({
       {reviewCount === 0 && (
         <NoReviewsCta course={course} reviewHref={reviewHref} />
       )}
+
+      {/* Provenance footnote: which bulletin year the record above was
+          imported from. A note rather than a header chip, so it does not read
+          as an attribute of the course itself. */}
+      <p className="catalog-note">{formatCatalogYear(course.catalogYear)}</p>
     </div>
   );
 }

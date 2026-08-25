@@ -108,15 +108,21 @@ describe("formatCreditHours", () => {
 describe("formatCatalogYear", () => {
   it("stamps an academic-year range, normalized to an en dash", () => {
     // The ingest always stores a range like "2026-2027" (import.ts).
-    expect(formatCatalogYear("2025-2026")).toBe("2025–2026 catalog");
+    expect(formatCatalogYear("2025-2026")).toBe(
+      "Course details from the 2025–2026 Auburn Bulletin.",
+    );
   });
 
   it("stamps a bare value without inventing a range", () => {
-    expect(formatCatalogYear("2025")).toBe("2025 catalog");
+    expect(formatCatalogYear("2025")).toBe(
+      "Course details from the 2025 Auburn Bulletin.",
+    );
   });
 
   it("trims surrounding whitespace", () => {
-    expect(formatCatalogYear("  2025-2026 ")).toBe("2025–2026 catalog");
+    expect(formatCatalogYear("  2025-2026 ")).toBe(
+      "Course details from the 2025–2026 Auburn Bulletin.",
+    );
   });
 });
 

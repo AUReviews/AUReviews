@@ -22,9 +22,19 @@ export const metadata: Metadata = {
     "Anonymous, verified reviews of Auburn's COMP catalog. Independent and student-run, not affiliated with Auburn University.",
 };
 
+// Applies the viewer's stored theme choice before first paint (see
+// ThemeToggle.tsx). Runs inline so there is no flash; it touches only <html>'s
+// data-theme attribute, hence suppressHydrationWarning there.
+const THEME_INIT =
+  '(function(){try{var t=localStorage.getItem("aureviews-theme");' +
+  'if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}})();';
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={jakarta.className}>
+    <html lang="en" className={jakarta.className} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
+      </head>
       <body>
         <div className="app">
           <SessionProvider>
