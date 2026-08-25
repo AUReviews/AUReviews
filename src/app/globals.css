@@ -195,8 +195,11 @@ a:hover {
 /* Theme toggle: a single circular button showing the current mode's icon;
    clicking cycles system -> light -> dark (ThemeToggle.tsx). */
 .theme-btn {
-  width: 30px;
-  height: 30px;
+  /* 36px = .btn-accent's height (13.5px * 1.5 line-height + 2 * 8px padding),
+     so the circle lines up with "+ Add Review" beside it. */
+  width: 36px;
+  height: 36px;
+  flex: none;
   border-radius: 50%;
   display: flex;
   align-items: center;
