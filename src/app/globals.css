@@ -1566,12 +1566,18 @@ a.chip-link:hover {
 }
 
 /* ---- Footer links + legal pages (issue #29) ---------------------------- */
-.footer-main {
-  padding: 28px 40px;
+/* One padding on the footer, one 8px gap between every row (#27's
+   `.site-footer p + p` already gives 8px inside .footer-main). */
+.site-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 40px;
 }
 /* Scoped under .site-footer so it outranks the #27 `.site-footer p` reset. */
 .site-footer .footer-disclaimer {
-  margin: 10px auto 0;
+  margin-left: auto;
+  margin-right: auto;
   max-width: 720px;
   line-height: 1.55;
 }
@@ -1582,7 +1588,6 @@ a.chip-link:hover {
   align-items: center;
   justify-content: center;
   gap: 8px 20px;
-  padding: 0 40px 24px;
   font-size: 12px;
 }
 .site-footer .footer-legal a {
