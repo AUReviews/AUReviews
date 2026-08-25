@@ -1571,20 +1571,19 @@ a.chip-link:hover {
 }
 /* Scoped under .site-footer so it outranks the #27 `.site-footer p` reset. */
 .site-footer .footer-disclaimer {
-  margin: 0 auto 10px;
+  margin: 10px auto 0;
   max-width: 720px;
   line-height: 1.55;
 }
-/* GitHub-style legal bar: one muted row, copyright first, then the pages. */
+/* Legal bar: one centered muted row, copyright first, then the pages. */
 .footer-legal {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 8px 20px;
-  padding: 14px 40px;
-  border-top: 1px solid var(--border-default);
+  padding: 0 40px 24px;
   font-size: 12px;
-  text-align: left;
 }
 .site-footer .footer-legal a {
   color: var(--text-muted);

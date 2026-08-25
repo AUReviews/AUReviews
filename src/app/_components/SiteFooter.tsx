@@ -6,7 +6,7 @@ const GITHUB_ISSUE_BUG = `${GITHUB_REPO}/issues/new?template=bug_report.yml`;
 const GITHUB_ISSUE_FEATURE = `${GITHUB_REPO}/issues/new?template=feature_request.yml`;
 
 // The site-wide footer (v1-spec §10/§13; issue #29). Two bands: the
-// non-affiliation disclaimer with the GitHub links (bugs and feature requests
+// GitHub links with the non-affiliation disclaimer beneath them (bugs and feature requests
 // go straight to issues, owner decision on #27), then a compact legal bar
 // with the copyright and the ToS/Privacy/Guidelines links. A Server Component
 // with no session read, so the static pages stay CDN-static (§8).
@@ -15,7 +15,6 @@ export default function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="footer-main">
-        <p className="footer-disclaimer">{NON_AFFILIATION_DISCLAIMER}</p>
         <p className="site-footer-links">
           <a href={GITHUB_ISSUE_BUG} target="_blank" rel="noopener noreferrer">
             Report a bug
@@ -27,6 +26,7 @@ export default function SiteFooter() {
             GitHub
           </a>
         </p>
+        <p className="footer-disclaimer">{NON_AFFILIATION_DISCLAIMER}</p>
       </div>
       <nav className="footer-legal" aria-label="Legal">
         <span>&copy; {year} AUReviews</span>
