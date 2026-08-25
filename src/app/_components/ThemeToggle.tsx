@@ -2,8 +2,9 @@
 
 import { useSyncExternalStore, type ReactNode } from "react";
 
-// Header light/dark/system toggle (v1-spec §13; ported from
-// prototype/index.html's `.theme-group`). The choice lives in localStorage and
+// Header theme toggle (v1-spec §13): one circular button showing the CURRENT
+// mode's icon; each click advances system -> light -> dark -> system. With
+// nothing stored the mode is "system". The choice lives in localStorage and
 // is applied as `data-theme` on <html>: "light" | "dark" set the attribute,
 // "system" removes it so globals.css's `prefers-color-scheme` block decides.
 // layout.tsx applies the stored choice in an inline pre-hydration script, so
@@ -41,7 +42,28 @@ function subscribe(cb: () => void): () => void {
   };
 }
 
+// Cycle order; OPTIONS[i + 1] is what a click from OPTIONS[i] selects.
 const OPTIONS: { mode: ThemeMode; label: string; icon: ReactNode }[] = [
+  {
+    mode: "system",
+    label: "System",
+    icon: (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="2" y="4" width="20" height="14" rx="2" />
+        <path d="M8 21h8M12 17v4" />
+      </svg>
+    ),
+  },
   {
     mode: "light",
     label: "Light",
@@ -80,26 +102,6 @@ const OPTIONS: { mode: ThemeMode; label: string; icon: ReactNode }[] = [
       </svg>
     ),
   },
-  {
-    mode: "system",
-    label: "System",
-    icon: (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <rect x="2" y="4" width="20" height="14" rx="2" />
-        <path d="M8 21h8M12 17v4" />
-      </svg>
-    ),
-  },
 ];
 
 export default function ThemeToggle() {
@@ -117,22 +119,19 @@ export default function ThemeToggle() {
     for (const cb of listeners) cb();
   }
 
+  const index = OPTIONS.findIndex((o) => o.mode === mode);
+  const current = OPTIONS[index];
+  const next = OPTIONS[(index + 1) % OPTIONS.length];
+
   return (
-    <div className="theme-group" role="radiogroup" aria-label="Color theme">
-      {OPTIONS.map((o) => (
-        <button
-          key={o.mode}
-          type="button"
-          role="radio"
-          aria-checked={mode === o.mode}
-          title={o.label}
-          aria-label={o.label}
-          className={`theme-btn${mode === o.mode ? " active" : ""}`}
-          onClick={() => choose(o.mode)}
-        >
-          {o.icon}
-        </button>
-      ))}
-    </div>
+    <button
+      type="button"
+      className="theme-btn"
+      title={`Theme: ${current.label}. Switch to ${next.label.toLowerCase()}`}
+      aria-label={`Theme: ${current.label}. Switch to ${next.label.toLowerCase()}`}
+      onClick={() => choose(next.mode)}
+    >
+      {current.icon}
+    </button>
   );
 }
