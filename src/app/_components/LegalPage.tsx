@@ -13,7 +13,7 @@ export default function LegalPage({
   return (
     <article className="legal">
       <h1>{title}</h1>
-      <p className="legal-meta">Last updated {effective}. Not legal advice.</p>
+      <p className="legal-meta">Last updated {effective}</p>
       {children}
     </article>
   );
