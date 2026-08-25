@@ -27,8 +27,7 @@ export default function TermsPage() {
       <h2>1. Who can post</h2>
       <p>
         To post a review, vote, or otherwise contribute, you must be at least 18 years old and
-        verify a current Auburn email address (<code>@auburn.edu</code> or{" "}
-        <code>@tigermail.auburn.edu</code>). Anyone can read the Site.
+        verify a current Auburn email address (<code>@auburn.edu</code>). Anyone can read the Site.
       </p>
 
       <h2>2. Not affiliated with Auburn University</h2>

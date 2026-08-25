@@ -27,7 +27,7 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <strong>Your Auburn email, briefly.</strong> When you sign in we send a one-time code to
-          your Auburn address (<code>@auburn.edu</code> or <code>@tigermail.auburn.edu</code>).
+          your Auburn address (<code>@auburn.edu</code>).
           We do not store the address. We store a one-way keyed hash of it; the key lives outside the database. The hash lets us recognize you
           when you come back and attribute your reviews to you, but it cannot be turned back into
           your email.
