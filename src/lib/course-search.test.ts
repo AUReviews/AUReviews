@@ -51,4 +51,15 @@ describe("toCourseOption", () => {
       label: "COMP 3270 · Introduction to Algorithms",
     });
   });
+
+  it("title-cases an all-caps bulletin title in the label", () => {
+    expect(
+      toCourseOption({
+        id: "id-1",
+        subject: "COMP",
+        number: "2210",
+        title: "FUNDAMENTALS OF COMPUTING II",
+      }).label,
+    ).toBe("COMP 2210 · Fundamentals of Computing II");
+  });
 });

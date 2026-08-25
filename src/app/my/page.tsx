@@ -3,7 +3,11 @@ import Link from "next/link";
 import { getCurrentIdentityHash } from "@/auth/session";
 import { canContestRemoval, removalReasonLabel } from "@/domain";
 import { listMyReviews, listMyVotes } from "@/db/queries";
-import { courseHref, formatCourseCode } from "@/lib/course-detail";
+import {
+  courseHref,
+  formatCourseCode,
+  formatCourseTitle,
+} from "@/lib/course-detail";
 import {
   formatReviewDate,
   formatReviewTerm,
@@ -144,7 +148,7 @@ function CourseLine({ review }: { review: MyReview }) {
       className="my-course"
     >
       {formatCourseCode(review.courseSubject, review.courseNumber)} ·{" "}
-      {review.courseTitle}
+      {formatCourseTitle(review.courseTitle)}
     </Link>
   );
 }
